@@ -6,7 +6,11 @@ import argparse
 import confuse
 import pprint
 import urllib3
+from tabulate import tabulate
+from prettytable import PrettyTable
 from proxmoxer import ProxmoxAPI
+from collections import OrderedDict
+
 
 
 configtemplate = {
@@ -20,28 +24,38 @@ configtemplate = {
     )
 }
 
-
 config = confuse.LazyConfig('pvecontrol', __name__)
 
 def action_nodelist(proxmox, args):
 #   # List proxmox nodes in the cluster using proxmoxer api
 #  print("Listing nodes in the cluster: %s"%args)
-  pprint.pprint(proxmox)
-
+  nodes = []
   for node in proxmox.nodes.get():
+    node = OrderedDict(sorted(node.items()))
     allocated_mem = 0
-    try:
-      for vm in proxmox.nodes(node['node']).qemu.get():
-        if vm['status'] == 'running':
-          config = proxmox.nodes(node['node']).qemu(vm['vmid']).config.get()
-          allocated_mem += config['memory']
-      print("%s: available_ram=%i allocated_ram=%i"%(node['node'],node['maxmem']/1024/1024,allocated_mem))
-    except:
-      print("%s: Cannot get informations"%node['node'])
+    for vm in proxmox.nodes(node['node']).qemu.get():
+      if vm['status'] == 'running':
+        config = proxmox.nodes(node['node']).qemu(vm['vmid']).config.get()
+        allocated_mem += config['memory']
+    node['allocatedmem'] = allocated_mem
+    node['maxmem'] = int(node['maxmem']/1024/1024)
+    nodes.append(node)
+  print(tabulate(nodes, headers="keys"))
+  x = PrettyTable()
+  x.field_names = nodes[0].keys()
+  [ x.add_row( node.values() ) for node in nodes ]
+  print(x.get_string())
 
 def action_vmlist(proxmox, args):
 #   # List proxmox nodes in the cluster using proxmoxer api
   print("Listing vms in the cluster: %s"%args)
+  vms = []
+  for node in proxmox.nodes.get():
+    for vm in proxmox.nodes(node['node']).qemu.get():
+      vm.update({"node": node['node']})
+      vms.append( vm )
+  
+  print(tabulate(vms, headers="keys"))
 
 def _parser():
   # Parser configuration
@@ -81,9 +95,8 @@ for c in validconfig.clusters:
 if not clusterconfig:
   print('No such cluster %s'%args.cluster)
   sys.exit(1)
-
 #pprint.pprint(clusterconfig)
-print('connecting to cluster')
+
 proxmox = ProxmoxAPI(clusterconfig.host, user=clusterconfig.user, password=clusterconfig.password, verify_ssl=False)
 
 args.func(proxmox, args)
