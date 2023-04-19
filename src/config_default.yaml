@@ -1,7 +1,7 @@
 ---
 
 clusters:
-  - name: test1
-    url: "https://10.14.22.13:8006"
-    user: "toot"
-    password: "blabla"
+  - name: cluster1 
+    host: 127.0.0.1
+    user: root
+    password: default
