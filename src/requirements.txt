@@ -1,0 +1,5 @@
+proxmoxer>=2.0.0
+prettytable
+humanize
+confuse
+pyyaml
