@@ -6,11 +6,10 @@ import argparse
 import confuse
 import pprint
 import urllib3
-from tabulate import tabulate
 from prettytable import PrettyTable
 from proxmoxer import ProxmoxAPI
 from collections import OrderedDict
-
+from humanize import naturalsize
 
 
 configtemplate = {
@@ -26,36 +25,49 @@ configtemplate = {
 
 config = confuse.LazyConfig('pvecontrol', __name__)
 
+# Pretty output a table from a table of dicts
+# We assume all dicts have the same keys and are sorted by key
+def _print_tableoutput(table, sortby=None, filter=[]):
+  x = PrettyTable()
+  x.field_names = table[0].keys()
+  [ x.add_row( line.values() ) for line in table ]
+  print(x.get_string(sortby=sortby))
+
+def _filter_keys(input, keys):
+  # Filter keys from input dict
+  output = OrderedDict()
+  for key in keys:
+      output[key] = input[key]
+  return output
+
 def action_nodelist(proxmox, args):
 #   # List proxmox nodes in the cluster using proxmoxer api
-#  print("Listing nodes in the cluster: %s"%args)
   nodes = []
   for node in proxmox.nodes.get():
-    node = OrderedDict(sorted(node.items()))
+    node = _filter_keys(node, ['node', 'maxcpu', 'status','maxmem','maxdisk'])
     allocated_mem = 0
     for vm in proxmox.nodes(node['node']).qemu.get():
       if vm['status'] == 'running':
         config = proxmox.nodes(node['node']).qemu(vm['vmid']).config.get()
         allocated_mem += config['memory']
-    node['allocatedmem'] = allocated_mem
-    node['maxmem'] = int(node['maxmem']/1024/1024)
+    # We convert from MB to Bytes
+    node['allocatedmem'] = naturalsize(allocated_mem * 1024 * 1024, binary=True)
+    node['maxmem'] = naturalsize(node['maxmem'], binary=True)
+    node['maxdisk'] = naturalsize(node['maxdisk'], binary=True)
     nodes.append(node)
-  print(tabulate(nodes, headers="keys"))
-  x = PrettyTable()
-  x.field_names = nodes[0].keys()
-  [ x.add_row( node.values() ) for node in nodes ]
-  print(x.get_string())
+  _print_tableoutput(nodes, sortby='node')
 
 def action_vmlist(proxmox, args):
 #   # List proxmox nodes in the cluster using proxmoxer api
-  print("Listing vms in the cluster: %s"%args)
   vms = []
   for node in proxmox.nodes.get():
     for vm in proxmox.nodes(node['node']).qemu.get():
-      vm.update({"node": node['node']})
+      vm = _filter_keys(vm, ['vmid', 'status', 'cpus', 'maxdisk', 'maxmem', 'name'])
+      vm['node'] = node['node']
+      vm['maxmem'] = naturalsize(vm['maxmem'], binary=True)
+      vm['maxdisk'] = naturalsize(vm['maxdisk'], binary=True)
       vms.append( vm )
-  
-  print(tabulate(vms, headers="keys"))
+  _print_tableoutput(vms, sortby='vmid')
 
 def _parser():
   # Parser configuration
