@@ -40,18 +40,65 @@ def _filter_keys(input, keys):
       output[key] = input[key]
   return output
 
+def _get_node_allocated_mem(proxmox, node, running = True):
+  # Get the allocated memory for a node
+  allocated_mem = 0
+  for vm in proxmox.nodes(node).qemu.get():
+    if vm['status'] != 'running' and running:
+      continue
+    config = proxmox.nodes(node).qemu(vm['vmid']).config.get()
+    allocated_mem += config['memory']
+  return allocated_mem
+
+def _get_cluster_allocated_mem(proxmox, running = True):
+  # Get the allocated memory for a cluster
+  allocated_mem = 0
+  for node in proxmox.nodes.get():
+    allocated_mem += _get_node_allocated_mem(proxmox, node['node'], running)
+  return allocated_mem
+
+def _get_node_allocated_cpu(proxmox, node, running = True):
+  # Get the allocated cpu for a node
+  allocated_cpu = 0
+  for vm in proxmox.nodes(node).qemu.get():
+    if vm['status'] != 'running' and running:
+      continue
+    config = proxmox.nodes(node).qemu(vm['vmid']).config.get()
+    allocated_cpu += config['sockets'] * config['cores']
+  return allocated_cpu
+
+def _get_cluster_allocated_cpu(proxmox, running = True):
+  # Get the allocated cpu for a cluster
+  allocated_cpu = 0
+  for node in proxmox.nodes.get():
+    allocated_cpu += _get_node_allocated_cpu(proxmox, node['node'], running)
+  return allocated_cpu
+
+def _convert_to_MB(size):
+  # Convert a size from Bytes to MB
+  return naturalsize(size * 1024 * 1024, binary=True)
+
+def action_clusterstatus(proxmox, args):
+  status = proxmox.cluster.status.get()[0]
+  resources = proxmox.cluster.resources.get(type='node')
+  logging.info(status)
+  logging.debug(resources)
+  status = _filter_keys(status, ['name', 'nodes', 'quorate'])
+# FIXME get cluster maxmem
+# FIXME get cluster maxcpu
+  status['allocatedmem'] = _convert_to_MB(_get_cluster_allocated_mem(proxmox))
+  status['allocatedcpu'] = _get_cluster_allocated_cpu(proxmox)
+  _print_tableoutput([status])
+
 def action_nodelist(proxmox, args):
 #   # List proxmox nodes in the cluster using proxmoxer api
   nodes = []
   for node in proxmox.nodes.get():
     node = _filter_keys(node, ['node', 'maxcpu', 'status','maxmem','maxdisk'])
-    allocated_mem = 0
-    for vm in proxmox.nodes(node['node']).qemu.get():
-      if vm['status'] == 'running':
-        config = proxmox.nodes(node['node']).qemu(vm['vmid']).config.get()
-        allocated_mem += config['memory']
+    allocated_mem = _get_node_allocated_mem(proxmox, node['node'])
     # We convert from MB to Bytes
-    node['allocatedmem'] = naturalsize(allocated_mem * 1024 * 1024, binary=True)
+    node['allocatedmem'] = _convert_to_MB(allocated_mem)
+    node['allocatedcpu'] = _get_node_allocated_cpu(proxmox, node['node'])
     node['maxmem'] = naturalsize(node['maxmem'], binary=True)
     node['maxdisk'] = naturalsize(node['maxdisk'], binary=True)
     nodes.append(node)
@@ -77,6 +124,10 @@ def _parser():
   parser.add_argument('-c', '--cluster', action='store', required=True, help='Proxmox cluster name as defined in configuration' )
   subparsers = parser.add_subparsers(help='sub-command help', dest='action_name')
 
+  # clusterstatus parser
+  parser_clusterstatus = subparsers.add_parser('clusterstatus', help='Show cluster status')
+  parser_clusterstatus.set_defaults(func=action_clusterstatus)
+  
   # nodelist parser
   parser_nodelist = subparsers.add_parser('nodelist', help='List nodes in the cluster')
   parser_nodelist.set_defaults(func=action_nodelist)
