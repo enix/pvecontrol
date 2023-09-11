@@ -98,6 +98,9 @@ def action_nodelist(proxmox, args):
 #   # List proxmox nodes in the cluster using proxmoxer api
   nodes = []
   for node in proxmox.nodes.get():
+    logging.debug("NODE: %s",node)
+    if node['status'] == "offline":
+      continue
     node = _filter_keys(node, ['node', 'maxcpu', 'status','maxmem','maxdisk'])
     allocated_mem = _get_node_allocated_mem(proxmox, node['node'])
     # We convert from MB to Bytes
