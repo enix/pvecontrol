@@ -206,31 +206,32 @@ def _parser():
   return parser.parse_args()
 
 
-# Disable urllib3 warnings about invalid certs
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+if __name__ == "__main__":
+  # Disable urllib3 warnings about invalid certs
+  urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-args = _parser()
-# configure logging
-logging.basicConfig(encoding='utf-8', level=logging.DEBUG if args.debug else logging.INFO)
-logging.info("Proxmox cluster: %s" % args.cluster)
+  args = _parser()
+  # configure logging
+  logging.basicConfig(encoding='utf-8', level=logging.DEBUG if args.debug else logging.INFO)
+  logging.info("Proxmox cluster: %s" % args.cluster)
 
-# Load configuration file
-# FIXME Creation du directory de configuration si non existant
-logging.debug('configuration directory is %s'%config.config_dir())
-validconfig = config.get(configtemplate)
-logging.debug('configuration is %s'%validconfig)
+  # Load configuration file
+  # FIXME Creation du directory de configuration si non existant
+  logging.debug('configuration directory is %s'%config.config_dir())
+  validconfig = config.get(configtemplate)
+  logging.debug('configuration is %s'%validconfig)
 
-# FIXME trouver une methode plus clean pour recuperer la configuration du bon cluster
-# Peut etre rework la configuration completement avec un dict
-clusterconfig = False
-for c in validconfig.clusters:
-  if c.name == args.cluster:
-    clusterconfig = c
-if not clusterconfig:
-  print('No such cluster %s'%args.cluster)
-  sys.exit(1)
-logging.debug('clusterconfig is %s'%clusterconfig)
+  # FIXME trouver une methode plus clean pour recuperer la configuration du bon cluster
+  # Peut etre rework la configuration completement avec un dict
+  clusterconfig = False
+  for c in validconfig.clusters:
+    if c.name == args.cluster:
+      clusterconfig = c
+  if not clusterconfig:
+    print('No such cluster %s'%args.cluster)
+    sys.exit(1)
+  logging.debug('clusterconfig is %s'%clusterconfig)
 
-proxmox = ProxmoxAPI(clusterconfig.host, user=clusterconfig.user, password=clusterconfig.password, verify_ssl=False)
+  proxmox = ProxmoxAPI(clusterconfig.host, user=clusterconfig.user, password=clusterconfig.password, verify_ssl=False)
 
-args.func(proxmox, args)
+  args.func(proxmox, args)
