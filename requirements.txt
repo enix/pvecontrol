@@ -1,0 +1,11 @@
+  prettytable
+  humanize
+  confuse
+  pyyaml
+  urllib3
+# proxmoxer depdends  
+  proxmoxer>=2.0.0
+  requests
+  requests_toolbelt
+  openssh_wrapper
+  paramiko
