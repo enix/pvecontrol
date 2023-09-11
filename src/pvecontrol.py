@@ -130,7 +130,7 @@ def action_vmlist(proxmox, args):
       vms.append( vm )
   _print_tableoutput(vms, sortby='vmid')
 
-def action_gettasks(proxmox, args):
+def action_tasklist(proxmox, args):
   tasks = []
   for task in proxmox.get("cluster/tasks"):
     logging.debug("Task: %s", task)
@@ -158,8 +158,8 @@ def _parser():
   parser_vmlist = subparsers.add_parser('vmlist', help='List VMs in the cluster')
   parser_vmlist.set_defaults(func=action_vmlist)
   # gettasks parser
-  parser_vmlist = subparsers.add_parser('gettasks', help='List tasks')
-  parser_vmlist.set_defaults(func=action_gettasks)
+  parser_vmlist = subparsers.add_parser('tasklist', help='List tasks')
+  parser_vmlist.set_defaults(func=action_tasklist)
 
   return parser.parse_args()
 
