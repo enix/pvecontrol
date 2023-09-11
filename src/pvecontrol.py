@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import time
 import sys
 import argparse
 import confuse
@@ -143,20 +144,37 @@ def action_tasklist(proxmox, args):
     tasks.append(task)
   _print_tableoutput(tasks, sortby='starttime')
 
+def _print_taskstatus(status):
+  output = []
+  if status['status'] == "running":
+    status["exitstatus"] = ""
+  output.append(_filter_keys(status, ['upid', 'exitstatus', 'node', 'status', 'type', 'user', 'starttime']))
+  _print_tableoutput(output)
+
 def action_taskget(proxmox, args):
   task = Tasks.decode_upid(args.upid)
   logging.debug("Task: %s", task)
   status = proxmox.nodes(task['node']).tasks(task['upid']).status.get()
   logging.debug("Task status: %s", status)
-  output = []
-  if status['status'] == "running":
-      status["exitstatus"] = ""
-  output.append(_filter_keys(status, ['upid', 'exitstatus', 'node', 'status', 'type', 'user', 'starttime']))
-  _print_tableoutput(output)
+  _print_taskstatus(status)
   log = proxmox.nodes(task['node']).tasks(task['upid']).log.get(limit=0)
   logging.debug("Task Log: %s", log)
-  _print_tableoutput([{"log output": Tasks.decode_log(log)}])
-
+  if status['status'] == 'running' and args.follow:
+    lastline = 0
+    print("log output, follow mode")
+    while status['status'] == "running":
+      status = proxmox.nodes(task['node']).tasks(task['upid']).status.get()
+      logging.debug("Task status: %s", status)
+      log = proxmox.nodes(task['node']).tasks(task['upid']).log.get(limit=0, start=lastline)
+      logging.debug("Task Log: %s", log)
+      for line in log:
+        print("%s"%line['t'])
+        if line['n'] > lastline:
+          lastline = line['n']
+      time.sleep(1)
+    _print_taskstatus(status)
+  else:
+    _print_tableoutput([{"log output": Tasks.decode_log(log)}])
 
 def _parser():
   # Parser configuration
@@ -182,6 +200,7 @@ def _parser():
   # taskget parser
   parser_taskget = subparsers.add_parser('taskget', help='Get task detail')
   parser_taskget.add_argument('--upid', action='store', required=True, help="Proxmox tasks UPID to get informations")
+  parser_taskget.add_argument('-f', '--follow', action='store_true', help="Follow task log output")
   parser_taskget.set_defaults(func=action_taskget)
 
   return parser.parse_args()
