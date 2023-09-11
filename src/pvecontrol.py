@@ -40,6 +40,15 @@ def _filter_keys(input, keys):
       output[key] = input[key]
   return output
 
+def _get_nodes(proxmox):
+  nodes = []
+  for node in proxmox.nodes.get():
+    logging.debug("NODE: %s",node)
+    if node['status'] == "offline":
+      continue
+    nodes.append(node)
+  return nodes
+
 def _get_node_allocated_mem(proxmox, node, running = True):
   # Get the allocated memory for a node
   allocated_mem = 0
