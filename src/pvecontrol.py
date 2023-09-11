@@ -7,6 +7,7 @@ import confuse
 import urllib3
 import logging
 from prettytable import PrettyTable
+from proxmoxer.tools import Tasks
 from proxmoxer import ProxmoxAPI
 from collections import OrderedDict
 from humanize import naturalsize
@@ -106,10 +107,7 @@ def action_clusterstatus(proxmox, args):
 def action_nodelist(proxmox, args):
 #   # List proxmox nodes in the cluster using proxmoxer api
   nodes = []
-  for node in proxmox.nodes.get():
-    logging.debug("NODE: %s",node)
-    if node['status'] == "offline":
-      continue
+  for node in _get_nodes(proxmox):
     node = _filter_keys(node, ['node', 'maxcpu', 'status','maxmem','maxdisk'])
     allocated_mem = _get_node_allocated_mem(proxmox, node['node'])
     # We convert from MB to Bytes
@@ -123,7 +121,7 @@ def action_nodelist(proxmox, args):
 def action_vmlist(proxmox, args):
 #   # List proxmox nodes in the cluster using proxmoxer api
   vms = []
-  for node in proxmox.nodes.get():
+  for node in _get_nodes(proxmox):
     for vm in proxmox.nodes(node['node']).qemu.get():
       vm = _filter_keys(vm, ['vmid', 'status', 'cpus', 'maxdisk', 'maxmem', 'name'])
       vm['node'] = node['node']
@@ -131,6 +129,15 @@ def action_vmlist(proxmox, args):
       vm['maxdisk'] = naturalsize(vm['maxdisk'], binary=True)
       vms.append( vm )
   _print_tableoutput(vms, sortby='vmid')
+
+def action_gettasks(proxmox, args):
+  tasks = []
+  for task in proxmox.get("cluster/tasks"):
+    logging.debug("Task: %s", task)
+    task = _filter_keys(task, ['upid', 'status', 'node', 'type', 'starttime', 'endtime'])
+    tasks.append(task)
+  _print_tableoutput(tasks, sortby='starttime')
+
 
 def _parser():
   # Parser configuration
@@ -150,6 +157,9 @@ def _parser():
   # vmlist parser
   parser_vmlist = subparsers.add_parser('vmlist', help='List VMs in the cluster')
   parser_vmlist.set_defaults(func=action_vmlist)
+  # gettasks parser
+  parser_vmlist = subparsers.add_parser('gettasks', help='List tasks')
+  parser_vmlist.set_defaults(func=action_gettasks)
 
   return parser.parse_args()
 
