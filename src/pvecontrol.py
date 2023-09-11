@@ -61,10 +61,14 @@ def _get_node_allocated_cpu(proxmox, node, running = True):
   # Get the allocated cpu for a node
   allocated_cpu = 0
   for vm in proxmox.nodes(node).qemu.get():
+    logging.debug("VM: %s",vm)
     if vm['status'] != 'running' and running:
       continue
     config = proxmox.nodes(node).qemu(vm['vmid']).config.get()
-    allocated_cpu += config['sockets'] * config['cores']
+    if "sockets" in config:
+      allocated_cpu += config['sockets'] * config['cores']
+    else:
+      allocated_cpu += config['cores']
   return allocated_cpu
 
 def _get_cluster_allocated_cpu(proxmox, running = True):
