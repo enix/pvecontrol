@@ -30,6 +30,7 @@ config = confuse.LazyConfig('pvecontrol', __name__)
 # We assume all dicts have the same keys and are sorted by key
 def _print_tableoutput(table, sortby=None, filter=[]):
   x = PrettyTable()
+  x.align = 'l'
   x.field_names = table[0].keys()
   [ x.add_row( line.values() ) for line in table ]
   print(x.get_string(sortby=sortby))
@@ -138,6 +139,18 @@ def action_tasklist(proxmox, args):
     tasks.append(task)
   _print_tableoutput(tasks, sortby='starttime')
 
+def action_taskget(proxmox, args):
+  task = Tasks.decode_upid(args.upid)
+  logging.debug("Task: %s", task)
+  status = proxmox.nodes(task['node']).tasks(task['upid']).status.get()
+  logging.debug("Task status: %s", status)
+  output = []
+  output.append(_filter_keys(status, ['upid', 'exitstatus', 'node', 'status', 'type', 'user', 'starttime']))
+  _print_tableoutput(output)
+  log = proxmox.nodes(task['node']).tasks(task['upid']).log.get(limit=0)
+  logging.debug("Task Log: %s", log)
+  _print_tableoutput([{"log output": Tasks.decode_log(log)}])
+
 
 def _parser():
   # Parser configuration
@@ -157,9 +170,13 @@ def _parser():
   # vmlist parser
   parser_vmlist = subparsers.add_parser('vmlist', help='List VMs in the cluster')
   parser_vmlist.set_defaults(func=action_vmlist)
-  # gettasks parser
-  parser_vmlist = subparsers.add_parser('tasklist', help='List tasks')
-  parser_vmlist.set_defaults(func=action_tasklist)
+  # tasklist parser
+  parser_tasklist = subparsers.add_parser('tasklist', help='List tasks')
+  parser_tasklist.set_defaults(func=action_tasklist)
+  # taskget parser
+  parser_taskget = subparsers.add_parser('taskget', help='Get task detail')
+  parser_taskget.add_argument('--upid', action='store', required=True, help="Proxmox tasks UPID to get informations")
+  parser_taskget.set_defaults(func=action_taskget)
 
   return parser.parse_args()
 
