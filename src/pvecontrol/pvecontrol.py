@@ -206,7 +206,8 @@ def _parser():
   return parser.parse_args()
 
 
-if __name__ == "__main__":
+
+def main():
   # Disable urllib3 warnings about invalid certs
   urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -235,3 +236,7 @@ if __name__ == "__main__":
   proxmox = ProxmoxAPI(clusterconfig.host, user=clusterconfig.user, password=clusterconfig.password, verify_ssl=False)
 
   args.func(proxmox, args)
+
+
+if __name__ == '__main__':
+    sys.exit(main())
