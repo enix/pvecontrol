@@ -135,6 +135,10 @@ def action_tasklist(proxmox, args):
   tasks = []
   for task in proxmox.get("cluster/tasks"):
     logging.debug("Task: %s", task)
+    if "status" not in task:
+      task["status"] = ""
+    if "endtime" not in task:
+      task["endtime"] = 0
     task = _filter_keys(task, ['upid', 'status', 'node', 'type', 'starttime', 'endtime'])
     tasks.append(task)
   _print_tableoutput(tasks, sortby='starttime')
@@ -145,6 +149,8 @@ def action_taskget(proxmox, args):
   status = proxmox.nodes(task['node']).tasks(task['upid']).status.get()
   logging.debug("Task status: %s", status)
   output = []
+  if status['status'] == "running":
+      status["exitstatus"] = ""
   output.append(_filter_keys(status, ['upid', 'exitstatus', 'node', 'status', 'type', 'user', 'starttime']))
   _print_tableoutput(output)
   log = proxmox.nodes(task['node']).tasks(task['upid']).log.get(limit=0)
