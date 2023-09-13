@@ -40,3 +40,5 @@ pip-delete-this-directory.txt
 *.~
 .env
 .vscode/
+
+.pytest*
