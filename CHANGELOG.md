@@ -2,6 +2,19 @@
 
 
 
+## v0.1.1 (2023-09-13)
+
+### Chore
+
+* chore(README): update python version ([`14b4ad1`](https://github.com/enix/pvecontrol/commit/14b4ad17cc2245db9540915c4fd1cf30acba1a80))
+
+* chore(release): Use unified release workflow ([`6c481a7`](https://github.com/enix/pvecontrol/commit/6c481a7f81c755fd685d6111071469955b0660a9))
+
+### Fix
+
+* fix(pvecontrol): Add missing empty line ([`b825a95`](https://github.com/enix/pvecontrol/commit/b825a9516a48c70a950cb8faf4bd9113f981ccbc))
+
+
 ## v0.1.0 (2023-09-13)
 
 ### Feature
