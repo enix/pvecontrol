@@ -8,7 +8,7 @@ It is designed to easy usage of multiple large clusters and get some detailled i
 Installation
 ---
 
-Need python 3.9+
+Need python 3.7+
 
 Install python requirements and directly use the script
 
