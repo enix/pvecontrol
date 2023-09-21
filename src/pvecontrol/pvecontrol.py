@@ -194,10 +194,13 @@ def action_vmmigrate(proxmox, args):
   if len(check['local_disks']) > 0:
     options['with-local-disks'] = int(True)
 
-  # Lancer tache de migration
-  upid = proxmox.nodes(node['node']).qemu(vmid).migrate.post(**options)
-  # Suivre la task cree
-  _print_task(proxmox, upid, args.follow)
+  if not args.dry_run:
+    # Lancer tache de migration
+    upid = proxmox.nodes(node['node']).qemu(vmid).migrate.post(**options)
+    # Suivre la task cree
+    _print_task(proxmox, upid, args.follow)
+  else:
+    print("Dry run, skipping migration")
 
 def action_tasklist(proxmox, args):
   tasks = []
@@ -270,6 +273,7 @@ def _parser():
   parser_vmmigrate.add_argument('--target', action='store', required=True, help="Destination Proxmox VE node")
   parser_vmmigrate.add_argument('--online', action='store_true', help="Online migrate the VM, default True", default=True)
   parser_vmmigrate.add_argument('-f', '--follow', action='store_true', help="Follow task log output")
+  parser_vmmigrate.add_argument('--dry-run', action='store_true', help="Dry run, do not execute migration")
   parser_vmmigrate.set_defaults(func=action_vmmigrate)
 
   # tasklist parser
