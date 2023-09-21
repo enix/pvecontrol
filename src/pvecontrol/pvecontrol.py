@@ -68,12 +68,13 @@ def _get_vms(proxmox):
       vm['maxmem'] = naturalsize(vm['maxmem'], binary=True)
       vm['maxdisk'] = naturalsize(vm['maxdisk'], binary=True)
       vms.append( vm )
+  logging.debug("VMs: %s"%vms)
   return vms
 
 def _get_vm(proxmox, vmid):
   vms = _get_vms(proxmox)
   for vm in vms:
-    logging.debug("_get_vm: %s",vm)
+    logging.debug("_get_vm: %s"%vm)
     if vm['vmid'] == vmid:
       return vm
   return None
@@ -161,8 +162,8 @@ def action_vmlist(proxmox, args):
 def action_vmmigrate(proxmox, args):
   logging.debug("ARGS: %s"%args)
   # Migrate a vm to a node
-  vmid = int(args.vmid)
-  target = args.target
+  vmid = str(args.vmid)
+  target = str(args.target)
 
   # Check that vmid exists
   vm = _get_vm(proxmox, vmid)
