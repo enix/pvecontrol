@@ -145,6 +145,9 @@ def action_nodelist(proxmox, args):
 #   # List proxmox nodes in the cluster using proxmoxer api
   nodes = []
   for node in _get_nodes(proxmox):
+    if "maxcpu" not in node: node['maxcpu'] = 0
+    if "maxmem" not in node: node['maxmem'] = 0
+    if "maxdisk" not in node: node['maxdisk'] = 0
     node = _filter_keys(node, ['node', 'maxcpu', 'status','maxmem','maxdisk'])
     node = _get_node_ressources(proxmox, node)
     nodes.append(node)
