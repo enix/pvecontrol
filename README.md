@@ -13,8 +13,8 @@ Need python 3.7+
 Install python requirements and directly use the script
 
 ```bash
-pip3 instal -r requirements.txt
-python3 src/pvecontrol.py help
+pip3 install -r requirements.txt
+python3 src/pvecontrol/pvecontrol.py -h
 ```
 
 Configuration
