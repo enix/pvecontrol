@@ -255,12 +255,15 @@ def _print_task(proxmox, upid, follow = False):
     _print_tableoutput([{"log output": Tasks.decode_log(log)}])
 
 def _parser():
+## FIXME
+## Add version in help output
+
   # Parser configuration
-  parser = argparse.ArgumentParser(description='Proxmox VE control cli.')
+  parser = argparse.ArgumentParser(description='Proxmox VE control cli.', epilog="Made with love by Enix.io")
   parser.add_argument('-v', '--verbose', action='store_true')
   parser.add_argument('--debug', action='store_true')
   parser.add_argument('-c', '--cluster', action='store', required=True, help='Proxmox cluster name as defined in configuration' )
-  subparsers = parser.add_subparsers(help='sub-command help', dest='action_name')
+  subparsers = parser.add_subparsers(required=True)
 
   # clusterstatus parser
   parser_clusterstatus = subparsers.add_parser('clusterstatus', help='Show cluster status')
@@ -274,7 +277,7 @@ def _parser():
   parser_vmlist.set_defaults(func=action_vmlist)
   # vmmigrate parser
   parser_vmmigrate = subparsers.add_parser('vmmigrate', help='Migrate VMs in the cluster')
-  parser_vmmigrate.add_argument('--vmid', action='store', required=True, help="VM to migrate")
+  parser_vmmigrate.add_argument('--vmid', action='store', required=True, type=int, help="VM to migrate")
   parser_vmmigrate.add_argument('--target', action='store', required=True, help="Destination Proxmox VE node")
   parser_vmmigrate.add_argument('--online', action='store_true', help="Online migrate the VM, default True", default=True)
   parser_vmmigrate.add_argument('-f', '--follow', action='store_true', help="Follow task log output")
