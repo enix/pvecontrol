@@ -64,6 +64,7 @@ def _get_vms(proxmox):
   for node in _get_nodes(proxmox):
     for vm in proxmox.nodes(node['node']).qemu.get():
       vm = _filter_keys(vm, ['vmid', 'status', 'cpus', 'maxdisk', 'maxmem', 'name'])
+      vm['vmid'] = int(vm['vmid'])
       vm['node'] = node['node']
       vm['maxmem'] = naturalsize(vm['maxmem'], binary=True)
       vm['maxdisk'] = naturalsize(vm['maxdisk'], binary=True)
@@ -162,7 +163,7 @@ def action_vmlist(proxmox, args):
 def action_vmmigrate(proxmox, args):
   logging.debug("ARGS: %s"%args)
   # Migrate a vm to a node
-  vmid = str(args.vmid)
+  vmid = int(args.vmid)
   target = str(args.target)
 
   # Check that vmid exists
