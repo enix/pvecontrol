@@ -1,18 +1,22 @@
 Proxmox VE Control
 ===
 
+![release workflow](https://github.com/enix/pvecontrol/actions/workflows/release.yml/badge.svg?branch=main)
+![pypi release](https://img.shields.io/pypi/v/pvecontrol.svg)
+![pypi downloads](https://img.shields.io/pypi/dm/pvecontrol.svg)
+
 `pvecontrol` (https://pypi.org/project/pvecontrol/) software allows you to manage a Proxmox VE cluster using it's API with a convenient cli for you shell.
 
 It is designed to easy usage of multiple large clusters and get some detailled informations not easily available on the UI and integrated tools.
 
-`pvecontrol` is based upon (proxmoxer)[https://pypi.org/project/proxmoxer/] a wonderfull framework to communicate with Proxmox projects APIs.
+`pvecontrol` is based upon [proxmoxer](https://pypi.org/project/proxmoxer/) a wonderfull framework to communicate with Proxmox projects APIs.
 
 Installation
 ---
 
 The software need Python version 3.7+.
 
-The easiest way to install it is simply using pip. New versions are automatically published to [pypi](https://pypi.org/project/pvecontrol/) enix repository. It is recommended to use `pipx` in order to automatically create a dedicated python virtualenv.
+The easiest way to install it is simply using pip. New versions are automatically published to [pypi](https://pypi.org/project/pvecontrol/) repository. It is recommended to use `pipx` in order to automatically create a dedicated python virtualenv.
 
 ```shell
 pipx install pvecontrol
@@ -112,3 +116,7 @@ python3 src/pvecontrol/pvecontrol.py -h
 ```
 
 This project use *semantic versioning* with [python-semantic-release](https://python-semantic-release.readthedocs.io/en/latest/) toolkit in order to automate release process. All the commits must so use the [Angular Commit Message Conventions](https://github.com/angular/angular/blob/master/CONTRIBUTING.md#-commit-message-format). Repository `main` branch is also protected to prevent any unwanted publish of a new release. All updates must go thru a PR with a review.
+
+---
+
+Made with :heart: by Enix (http://enix.io) :monkey: from Paris :fr:.
