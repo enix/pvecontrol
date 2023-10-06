@@ -2,6 +2,53 @@
 
 
 
+## v0.2.0 (2023-10-06)
+
+### Chore
+
+* chore(README): Add badges, fix typos ([`e51df76`](https://github.com/enix/pvecontrol/commit/e51df76aa0625c0c9e40ed95215c16ce06964175))
+
+* chore(README): More complete documentation ([`384749c`](https://github.com/enix/pvecontrol/commit/384749c052b2fa37cd152b175aca517d116b8fc9))
+
+* chore(debug): Add some debug lines ([`151c31d`](https://github.com/enix/pvecontrol/commit/151c31df02d6da841debc85a7a3cb1df004c18b0))
+
+* chore(setup): Change description ([`542f9d7`](https://github.com/enix/pvecontrol/commit/542f9d7594fa47384753335e57382505b6bb2b16))
+
+* chore(setup): Change README content type ([`08aabcb`](https://github.com/enix/pvecontrol/commit/08aabcbde7cc6630e86029da965ed1fb25d84a91))
+
+### Feature
+
+* feat(vmmigrate): Add dry-run ([`9a5941e`](https://github.com/enix/pvecontrol/commit/9a5941e8639bc0c5010bbaa1911fe6ac368a36d1))
+
+* feat(vmmigrate): First version with migration ([`c908672`](https://github.com/enix/pvecontrol/commit/c908672e60ab60029a1b2c71ec9edce5edc41111))
+
+### Fix
+
+* fix(pvecontrol): Update parser help output ([`4a484f3`](https://github.com/enix/pvecontrol/commit/4a484f310c0c23dfababd7e700bf4d3678653fee))
+
+* fix(requirements): Bump proxmoxer version ([`09fd1fb`](https://github.com/enix/pvecontrol/commit/09fd1fb06e0c4b1f37e315855f2ae9260bf8b6ce))
+
+* fix(config): Use a more comprehensive default ([`5b9d4fc`](https://github.com/enix/pvecontrol/commit/5b9d4fc98ab6461cab30a89d242a440425e81b3c))
+
+* fix(pvecontrol): convert vmid to int ([`bb493fa`](https://github.com/enix/pvecontrol/commit/bb493fa4d1dac1f9e8d8e888957e6684e3f706be))
+
+* fix(nodelist): add some defaults for optional ([`f1ece32`](https://github.com/enix/pvecontrol/commit/f1ece32b936d1f8d187abd4426fa08de0a0ce6e8))
+
+### Unknown
+
+* Merge pull request #2 from enix/dev
+
+New release ([`98ea199`](https://github.com/enix/pvecontrol/commit/98ea199539a8766fe2bda4c7979f101e571d104f))
+
+* Merge pull request #1 from enix/rdegez-patch-1
+
+Update README.md ([`e65bd77`](https://github.com/enix/pvecontrol/commit/e65bd7704d57c04a1297aef3a8134d8221af7cc8))
+
+* Update README.md
+
+Fix typos ([`4fb2d47`](https://github.com/enix/pvecontrol/commit/4fb2d47dabdce0a75183b424eb8a53fbf0c9accc))
+
+
 ## v0.1.1 (2023-09-13)
 
 ### Chore
