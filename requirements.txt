@@ -4,7 +4,7 @@
   pyyaml
   urllib3
 # proxmoxer depdends  
-  proxmoxer>=2.0.0
+  proxmoxer>=2.0.1
   requests
   requests_toolbelt
   openssh_wrapper
