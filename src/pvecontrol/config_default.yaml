@@ -1,7 +1,7 @@
 ---
 
 clusters:
-  - name: cluster1 
+  - name: cluster1
     host: 127.0.0.1
-    user: root
-    password: default
+    user: pvecontrol@pve
+    password: somerandomsecret
