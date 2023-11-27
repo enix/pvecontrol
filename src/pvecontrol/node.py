@@ -37,8 +37,7 @@ class PVENode:
         self.disk = input[k]
       elif k == "maxdisk":
         self.maxdisk = input[k]
-    self.vms = []
-    self.vms = [ PVEVm(self._api, self.node, vm["vmid"], vm["status"], vm) for vm in  self._api.nodes(self.node).qemu.get() ]
+    self._init_vms()
     self._init_allocatedmem()
     self._init_allocatedcpu()
 
@@ -53,6 +52,11 @@ class PVENode:
       output += " - " + str(vm) + "\n"
     return output
 
+  def _init_vms(self):
+    self.vms = []
+    if self.status == NodeStatus.online:
+      self.vms = [ PVEVm(self._api, self.node, vm["vmid"], vm["status"], vm) for vm in  self._api.nodes(self.node).qemu.get() ]
+      
   def _init_allocatedmem(self):
     """Compute the amount of memory allocated to running VMs"""
     self.allocatedmem = 0
