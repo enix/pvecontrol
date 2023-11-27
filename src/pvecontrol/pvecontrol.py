@@ -9,9 +9,12 @@ import urllib3
 import logging
 from prettytable import PrettyTable
 from proxmoxer.tools import Tasks
-from proxmoxer import ProxmoxAPI
 from collections import OrderedDict
 from humanize import naturalsize
+
+from node import PVENode
+from vm import PVEVm
+from cluster import PVECluster
 
 
 configtemplate = {
@@ -33,7 +36,11 @@ def _print_tableoutput(table, sortby=None, filter=[]):
   x = PrettyTable()
   x.align = 'l'
   x.field_names = table[0].keys()
-  [ x.add_row( line.values() ) for line in table ]
+  for line in table:
+    for key in ['mem', 'allocatedmem', 'maxmem', 'disk', 'allocateddisk', 'maxdisk'] :
+      if key in line:
+        line[key] = naturalsize(line[key], binary=True)
+    x.add_row( line.values() )
   print(x.get_string(sortby=sortby))
 
 def _filter_keys(input, keys):
@@ -43,122 +50,39 @@ def _filter_keys(input, keys):
       output[key] = input[key]
   return output
 
-def _get_nodes(proxmox):
-  nodes = []
-  for node in proxmox.nodes.get():
-    logging.debug("NODE: %s",node)
-    if node['status'] == "offline":
-      continue
-    nodes.append(node)
-  return nodes
-
-def _get_node(proxmox, node):
-  for snode in _get_nodes(proxmox):
-    logging.debug("NODE: %s",snode)
-    if snode['node'] == node:
-      return snode
-  return None
-
-def _get_vms(proxmox):
-  vms = []
-  for node in _get_nodes(proxmox):
-    for vm in proxmox.nodes(node['node']).qemu.get():
-      vm = _filter_keys(vm, ['vmid', 'status', 'cpus', 'maxdisk', 'maxmem', 'name'])
-      vm['vmid'] = int(vm['vmid'])
-      vm['node'] = node['node']
-      vm['maxmem'] = naturalsize(vm['maxmem'], binary=True)
-      vm['maxdisk'] = naturalsize(vm['maxdisk'], binary=True)
-      vms.append( vm )
-  logging.debug("VMs: %s"%vms)
-  return vms
-
 def _get_vm(proxmox, vmid):
-  vms = _get_vms(proxmox)
-  for vm in vms:
+  for vm in proxmox.vms():
     logging.debug("_get_vm: %s"%vm)
-    if vm['vmid'] == vmid:
+    if vm.vmid == vmid:
       return vm
   return None
 
-def _get_node_allocated_mem(proxmox, node, running = True):
-  # Get the allocated memory for a node
-  allocated_mem = 0
-  for vm in proxmox.nodes(node).qemu.get():
-    if vm['status'] != 'running' and running:
-      continue
-    config = proxmox.nodes(node).qemu(vm['vmid']).config.get()
-    allocated_mem += config['memory']
-  return allocated_mem
-
-def _get_node_ressources(proxmox, node):
-  allocated_mem = _get_node_allocated_mem(proxmox, node['node'])
-  # We convert from MB to Bytes
-  node['allocatedmem'] = _convert_to_MB(allocated_mem)
-  node['allocatedcpu'] = _get_node_allocated_cpu(proxmox, node['node'])
-  node['maxmem'] = naturalsize(node['maxmem'], binary=True)
-  node['maxdisk'] = naturalsize(node['maxdisk'], binary=True)
-  return node
-
-def _get_cluster_allocated_mem(proxmox, running = True):
-  # Get the allocated memory for a cluster
-  allocated_mem = 0
-  for node in proxmox.nodes.get():
-    allocated_mem += _get_node_allocated_mem(proxmox, node['node'], running)
-  return allocated_mem
-
-def _get_node_allocated_cpu(proxmox, node, running = True):
-  # Get the allocated cpu for a node
-  allocated_cpu = 0
-  for vm in proxmox.nodes(node).qemu.get():
-    logging.debug("VM: %s",vm)
-    if vm['status'] != 'running' and running:
-      continue
-    config = proxmox.nodes(node).qemu(vm['vmid']).config.get()
-    if "sockets" in config:
-      allocated_cpu += config['sockets'] * config['cores']
-    else:
-      allocated_cpu += config['cores']
-  return allocated_cpu
-
-def _get_cluster_allocated_cpu(proxmox, running = True):
-  # Get the allocated cpu for a cluster
-  allocated_cpu = 0
-  for node in proxmox.nodes.get():
-    allocated_cpu += _get_node_allocated_cpu(proxmox, node['node'], running)
-  return allocated_cpu
-
-def _convert_to_MB(size):
-  # Convert a size from Bytes to MB
-  return naturalsize(size * 1024 * 1024, binary=True)
+def action_test(proxmox, args):
+  """Hidden optional test action"""
+  print(proxmox)
 
 def action_clusterstatus(proxmox, args):
-  status = proxmox.cluster.status.get()[0]
-  resources = proxmox.cluster.resources.get(type='node')
-  logging.info(status)
-  logging.debug(resources)
-  status = _filter_keys(status, ['name', 'nodes', 'quorate'])
+  logging.debug(proxmox.status)
+  logging.debug(proxmox.resources)
+  status = _filter_keys(proxmox.status[0], ['name', 'nodes', 'quorate'])
+  nodes = [ _filter_keys(n, ['name', 'ip', 'online']) for n in proxmox.status[1:] ]
 # FIXME get cluster maxmem
 # FIXME get cluster maxcpu
-  status['allocatedmem'] = _convert_to_MB(_get_cluster_allocated_mem(proxmox))
-  status['allocatedcpu'] = _get_cluster_allocated_cpu(proxmox)
+# FIXME get cluster allocatedmem
+# FIXME get cluster allocatedcpu
   _print_tableoutput([status])
+  _print_tableoutput(nodes)
 
 def action_nodelist(proxmox, args):
-#   # List proxmox nodes in the cluster using proxmoxer api
-  nodes = []
-  for node in _get_nodes(proxmox):
-    if "maxcpu" not in node: node['maxcpu'] = 0
-    if "maxmem" not in node: node['maxmem'] = 0
-    if "maxdisk" not in node: node['maxdisk'] = 0
-    node = _filter_keys(node, ['node', 'maxcpu', 'status','maxmem','maxdisk'])
-    node = _get_node_ressources(proxmox, node)
-    nodes.append(node)
+  """List proxmox nodes in the cluster using proxmoxer api"""
+  nodes = [ _filter_keys(n.__dict__, ['node', 'status', 'allocatedcpu', 'maxcpu', 'mem', 'allocatedmem', 'maxmem']) for n in proxmox.nodes ]
   _print_tableoutput(nodes, sortby='node')
 
 def action_vmlist(proxmox, args):
-#   # List proxmox nodes in the cluster using proxmoxer api
-  vms = _get_vms(proxmox)
+  """List VMs in the Proxmox Cluster"""
+  vms = [ _filter_keys(n.__dict__, ['vmid', 'name', 'status', 'node', 'cpus', 'maxmem', 'maxdisk']) for n in proxmox.vms() ]
   _print_tableoutput(vms, sortby='vmid')
+
 
 def action_vmmigrate(proxmox, args):
   logging.debug("ARGS: %s"%args)
@@ -173,35 +97,33 @@ def action_vmmigrate(proxmox, args):
     print("Source vm not found")
     sys.exit(1)
   # Get source node
-  node = _get_node(proxmox, vm['node'])
+  node = proxmox.find_node(vm.node)
   if not node:
     print("Source node does not exists")
     sys.exit(1)
   logging.debug("Source node: %s"%node)
 
   # Check target node exists
-  target = _get_node(proxmox, target)
+  target = proxmox.find_node(target)
   if not target:
     print("Target node does not exists")
     sys.exit(1)
-  target = _get_node_ressources(proxmox, target)
-  logging.debug("Target node: %s"%target)
   # Check target node a les ressources
   # FIXME
 
   # Check que la migration est possible
-  check = proxmox.nodes(node['node']).qemu(vmid).migrate.get(node= node['node'], target= target['node'])
+  check = proxmox._api.nodes(node.node).qemu(vmid).migrate.get(node= node.node, target= target.node)
   logging.debug("Migration check: %s"%check)
   options = {}
-  options['node'] = node['node']
-  options['target'] = target['node']
+  options['node'] = node.node
+  options['target'] = target.node
   options['online'] = int(args.online)
   if len(check['local_disks']) > 0:
     options['with-local-disks'] = int(True)
 
   if not args.dry_run:
     # Lancer tache de migration
-    upid = proxmox.nodes(node['node']).qemu(vmid).migrate.post(**options)
+    upid = proxmox._api.nodes(node.node).qemu(vmid).migrate.post(**options)
     # Suivre la task cree
     _print_task(proxmox, upid, args.follow)
   else:
@@ -209,7 +131,7 @@ def action_vmmigrate(proxmox, args):
 
 def action_tasklist(proxmox, args):
   tasks = []
-  for task in proxmox.get("cluster/tasks"):
+  for task in proxmox._api.get("cluster/tasks"):
     logging.debug("Task: %s", task)
     if "status" not in task:
       task["status"] = ""
@@ -232,18 +154,18 @@ def action_taskget(proxmox, args):
 def _print_task(proxmox, upid, follow = False):
   task = Tasks.decode_upid(upid)
   logging.debug("Task: %s", task)
-  status = proxmox.nodes(task['node']).tasks(task['upid']).status.get()
+  status = proxmox._api.nodes(task['node']).tasks(task['upid']).status.get()
   logging.debug("Task status: %s", status)
   _print_taskstatus(status)
-  log = proxmox.nodes(task['node']).tasks(task['upid']).log.get(limit=0)
+  log = proxmox._api.nodes(task['node']).tasks(task['upid']).log.get(limit=0)
   logging.debug("Task Log: %s", log)
   if status['status'] == 'running' and follow:
     lastline = 0
     print("log output, follow mode")
     while status['status'] == "running":
-      status = proxmox.nodes(task['node']).tasks(task['upid']).status.get()
+      status = proxmox._api.nodes(task['node']).tasks(task['upid']).status.get()
       logging.debug("Task status: %s", status)
-      log = proxmox.nodes(task['node']).tasks(task['upid']).log.get(limit=0, start=lastline)
+      log = proxmox._api.nodes(task['node']).tasks(task['upid']).log.get(limit=0, start=lastline)
       logging.debug("Task Log: %s", log)
       for line in log:
         print("%s"%line['t'])
@@ -293,8 +215,11 @@ def _parser():
   parser_taskget.add_argument('-f', '--follow', action='store_true', help="Follow task log output")
   parser_taskget.set_defaults(func=action_taskget)
 
-  return parser.parse_args()
+  # _test parser, hidden from help
+  parser_test = subparsers.add_parser('_test')
+  parser_test.set_defaults(func=action_test)
 
+  return parser.parse_args()
 
 
 def main():
@@ -323,9 +248,9 @@ def main():
     sys.exit(1)
   logging.debug('clusterconfig is %s'%clusterconfig)
 
-  proxmox = ProxmoxAPI(clusterconfig.host, user=clusterconfig.user, password=clusterconfig.password, verify_ssl=False)
+  proxmoxcluster = PVECluster(clusterconfig.name, clusterconfig.host, user=clusterconfig.user, password=clusterconfig.password, verify_ssl=False)
 
-  args.func(proxmox, args)
+  args.func(proxmoxcluster, args)
 
 
 if __name__ == '__main__':
