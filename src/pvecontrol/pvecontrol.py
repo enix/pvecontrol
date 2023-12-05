@@ -8,12 +8,12 @@ import confuse
 import urllib3
 import logging
 from prettytable import PrettyTable
-from proxmoxer.tools import Tasks
 from collections import OrderedDict
 from humanize import naturalsize
 
 from node import PVENode
 from vm import PVEVm
+from task import PVETask
 from cluster import PVECluster
 
 
@@ -130,49 +130,36 @@ def action_vmmigrate(proxmox, args):
     print("Dry run, skipping migration")
 
 def action_tasklist(proxmox, args):
-  tasks = []
-  for task in proxmox._api.get("cluster/tasks"):
-    logging.debug("Task: %s", task)
-    if "status" not in task:
-      task["status"] = ""
-    if "endtime" not in task:
-      task["endtime"] = 0
-    task = _filter_keys(task, ['upid', 'status', 'node', 'type', 'starttime', 'endtime'])
-    tasks.append(task)
+  tasks = [ _filter_keys(t.__dict__, ['upid', 'exitstatus', 'node', 'type', 'starttime', 'endtime', 'runningstatus', 'description']) for t in proxmox.tasks ]
   _print_tableoutput(tasks, sortby='starttime')
 
-def _print_taskstatus(status):
-  output = []
-  if status['status'] == "running":
-    status["exitstatus"] = ""
-  output.append(_filter_keys(status, ['upid', 'exitstatus', 'node', 'status', 'type', 'user', 'starttime']))
+def _print_taskstatus(task):
+  output = [ _filter_keys(task.__dict__, ['upid', 'exitstatus', 'node', 'runningstatus', 'type', 'user', 'starttime']) ]
   _print_tableoutput(output)
 
 def action_taskget(proxmox, args):
   _print_task(proxmox, args.upid, args.follow)
 
 def _print_task(proxmox, upid, follow = False):
-  task = Tasks.decode_upid(upid)
+  task = proxmox.find_task(upid)
   logging.debug("Task: %s", task)
-  status = proxmox._api.nodes(task['node']).tasks(task['upid']).status.get()
-  logging.debug("Task status: %s", status)
-  _print_taskstatus(status)
-  log = proxmox._api.nodes(task['node']).tasks(task['upid']).log.get(limit=0)
+  _print_taskstatus(task)
+  log = task.log(limit=0)
   logging.debug("Task Log: %s", log)
-  if status['status'] == 'running' and follow:
+  if task.running() and follow:
     lastline = 0
     print("log output, follow mode")
-    while status['status'] == "running":
-      status = proxmox._api.nodes(task['node']).tasks(task['upid']).status.get()
-      logging.debug("Task status: %s", status)
-      log = proxmox._api.nodes(task['node']).tasks(task['upid']).log.get(limit=0, start=lastline)
+    while task.running():
+      task.refresh()
+#      logging.debug("Task status: %s", status)
+      log = task.log(limit=0, start=lastline)
       logging.debug("Task Log: %s", log)
       for line in log:
         print("%s"%line['t'])
         if line['n'] > lastline:
           lastline = line['n']
       time.sleep(1)
-    _print_taskstatus(status)
+    _print_taskstatus(task)
   else:
     _print_tableoutput([{"log output": Tasks.decode_log(log)}])
 

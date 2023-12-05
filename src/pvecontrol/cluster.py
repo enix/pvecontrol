@@ -1,6 +1,7 @@
 from proxmoxer import ProxmoxAPI
 
 from node import PVENode
+from task import PVETask
 
 class PVECluster:
   """Proxmox VE Cluster"""
@@ -16,6 +17,10 @@ class PVECluster:
     self.nodes = []
     for node in self._api.nodes.get():
       self.nodes.append(PVENode(self._api, node["node"], node["status"], node))
+
+    self.tasks = []
+    for task in self._api.cluster.tasks.get():
+      self.tasks.append(PVETask(self._api, task["upid"]))
 
   def __str__(self):
     output = "Proxmox VE Cluster %s\n"%self.name
@@ -38,4 +43,11 @@ class PVECluster:
     for node in self.nodes:
       if node.node == nodename:
         return node
+    return False
+
+  def find_task(self, upid):
+    """Return a task by upid"""
+    for task in self.tasks:
+      if task.upid == upid:
+        return task
     return False
