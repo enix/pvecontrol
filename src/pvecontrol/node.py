@@ -64,7 +64,7 @@ class PVENode:
       if vm.status != VmStatus.running:
         continue
       # This is in MB in configuration
-      self.allocatedmem += vm.config['memory'] * 1024 * 1024
+      self.allocatedmem += int(vm.config['memory']) * 1024 * 1024
 
   def _init_allocatedcpu(self):
     """Compute the amount of cpu allocated to running VMs"""
