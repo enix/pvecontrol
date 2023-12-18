@@ -25,7 +25,11 @@ configtemplate = {
             'user': str,
             'password': str,
         }
-    )
+    ),
+    'node': {
+        'cpufactor': float,
+        'memoryminimum': int
+      }
 }
 
 config = confuse.LazyConfig('pvecontrol', __name__)
@@ -163,6 +167,20 @@ def _print_task(proxmox, upid, follow = False):
   else:
     _print_tableoutput([{"log output": Tasks.decode_log(log)}])
 
+def action_sanitycheck(proxmox, args):
+  """Check status of proxmox Cluster"""
+  # check cpu allocation factor
+  for node in proxmox.nodes:
+    if (node.maxcpu * validconfig.node.cpufactor) <= node.allocatedcpu:
+      print("Node %s is in cpu overcommit status: %s allocated but %s available"%(node.node, node.allocatedcpu, node.maxcpu))
+    if (node.allocatedmem + validconfig.node.memoryminimum) >= node.maxmem:
+      print("Node %s is in mem overcommit status: %s allocated but %s available"%(node.node, node.allocatedmem, node.maxmem))
+  # More checks to implement
+  # VM is started but 'startonboot' not set
+  # VM is running in cpu = host
+  # VM is running in cpu = qemu64
+  
+
 def _parser():
 ## FIXME
 ## Add version in help output
@@ -202,6 +220,10 @@ def _parser():
   parser_taskget.add_argument('-f', '--follow', action='store_true', help="Follow task log output")
   parser_taskget.set_defaults(func=action_taskget)
 
+  # sanitycheck parser
+  parser_sanitycheck = subparsers.add_parser('sanitycheck', help='Run Sanity checks on the cluster')
+  parser_sanitycheck.set_defaults(func=action_sanitycheck)
+
   # _test parser, hidden from help
   parser_test = subparsers.add_parser('_test')
   parser_test.set_defaults(func=action_test)
@@ -221,6 +243,7 @@ def main():
   # Load configuration file
   # FIXME Creation du directory de configuration si non existant
   logging.debug('configuration directory is %s'%config.config_dir())
+  global validconfig
   validconfig = config.get(configtemplate)
   logging.debug('configuration is %s'%validconfig)
 
