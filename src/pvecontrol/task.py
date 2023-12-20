@@ -23,16 +23,17 @@ class PVETask:
     self.type = task["type"]
     self.user = task["user"]
 
-    self._initstatus()
-
-  def _initstatus(self):
-    if self.node != NodeStatus.online:
-      return
-    status = self._api.nodes(self.node).tasks(self.upid).status.get()
     self.runningstatus = TaskRunningStatus.stopped
     self.exitstatus = ""
     self.endtime = 0
     self.description = ""
+    self._initstatus()
+
+  def _initstatus(self):
+# This is bugguy. replace with a catch / except ?
+#    if self.node != NodeStatus.online:
+#      return
+    status = self._api.nodes(self.node).tasks(self.upid).status.get()
     for k in status:
       if k == "status":
         self.runningstatus = TaskRunningStatus[status["status"]]
