@@ -43,3 +43,16 @@ class PVEVm:
   def __str__(self):
     return("vmid: {}, status: {}, name: {}, lock: {}, cpus: {}, maxdisk: {}, maxmem: {}, uptime: {}, tags: {}" 
           .format(self.vmid, self.status, self.name, self.lock, self.cpus, self.maxdisk, self.maxmem, self.uptime, self.tags))
+
+  def migrate(self, target, online = False):
+    options = {}
+    options['node'] = self.node
+    options['target'] = target
+    check = self._api.nodes(self.node).qemu(self.vmid).migrate.get(**options)
+#    logging.debug("Migration check: %s"%check)
+    options['online'] = int(online)
+    if len(check['local_disks']) > 0:
+      options['with-local-disks'] = int(True)
+
+    upid = self._api.nodes(self.node).qemu(self.vmid).migrate.post(**options)
+    return upid
