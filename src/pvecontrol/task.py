@@ -1,5 +1,6 @@
 from enum import Enum
 from proxmoxer.tools import Tasks
+from node import NodeStatus
 
 
 class TaskRunningStatus(Enum):
@@ -25,6 +26,8 @@ class PVETask:
     self._initstatus()
 
   def _initstatus(self):
+    if self.node != NodeStatus.online:
+      return
     status = self._api.nodes(self.node).tasks(self.upid).status.get()
     self.runningstatus = TaskRunningStatus.stopped
     self.exitstatus = ""
@@ -47,3 +50,7 @@ class PVETask:
 
   def refresh(self):
     self._initstatus()
+
+  def decode_log(self, limit = 0, start = 0):
+    log = self.log(limit, start)
+    return(Tasks.decode_log(log))
