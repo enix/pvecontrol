@@ -9,11 +9,13 @@ class PVECluster:
 
   def __init__(self, name, host, user, password, verify_ssl=False):
     self._api = ProxmoxAPI(host, user=user, password=password, verify_ssl=False)
+    self.name =  name
+    self._initstatus()
 
+  def _initstatus(self):
     self.status = self._api.cluster.status.get()
     self.resources = self._api.cluster.resources.get()
 
-    self.name =  name
     self.nodes = []
     for node in self._api.nodes.get():
       self.nodes.append(PVENode(self._api, node["node"], node["status"], node))
@@ -21,6 +23,9 @@ class PVECluster:
     self.tasks = []
     for task in self._api.cluster.tasks.get():
       self.tasks.append(PVETask(self._api, task["upid"]))
+
+  def refresh(self):
+    self._initstatus()
 
   def __str__(self):
     output = "Proxmox VE Cluster %s\n"%self.name
@@ -32,6 +37,7 @@ class PVECluster:
     return output
 
   def vms(self):
+    """Return all vms on this cluster"""
     vms = []
     for node in self.nodes:
       for vm in node.vms:
