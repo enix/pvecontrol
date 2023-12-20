@@ -235,9 +235,12 @@ def main():
   # Disable urllib3 warnings about invalid certs
   urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+  # get cli arguments
   args = _parser()
+
   # configure logging
   logging.basicConfig(encoding='utf-8', level=logging.DEBUG if args.debug else logging.INFO)
+  logging.debug("Arguments: %s"%args)  
   logging.info("Proxmox cluster: %s" % args.cluster)
 
   # Load configuration file
