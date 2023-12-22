@@ -45,6 +45,12 @@ clusters:
     host: 10.10.10.10
     user: pvecontrol@pve
     password: Supers3cUre
+node:
+  # Overcommit cpu factor. can be 1 for not overcommit
+  cpufactor: 2.5
+  # Memory to reserve for system on a node. in Bytes
+  memoryminimum: 81928589934592
+
 ```
 
 Usage
