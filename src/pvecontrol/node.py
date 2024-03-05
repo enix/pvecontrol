@@ -56,7 +56,7 @@ class PVENode:
     self.vms = []
     if self.status == NodeStatus.online:
       self.vms = [ PVEVm(self._api, self.node, vm["vmid"], vm["status"], vm) for vm in  self._api.nodes(self.node).qemu.get() ]
-      
+
   def _init_allocatedmem(self):
     """Compute the amount of memory allocated to running VMs"""
     self.allocatedmem = 0
