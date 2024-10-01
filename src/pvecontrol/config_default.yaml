@@ -5,3 +5,7 @@ clusters:
     host: 127.0.0.1
     user: pvecontrol@pve
     password: somerandomsecret
+
+node:
+  cpufactor: 2.5
+  memoryminimum: 81928589934592
