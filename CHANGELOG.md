@@ -1,6 +1,55 @@
 # CHANGELOG
 
+## v0.3.0 (2024-10-01)
 
+### Chore
+
+* chore(README): Update config ([`4f62fc7`](https://github.com/enix/pvecontrol/commit/4f62fc7af56da5aaa7bd3ed388e4b071c7bab9a7))
+
+* chore(pvecontrol): Add some debug ([`21d332a`](https://github.com/enix/pvecontrol/commit/21d332af8f416c060654169b604ed1ed0b23c980))
+
+### Feature
+
+* feat(pvecontrol): Add nodeevacuate feature
+
+This fonction allow to automatically migrate out all the VMs from a node to another ones. ([`206dc83`](https://github.com/enix/pvecontrol/commit/206dc8322cf8fc7eb0bae3c3385fef4bd7f8a7ea))
+
+* feat(task): Add internal decode_log fonction ([`dad15b2`](https://github.com/enix/pvecontrol/commit/dad15b22e1fdeade956bfadba66283d0aa9ce835))
+
+* feat(cluster): Add refresh
+
+Allow to refresh all clusters objects ([`6b50de5`](https://github.com/enix/pvecontrol/commit/6b50de5bd36becbface74638a6fb6f4345e074f4))
+
+* feat(vm): add vm.migrate
+
+This new fonction take over management of VM migration ([`9b01237`](https://github.com/enix/pvecontrol/commit/9b012372c038e451b2898fdff9f0a169940300d4))
+
+* feat(sanitycheck): Add feature to check for cluster good rules ([`f649380`](https://github.com/enix/pvecontrol/commit/f64938077d41a745c04b306d27754c43a1500c67))
+
+* feat(tasks): Rewrite task using class ([`df528be`](https://github.com/enix/pvecontrol/commit/df528be678de9b6cfd2cf822ffcaedaf7db2c280))
+
+* feat(global): Complete rewrite into classes
+
+Create classes to manage PVECluster, PVENode and PVEVM objects. This will allow
+lot more simple operations now. ([`119b01c`](https://github.com/enix/pvecontrol/commit/119b01cc42355d93db1f8c8afd77427ce1b7a5ab))
+
+### Fix
+
+* fix(task): Fix issue with status refresh ([`43c72c0`](https://github.com/enix/pvecontrol/commit/43c72c01fac3ea5b03d931d7b44d13c226012f15))
+
+* fix(node): linter output ([`5e0bea1`](https://github.com/enix/pvecontrol/commit/5e0bea113ba728b457ed0d1bd7626be22f907e66))
+
+* fix(task): Revert fix for not available node ([`3cbd35a`](https://github.com/enix/pvecontrol/commit/3cbd35a98504b61b79aaba817117c32e2093facd))
+
+* fix(node): add cast on memory ([`2298276`](https://github.com/enix/pvecontrol/commit/229827651a99dd68838b91b5b0a05900ede37220))
+
+* fix(PVENode): Fix issue with offline node ([`a128eb3`](https://github.com/enix/pvecontrol/commit/a128eb3be53071503cdd6769279021ec0bb64d12))
+
+### Unknown
+
+* Merge pull request #3 from enix/dev
+
+Split code using lib and objects ([`b411d19`](https://github.com/enix/pvecontrol/commit/b411d19a2136973ce26613e202a5a5d53da744f8))
 
 ## v0.2.0 (2023-10-06)
 
@@ -48,7 +97,6 @@ Update README.md ([`e65bd77`](https://github.com/enix/pvecontrol/commit/e65bd770
 
 Fix typos ([`4fb2d47`](https://github.com/enix/pvecontrol/commit/4fb2d47dabdce0a75183b424eb8a53fbf0c9accc))
 
-
 ## v0.1.1 (2023-09-13)
 
 ### Chore
@@ -61,7 +109,6 @@ Fix typos ([`4fb2d47`](https://github.com/enix/pvecontrol/commit/4fb2d47dabdce0a
 
 * fix(pvecontrol): Add missing empty line ([`b825a95`](https://github.com/enix/pvecontrol/commit/b825a9516a48c70a950cb8faf4bd9113f981ccbc))
 
-
 ## v0.1.0 (2023-09-13)
 
 ### Feature
@@ -70,7 +117,6 @@ Fix typos ([`4fb2d47`](https://github.com/enix/pvecontrol/commit/4fb2d47dabdce0a
 
 This include semantic-release gh action to build a new release when push
 to main branch ([`d1c86b5`](https://github.com/enix/pvecontrol/commit/d1c86b513fc3ab7a6b402b0156cd1b16b8481d4e))
-
 
 ## v0.0.1 (2023-09-13)
 
