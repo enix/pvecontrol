@@ -226,7 +226,19 @@ def action_vmmigrate(proxmox, args):
     # Lancer tache de migration
     upid = proxmox._api.nodes(node.node).qemu(vmid).migrate.post(**options)
     # Suivre la task cree
-    _print_task(proxmox, upid, args.follow)
+    proxmox.refresh()
+    task = proxmox.find_task(upid)
+    if args.follow:
+      _print_task(proxmox, upid, args.follow)
+    else:
+      _print_taskstatus(task)
+    # wait for task completion
+    while task.running():
+      logging.debug("Task status: %s", task.runningstatus)
+      task.refresh()
+      time.sleep(1)
+    _print_taskstatus(task)
+
   else:
     print("Dry run, skipping migration")
 
