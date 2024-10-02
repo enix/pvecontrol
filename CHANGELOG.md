@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## v0.3.1 (2024-10-02)
+
+### Chore
+
+* chore(ci): update python version
+
+Also update action versions
+Run ci on dev branch ([`c79b5a3`](https://github.com/enix/pvecontrol/commit/c79b5a341acdf840824b3e74f836be80b265bc39))
+
+### Fix
+
+* fix(package): Fix module package and install ([`858d20f`](https://github.com/enix/pvecontrol/commit/858d20f6bde59b0140a1ca7dd68afd5818bfe05e))
+
 ## v0.3.0 (2024-10-01)
 
 ### Chore
