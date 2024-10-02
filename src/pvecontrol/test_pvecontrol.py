@@ -1,4 +1,4 @@
-from . import pvecontrol
+import pvecontrol
 
 def test_filter_keys():
   input = {'test': "toto", 'none': "noninclude"}

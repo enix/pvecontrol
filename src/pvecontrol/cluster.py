@@ -1,7 +1,7 @@
 from proxmoxer import ProxmoxAPI
 
-from node import PVENode
-from task import PVETask
+from pvecontrol.node import PVENode
+from pvecontrol.task import PVETask
 
 class PVECluster:
   """Proxmox VE Cluster"""
