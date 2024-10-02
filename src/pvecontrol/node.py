@@ -1,7 +1,7 @@
 from enum import Enum
 
-from vm import PVEVm
-from vm import VmStatus
+from pvecontrol.vm import PVEVm
+from pvecontrol.vm import VmStatus
 
 class NodeStatus(Enum):
   unknown = 0

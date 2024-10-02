@@ -1,6 +1,7 @@
 from enum import Enum
 from proxmoxer.tools import Tasks
-from node import NodeStatus
+
+from pvecontrol.node import NodeStatus
 
 
 class TaskRunningStatus(Enum):
