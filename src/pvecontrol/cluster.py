@@ -18,7 +18,7 @@ class PVECluster:
 
     self.nodes = []
     for node in self._api.nodes.get():
-      self.nodes.append(PVENode(self._api, node["node"], node["status"], node))
+      self.nodes.append(PVENode(self._api, node["node"], node["status"], kwargs=node))
 
     self.tasks = []
     for task in self._api.cluster.tasks.get():
@@ -28,9 +28,9 @@ class PVECluster:
     self._initstatus()
 
   def __str__(self):
-    output = "Proxmox VE Cluster %s\n"%self.name
-    output += "  Status: " + str(self.status) + "\n"
-    output += "  Resources: " + str(self.resources) + "\n"
+    output = f"Proxmox VE Cluster {self.name}\n"
+    output += f"  Status: {self.status}"
+    output += f"  Resources: {self.resources}"
     output += "  Nodes:\n"
     for node in self.nodes:
       output += str(node) + "\n"

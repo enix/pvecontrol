@@ -11,8 +11,11 @@ class NodeStatus(Enum):
 class PVENode:
   """A proxmox VE Node"""
   _api = None
- 
-  def __init__(self, api, node, status, input = {}):
+  _acceptable_kwargs = (
+    "name", "lock", "maxdisk", "maxmem", "uptime", "tags",
+  )
+
+  def __init__(self, api, node, status, **kwargs):
     self.node = node
     self.status = NodeStatus[status]
     self._api = api
@@ -24,38 +27,29 @@ class PVENode:
     self.maxmem = 0
     self.disk = 0
     self.maxdisk = 0
-    for k in input:
-      if k == "cpu":
-        self.cpu = input[k]
-      elif k == "maxcpu":
-        self.maxcpu = input[k]
-      elif k == "mem":
-        self.mem = input[k]
-      elif k == "maxmem":
-        self.maxmem = input[k]
-      elif k == "disk":
-        self.disk = input[k]
-      elif k == "maxdisk":
-        self.maxdisk = input[k]
+    for k in kwargs.keys():
+       if k in [self._acceptable_kwargs]:
+          self.__setattr__(k, kwargs[k])
+
     self._init_vms()
     self._init_allocatedmem()
     self._init_allocatedcpu()
 
   def __str__(self):
-    output = "Node: " + self.node + "\n"
-    output += "Status: " + str(self.status) + "\n"
-    output += "CPU: " + str(self.cpu) + "/" + str(self.allocatedcpu) + "/" + str(self.maxcpu) + "\n"
-    output += "Mem: " + str(self.mem) + "/" + str(self.allocatedmem) + "/" + str(self.maxmem) + "\n"
-    output += "Disk: " + str(self.disk) + "/" + str(self.maxdisk) + "\n"
-    output += "VMs: \n"
+    output = f"Node: {self.node}\n"
+    output += f"Status: {self.status}\n"
+    output += f"CPU: {self.cpu}/{self.allocatedcpu}/{self.maxcpu}\n"
+    output += f"Mem: {self.mem}/{self.allocatedmem}/{self.maxmem}\n"
+    output += f"Disk: {self.disk}/{self.maxdisk}\n"
+    output += f"VMs: \n"
     for vm in self.vms:
-      output += " - " + str(vm) + "\n"
+      output += f" - {vm}\n"
     return output
 
   def _init_vms(self):
     self.vms = []
     if self.status == NodeStatus.online:
-      self.vms = [ PVEVm(self._api, self.node, vm["vmid"], vm["status"], vm) for vm in  self._api.nodes(self.node).qemu.get() ]
+      self.vms = [ PVEVm(self._api, self.node, vm["vmid"], vm["status"], kwargs=vm) for vm in  self._api.nodes(self.node).qemu.get() ]
 
   def _init_allocatedmem(self):
     """Compute the amount of memory allocated to running VMs"""

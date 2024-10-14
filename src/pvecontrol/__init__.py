@@ -11,11 +11,8 @@ from prettytable import PrettyTable
 from collections import OrderedDict
 from humanize import naturalsize
 
-from pvecontrol.node import PVENode
 from pvecontrol.node import NodeStatus
-from pvecontrol.vm import PVEVm
 from pvecontrol.vm import VmStatus
-from pvecontrol.task import PVETask
 from pvecontrol.cluster import PVECluster
 
 
@@ -126,7 +123,7 @@ def action_nodeevacuate(proxmox, args):
       logging.debug("VM %i is not running, skipping"%(vm.vmid))
       continue
     # check ressources
-    for target in targets: 
+    for target in targets:
       logging.debug("Test target: %s, allocatedmem: %i, allocatedcpu: %i"%(target.node, target.allocatedmem, target.allocatedcpu))
       if (vm.maxmem + target.allocatedmem) > (target.maxmem - validconfig.node.memoryminimum):
         logging.debug("Discard target: %s, will overcommit ram"%(target.node))
@@ -140,7 +137,7 @@ def action_nodeevacuate(proxmox, args):
         break
     else:
       print("No target found for VM %s"%vm.vmid)
-      
+
 
   logging.debug(plan)
   # validate input
@@ -304,7 +301,7 @@ def _parser():
   # clusterstatus parser
   parser_clusterstatus = subparsers.add_parser('clusterstatus', help='Show cluster status')
   parser_clusterstatus.set_defaults(func=action_clusterstatus)
-  
+
   # nodelist parser
   parser_nodelist = subparsers.add_parser('nodelist', help='List nodes in the cluster')
   parser_nodelist.set_defaults(func=action_nodelist)
@@ -360,7 +357,7 @@ def main():
 
   # configure logging
   logging.basicConfig(encoding='utf-8', level=logging.DEBUG if args.debug else logging.INFO)
-  logging.debug("Arguments: %s"%args)  
+  logging.debug("Arguments: %s"%args)
   logging.info("Proxmox cluster: %s" % args.cluster)
 
   # Load configuration file
