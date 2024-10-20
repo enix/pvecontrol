@@ -32,7 +32,7 @@ class PVEVm:
 
   def __str__(self):
     return(
-      f"vmid: {self.vmid}, status: {self.vmid}, name: {self.name}, " + \
+      f"vmid: {self.vmid}, status: {self.status}, name: {self.name}, " + \
       f"lock: {self.lock}, cpus: {self.cpus}, maxdisk: {self.maxdisk}, " + \
       f"maxmem: {self.maxmem}, uptime: {self.uptime}, tags: {self.tags}"
     )
