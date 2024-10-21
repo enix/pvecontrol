@@ -10,12 +10,16 @@ configtemplate = {
             'host': str,
             'user': str,
             'password': str,
+            'node_factors': confuse.Optional({
+                'cpufactor': confuse.Optional(float, None),
+                'memoryminimum': confuse.Optional(int, None)
+            }, default={})
         }
     ),
-    'node': {
+    'node_factors': {
         'cpufactor': float,
         'memoryminimum': int
-      }
+    }
 }
 
 
@@ -38,8 +42,8 @@ def set_config(cluster_name):
     print('No such cluster %s'%cluster_name)
     sys.exit(1)
   logging.debug('clusterconfig is %s'%clusterconfig)
+
+  for k, v in clusterconfig.node_factors.items():
+    clusterconfig.node_factors[k] = validconfig.node_factors.get(k, v)
+
   return clusterconfig
-
-
-def get_config():
-  return validconfig

@@ -1,7 +1,6 @@
 import logging
 import time
 
-from pvecontrol.config import get_config
 from pvecontrol.node import NodeStatus
 from pvecontrol.vm import VmStatus
 from pvecontrol.utils import (
@@ -16,8 +15,6 @@ def action_nodelist(proxmox, args):
 
 def action_nodeevacuate(proxmox, args):
   """Evacuate a node by migrating all it's VM out"""
-  validconfig = get_config()
-
   # check node exists
   srcnode = proxmox.find_node(args.node)
   logging.debug(srcnode)
@@ -60,9 +57,9 @@ def action_nodeevacuate(proxmox, args):
     # check ressources
     for target in targets:
       logging.debug("Test target: %s, allocatedmem: %i, allocatedcpu: %i"%(target.node, target.allocatedmem, target.allocatedcpu))
-      if (vm.maxmem + target.allocatedmem) > (target.maxmem - validconfig.node.memoryminimum):
+      if (vm.maxmem + target.allocatedmem) > (target.maxmem - proxmox.node_factors['memoryminimum']):
         logging.debug("Discard target: %s, will overcommit ram"%(target.node))
-      elif (vm.cpus + target.allocatedcpu) > (target.maxcpu *  validconfig.node.cpufactor):
+      elif (vm.cpus + target.allocatedcpu) > (target.maxcpu *  proxmox.node_factors['cpufactor']):
         logging.debug("Discard target: %s, will overcommit cpu"%(target.node))
       else:
         plan.append({"vmid": vm.vmid, "vm": vm, "node": args.node, "target": target})
