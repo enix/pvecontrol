@@ -96,7 +96,6 @@ def _parser():
   parser_sanitycheck = subparsers.add_parser('sanitycheck', help='Run Sanity checks on the cluster')
   parser_sanitycheck.set_defaults(func=cluster.action_sanitycheck)
 
-
   # _test parser, hidden from help
   parser_test = subparsers.add_parser('_test')
   parser_test.set_defaults(func=action_test)
@@ -113,12 +112,19 @@ def main():
 
   # configure logging
   logging.basicConfig(encoding='utf-8', level=logging.DEBUG if args.debug else logging.INFO)
-  logging.debug("Arguments: %s"%args)
+  logging.debug("Arguments: %s" % args)
   logging.info("Proxmox cluster: %s" % args.cluster)
 
   clusterconfig = set_config(args.cluster)
 
-  proxmoxcluster = PVECluster(clusterconfig.name, clusterconfig.host, user=clusterconfig.user, password=clusterconfig.password, verify_ssl=False)
+  proxmoxcluster = PVECluster(
+    clusterconfig.name,
+    clusterconfig.host,
+    user=clusterconfig.user,
+    password=clusterconfig.password,
+    node_factors=clusterconfig.node_factors,
+    verify_ssl=False
+  )
 
   args.func(proxmoxcluster, args)
 
