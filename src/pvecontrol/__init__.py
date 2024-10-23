@@ -126,7 +126,7 @@ def action_nodeevacuate(proxmox, args):
       logging.debug("VM %i is not running, skipping"%(vm.vmid))
       continue
     # check ressources
-    for target in targets: 
+    for target in targets:
       logging.debug("Test target: %s, allocatedmem: %i, allocatedcpu: %i"%(target.node, target.allocatedmem, target.allocatedcpu))
       if (vm.maxmem + target.allocatedmem) > (target.maxmem - validconfig.node.memoryminimum):
         logging.debug("Discard target: %s, will overcommit ram"%(target.node))
@@ -140,7 +140,7 @@ def action_nodeevacuate(proxmox, args):
         break
     else:
       print("No target found for VM %s"%vm.vmid)
-      
+
 
   logging.debug(plan)
   # validate input
@@ -251,15 +251,17 @@ def _print_taskstatus(task):
   _print_tableoutput(output)
 
 def action_taskget(proxmox, args):
-  _print_task(proxmox, args.upid, args.follow)
+  _print_task(proxmox, args.upid, args.follow, args.wait)
 
-def _print_task(proxmox, upid, follow = False):
+def _print_task(proxmox, upid, follow = False, wait = False):
   task = proxmox.find_task(upid)
   logging.debug("Task: %s", task)
   _print_taskstatus(task)
   log = task.log(limit=0)
   logging.debug("Task Log: %s", log)
+  print_log_output = True
   if task.running() and follow:
+    print_log_output = False
     lastline = 0
     print("log output, follow mode")
     while task.running():
@@ -273,7 +275,14 @@ def _print_task(proxmox, upid, follow = False):
           lastline = line['n']
       time.sleep(1)
     _print_taskstatus(task)
-  else:
+  if task.running() and wait:
+    while task.running():
+      task.refresh()
+      print(".", end="")
+      sys.stdout.flush()
+      time.sleep(1)
+    print("")
+  if print_log_output:
     _print_tableoutput([{"log output": task.decode_log()}])
 
 def action_sanitycheck(proxmox, args):
@@ -304,7 +313,7 @@ def _parser():
   # clusterstatus parser
   parser_clusterstatus = subparsers.add_parser('clusterstatus', help='Show cluster status')
   parser_clusterstatus.set_defaults(func=action_clusterstatus)
-  
+
   # nodelist parser
   parser_nodelist = subparsers.add_parser('nodelist', help='List nodes in the cluster')
   parser_nodelist.set_defaults(func=action_nodelist)
@@ -337,6 +346,7 @@ def _parser():
   parser_taskget = subparsers.add_parser('taskget', help='Get task detail')
   parser_taskget.add_argument('--upid', action='store', required=True, help="Proxmox tasks UPID to get informations")
   parser_taskget.add_argument('-f', '--follow', action='store_true', help="Follow task log output")
+  parser_taskget.add_argument('-w', '--wait', action='store_true', help="Wait task end")
   parser_taskget.set_defaults(func=action_taskget)
 
   # sanitycheck parser
@@ -360,7 +370,7 @@ def main():
 
   # configure logging
   logging.basicConfig(encoding='utf-8', level=logging.DEBUG if args.debug else logging.INFO)
-  logging.debug("Arguments: %s"%args)  
+  logging.debug("Arguments: %s"%args)
   logging.info("Proxmox cluster: %s" % args.cluster)
 
   # Load configuration file
