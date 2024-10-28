@@ -17,6 +17,7 @@ from pvecontrol.vm import PVEVm
 from pvecontrol.vm import VmStatus
 from pvecontrol.task import PVETask
 from pvecontrol.cluster import PVECluster
+from enum import Enum
 
 
 configtemplate = {
@@ -41,13 +42,16 @@ config = confuse.LazyConfig('pvecontrol', __name__)
 def _print_tableoutput(table, sortby=None, filter=[]):
   x = PrettyTable()
   x.align = 'l'
-  x.field_names = table[0].keys()
+  x.field_names = [*table[0].keys(), "sortby"]
   for line in table:
+    sort_data = line[sortby]
+    if isinstance(sort_data, Enum):
+      sort_data = str(sort_data)
     for key in ['mem', 'allocatedmem', 'maxmem', 'disk', 'allocateddisk', 'maxdisk'] :
       if key in line:
         line[key] = naturalsize(line[key], binary=True)
-    x.add_row( line.values() )
-  print(x.get_string(sortby=sortby))
+    x.add_row( [*line.values(), sort_data] )
+  print(x.get_string(sortby="sortby", fields=table[0].keys()))
 
 def _filter_keys(input, keys):
   # Filter keys from input dict
@@ -82,7 +86,7 @@ def action_clusterstatus(proxmox, args):
 def action_nodelist(proxmox, args):
   """List proxmox nodes in the cluster using proxmoxer api"""
   nodes = [ _filter_keys(n.__dict__, ['node', 'status', 'allocatedcpu', 'maxcpu', 'mem', 'allocatedmem', 'maxmem']) for n in proxmox.nodes ]
-  _print_tableoutput(nodes, sortby='node')
+  _print_tableoutput(nodes, args.sort_by)
 
 def action_nodeevacuate(proxmox, args):
   """Evacuate a node by migrating all it's VM out"""
@@ -126,7 +130,7 @@ def action_nodeevacuate(proxmox, args):
       logging.debug("VM %i is not running, skipping"%(vm.vmid))
       continue
     # check ressources
-    for target in targets: 
+    for target in targets:
       logging.debug("Test target: %s, allocatedmem: %i, allocatedcpu: %i"%(target.node, target.allocatedmem, target.allocatedcpu))
       if (vm.maxmem + target.allocatedmem) > (target.maxmem - validconfig.node.memoryminimum):
         logging.debug("Discard target: %s, will overcommit ram"%(target.node))
@@ -140,7 +144,7 @@ def action_nodeevacuate(proxmox, args):
         break
     else:
       print("No target found for VM %s"%vm.vmid)
-      
+
 
   logging.debug(plan)
   # validate input
@@ -182,7 +186,7 @@ def action_nodeevacuate(proxmox, args):
 def action_vmlist(proxmox, args):
   """List VMs in the Proxmox Cluster"""
   vms = [ _filter_keys(n.__dict__, ['vmid', 'name', 'status', 'node', 'cpus', 'maxmem', 'maxdisk']) for n in proxmox.vms() ]
-  _print_tableoutput(vms, sortby='vmid')
+  _print_tableoutput(vms, sortby=args.sort_by)
 
 
 def action_vmmigrate(proxmox, args):
@@ -244,7 +248,7 @@ def action_vmmigrate(proxmox, args):
 
 def action_tasklist(proxmox, args):
   tasks = [ _filter_keys(t.__dict__, ['upid', 'exitstatus', 'node', 'type', 'starttime', 'endtime', 'runningstatus', 'description']) for t in proxmox.tasks ]
-  _print_tableoutput(tasks, sortby='starttime')
+  _print_tableoutput(tasks, sortby=args.sort_by)
 
 def _print_taskstatus(task):
   output = [ _filter_keys(task.__dict__, ['upid', 'exitstatus', 'node', 'runningstatus', 'type', 'user', 'starttime']) ]
@@ -304,9 +308,10 @@ def _parser():
   # clusterstatus parser
   parser_clusterstatus = subparsers.add_parser('clusterstatus', help='Show cluster status')
   parser_clusterstatus.set_defaults(func=action_clusterstatus)
-  
+
   # nodelist parser
   parser_nodelist = subparsers.add_parser('nodelist', help='List nodes in the cluster')
+  parser_nodelist.add_argument('--sort-by', action='store', help="Key used to sort items", default="node")
   parser_nodelist.set_defaults(func=action_nodelist)
   # nodeevacuate parser
   parser_nodeevacuate = subparsers.add_parser('nodeevacuate', help='Evacuate an host by migrating all VMs')
@@ -320,6 +325,7 @@ def _parser():
 
   # vmlist parser
   parser_vmlist = subparsers.add_parser('vmlist', help='List VMs in the cluster')
+  parser_vmlist.add_argument('--sort-by', action='store', help="Key used to sort items", default="vmid")
   parser_vmlist.set_defaults(func=action_vmlist)
   # vmmigrate parser
   parser_vmmigrate = subparsers.add_parser('vmmigrate', help='Migrate VMs in the cluster')
@@ -332,6 +338,7 @@ def _parser():
 
   # tasklist parser
   parser_tasklist = subparsers.add_parser('tasklist', help='List tasks')
+  parser_tasklist.add_argument('--sort-by', action='store', help="Key used to sort items", default="starttime")
   parser_tasklist.set_defaults(func=action_tasklist)
   # taskget parser
   parser_taskget = subparsers.add_parser('taskget', help='Get task detail')
@@ -360,7 +367,7 @@ def main():
 
   # configure logging
   logging.basicConfig(encoding='utf-8', level=logging.DEBUG if args.debug else logging.INFO)
-  logging.debug("Arguments: %s"%args)  
+  logging.debug("Arguments: %s"%args)
   logging.info("Proxmox cluster: %s" % args.cluster)
 
   # Load configuration file
