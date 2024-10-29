@@ -22,6 +22,8 @@ class PVEVm:
     self.maxmem = 0
     self.uptime = 0
     self.tags = ""
+    self.template = 0
+
     for k in input:
       if k == "name":
         self.name = input["name"]
@@ -37,12 +39,14 @@ class PVEVm:
         self.uptime = input["uptime"]
       elif k == "tags":
         self.tags = input["tags"]
-    
+      elif k == "template":
+        self.template = input["template"]
+
     self.config = self._api.nodes(self.node).qemu(vmid).config.get()
 
   def __str__(self):
-    return("vmid: {}, status: {}, name: {}, lock: {}, cpus: {}, maxdisk: {}, maxmem: {}, uptime: {}, tags: {}" 
-          .format(self.vmid, self.status, self.name, self.lock, self.cpus, self.maxdisk, self.maxmem, self.uptime, self.tags))
+    return("vmid: {}, status: {}, name: {}, lock: {}, cpus: {}, maxdisk: {}, maxmem: {}, uptime: {}, tags: {}, template: {}"
+          .format(self.vmid, self.status, self.name, self.lock, self.cpus, self.maxdisk, self.maxmem, self.uptime, self.tags, self.template))
 
   def migrate(self, target, online = False):
     options = {}
