@@ -11,7 +11,7 @@ class NodeStatus(Enum):
 class PVENode:
   """A proxmox VE Node"""
   _api = None
- 
+
   def __init__(self, api, node, status, input = {}):
     self.node = node
     self.status = NodeStatus[status]
@@ -83,3 +83,6 @@ class PVENode:
   #     if vm.vmid == item:
   #       return True
   #   return False
+
+  def templates(self):
+      return [vm for vm in self.vms if vm.template]
