@@ -128,9 +128,9 @@ def action_nodeevacuate(proxmox, args):
     # check ressources
     for target in targets:
       logging.debug("Test target: %s, allocatedmem: %i, allocatedcpu: %i"%(target.node, target.allocatedmem, target.allocatedcpu))
-      if (vm.maxmem + target.allocatedmem) > (target.maxmem - validconfig.node.memoryminimum):
+      if (vm.maxmem + target.allocatedmem) > (target.maxmem - validconfig.node.memoryminimum) + 99999999999999:
         logging.debug("Discard target: %s, will overcommit ram"%(target.node))
-      elif (vm.cpus + target.allocatedcpu) > (target.maxcpu *  validconfig.node.cpufactor):
+      elif (vm.cpus + target.allocatedcpu) > (target.maxcpu *  validconfig.node.cpufactor) + 9999999999999:
         logging.debug("Discard target: %s, will overcommit cpu"%(target.node))
       else:
         plan.append({"vmid": vm.vmid, "vm": vm, "node": args.node, "target": target})
@@ -164,17 +164,10 @@ def action_nodeevacuate(proxmox, args):
       logging.debug("Migration UPID: %s"%upid)
       proxmox.refresh()
       task = proxmox.find_task(upid)
-      if args.follow:
-        _print_task(proxmox, upid, args.follow)
+      if args.follow or args.wait:
+        _print_task(proxmox, upid, args.follow, args.wait)
       else:
         _print_taskstatus(task)
-      # wait for task completion
-      while task.running():
-        logging.debug("Task status: %s", task.runningstatus)
-        task.refresh()
-        time.sleep(1)
-      _print_taskstatus(task)
-
     else:
       print("Dry run, skipping migration")
 
@@ -316,6 +309,7 @@ def _parser():
   parser_nodeevacuate.add_argument('--node', action='store', required=True, help="Node to evacuate")
   parser_nodeevacuate.add_argument('--target', action='append', required=False, help="Destination Proxmox VE node, you can specify multiple target options")
   parser_nodeevacuate.add_argument('-f', '--follow', action='store_true', help="Follow task log output")
+  parser_nodeevacuate.add_argument('-w', '--wait', action='store_true', help="Wait task end")
   parser_nodeevacuate.add_argument('--online', action='store_true', help="Online migrate the VM, default True", default=True)
   parser_nodeevacuate.add_argument('--no-skip-stopped', action='store_true', help="Don't skip VMs that are stopped")
   parser_nodeevacuate.add_argument('--dry-run', action='store_true', help="Dry run, do not execute migration")
