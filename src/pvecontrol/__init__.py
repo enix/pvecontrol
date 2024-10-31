@@ -228,17 +228,10 @@ def action_vmmigrate(proxmox, args):
     # Suivre la task cree
     proxmox.refresh()
     task = proxmox.find_task(upid)
-    if args.follow:
-      _print_task(proxmox, upid, args.follow)
+    if args.follow or args.wait:
+      _print_task(proxmox, upid, args.follow, args.wait)
     else:
       _print_taskstatus(task)
-    # wait for task completion
-    while task.running():
-      logging.debug("Task status: %s", task.runningstatus)
-      task.refresh()
-      time.sleep(1)
-    _print_taskstatus(task)
-
   else:
     print("Dry run, skipping migration")
 
@@ -274,8 +267,8 @@ def _print_task(proxmox, upid, follow = False, wait = False):
         if line['n'] > lastline:
           lastline = line['n']
       time.sleep(1)
-    _print_taskstatus(task)
   if task.running() and wait:
+    print_log_output = False
     while task.running():
       task.refresh()
       print(".", end="")
@@ -284,6 +277,7 @@ def _print_task(proxmox, upid, follow = False, wait = False):
     print("")
   if print_log_output:
     _print_tableoutput([{"log output": task.decode_log()}])
+  _print_taskstatus(task)
 
 def action_sanitycheck(proxmox, args):
   """Check status of proxmox Cluster"""
@@ -336,6 +330,7 @@ def _parser():
   parser_vmmigrate.add_argument('--target', action='store', required=True, help="Destination Proxmox VE node")
   parser_vmmigrate.add_argument('--online', action='store_true', help="Online migrate the VM, default True", default=True)
   parser_vmmigrate.add_argument('-f', '--follow', action='store_true', help="Follow task log output")
+  parser_vmmigrate.add_argument('-w', '--wait', action='store_true', help="Wait task end")
   parser_vmmigrate.add_argument('--dry-run', action='store_true', help="Dry run, do not execute migration")
   parser_vmmigrate.set_defaults(func=action_vmmigrate)
 
