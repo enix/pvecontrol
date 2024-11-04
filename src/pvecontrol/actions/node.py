@@ -5,14 +5,14 @@ from pvecontrol.config import get_config
 from pvecontrol.node import NodeStatus
 from pvecontrol.vm import VmStatus
 from pvecontrol.utils import (
-    _filter_keys, _print_tableoutput, _print_task, _print_taskstatus
+    filter_keys, print_tableoutput, print_task, print_taskstatus
 )
 
 
 def action_nodelist(proxmox, args):
   """List proxmox nodes in the cluster using proxmoxer api"""
-  nodes = [ _filter_keys(n.__dict__, ['node', 'status', 'allocatedcpu', 'maxcpu', 'mem', 'allocatedmem', 'maxmem']) for n in proxmox.nodes ]
-  _print_tableoutput(nodes, sortby='node')
+  nodes = [ filter_keys(n.__dict__, ['node', 'status', 'allocatedcpu', 'maxcpu', 'mem', 'allocatedmem', 'maxmem']) for n in proxmox.nodes ]
+  print_tableoutput(nodes, sortby='node')
 
 def action_nodeevacuate(proxmox, args):
   """Evacuate a node by migrating all it's VM out"""
@@ -97,15 +97,15 @@ def action_nodeevacuate(proxmox, args):
       proxmox.refresh()
       task = proxmox.find_task(upid)
       if args.follow:
-        _print_task(proxmox, upid, args.follow)
+        print_task(proxmox, upid, args.follow)
       else:
-        _print_taskstatus(task)
+        print_taskstatus(task)
       # wait for task completion
       while task.running():
         logging.debug("Task status: %s", task.runningstatus)
         task.refresh()
         time.sleep(1)
-      _print_taskstatus(task)
+      print_taskstatus(task)
 
     else:
       print("Dry run, skipping migration")

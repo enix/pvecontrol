@@ -1,6 +1,6 @@
-from pvecontrol.utils import _filter_keys
+from pvecontrol.utils import filter_keys
 
-def test_filter_keys():
+def testfilter_keys():
   input = {'test': "toto", 'none': "noninclude"}
   filter = ["test"]
-  assert _filter_keys(input, filter) == {'test': "toto"}
+  assert filter_keys(input, filter) == {'test': "toto"}

@@ -1,20 +1,20 @@
 import logging
 
 from pvecontrol.config import get_config
-from pvecontrol.utils import _filter_keys, _print_tableoutput
+from pvecontrol.utils import filter_keys, print_tableoutput
 
 
 def action_clusterstatus(proxmox, args):
   logging.debug(proxmox.status)
   logging.debug(proxmox.resources)
-  status = _filter_keys(proxmox.status[0], ['name', 'nodes', 'quorate'])
-  nodes = [ _filter_keys(n, ['name', 'ip', 'online']) for n in proxmox.status[1:] ]
+  status = filter_keys(proxmox.status[0], ['name', 'nodes', 'quorate'])
+  nodes = [ filter_keys(n, ['name', 'ip', 'online']) for n in proxmox.status[1:] ]
 # FIXME get cluster maxmem
 # FIXME get cluster maxcpu
 # FIXME get cluster allocatedmem
 # FIXME get cluster allocatedcpu
-  _print_tableoutput([status])
-  _print_tableoutput(nodes)
+  print_tableoutput([status])
+  print_tableoutput(nodes)
 
 def action_sanitycheck(proxmox, args):
   """Check status of proxmox Cluster"""

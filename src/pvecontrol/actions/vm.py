@@ -3,7 +3,7 @@ import sys
 import time
 
 from pvecontrol.utils import (
-    _print_task, _print_taskstatus, _print_tableoutput, _filter_keys
+    print_task, print_taskstatus, print_tableoutput, filter_keys
 )
 
 
@@ -58,20 +58,20 @@ def action_vmmigrate(proxmox, args):
     proxmox.refresh()
     task = proxmox.find_task(upid)
     if args.follow:
-      _print_task(proxmox, upid, args.follow)
+      print_task(proxmox, upid, args.follow)
     else:
-      _print_taskstatus(task)
+      print_taskstatus(task)
     # wait for task completion
     while task.running():
       logging.debug("Task status: %s", task.runningstatus)
       task.refresh()
       time.sleep(1)
-    _print_taskstatus(task)
+    print_taskstatus(task)
 
   else:
     print("Dry run, skipping migration")
 
 def action_vmlist(proxmox, args):
   """List VMs in the Proxmox Cluster"""
-  vms = [ _filter_keys(n.__dict__, ['vmid', 'name', 'status', 'node', 'cpus', 'maxmem', 'maxdisk']) for n in proxmox.vms() ]
-  _print_tableoutput(vms, sortby='vmid')
+  vms = [ filter_keys(n.__dict__, ['vmid', 'name', 'status', 'node', 'cpus', 'maxmem', 'maxdisk']) for n in proxmox.vms() ]
+  print_tableoutput(vms, sortby='vmid')

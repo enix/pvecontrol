@@ -8,7 +8,7 @@ from humanize import naturalsize
 
 # Pretty output a table from a table of dicts
 # We assume all dicts have the same keys and are sorted by key
-def _print_tableoutput(table, sortby=None, filter=[]):
+def print_tableoutput(table, sortby=None, filter=[]):
   x = PrettyTable()
   x.align = 'l'
   x.field_names = table[0].keys()
@@ -19,21 +19,21 @@ def _print_tableoutput(table, sortby=None, filter=[]):
     x.add_row( line.values() )
   print(x.get_string(sortby=sortby))
 
-def _filter_keys(input, keys):
+def filter_keys(input, keys):
   # Filter keys from input dict
   output = OrderedDict()
   for key in keys:
       output[key] = input[key]
   return output
 
-def _print_taskstatus(task):
-  output = [ _filter_keys(task.__dict__, ['upid', 'exitstatus', 'node', 'runningstatus', 'type', 'user', 'starttime']) ]
-  _print_tableoutput(output)
+def print_taskstatus(task):
+  output = [ filter_keys(task.__dict__, ['upid', 'exitstatus', 'node', 'runningstatus', 'type', 'user', 'starttime']) ]
+  print_tableoutput(output)
 
-def _print_task(proxmox, upid, follow = False):
+def print_task(proxmox, upid, follow = False):
   task = proxmox.find_task(upid)
   logging.debug("Task: %s", task)
-  _print_taskstatus(task)
+  print_taskstatus(task)
   log = task.log(limit=0)
   logging.debug("Task Log: %s", log)
   if task.running() and follow:
@@ -49,6 +49,6 @@ def _print_task(proxmox, upid, follow = False):
         if line['n'] > lastline:
           lastline = line['n']
       time.sleep(1)
-    _print_taskstatus(task)
+    print_taskstatus(task)
   else:
-    _print_tableoutput([{"log output": task.decode_log()}])
+    print_tableoutput([{"log output": task.decode_log()}])
