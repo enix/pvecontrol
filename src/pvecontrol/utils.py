@@ -1,0 +1,54 @@
+import logging
+import time
+
+from prettytable import PrettyTable
+from collections import OrderedDict
+from humanize import naturalsize
+
+
+# Pretty output a table from a table of dicts
+# We assume all dicts have the same keys and are sorted by key
+def _print_tableoutput(table, sortby=None, filter=[]):
+  x = PrettyTable()
+  x.align = 'l'
+  x.field_names = table[0].keys()
+  for line in table:
+    for key in ['mem', 'allocatedmem', 'maxmem', 'disk', 'allocateddisk', 'maxdisk'] :
+      if key in line:
+        line[key] = naturalsize(line[key], binary=True)
+    x.add_row( line.values() )
+  print(x.get_string(sortby=sortby))
+
+def _filter_keys(input, keys):
+  # Filter keys from input dict
+  output = OrderedDict()
+  for key in keys:
+      output[key] = input[key]
+  return output
+
+def _print_taskstatus(task):
+  output = [ _filter_keys(task.__dict__, ['upid', 'exitstatus', 'node', 'runningstatus', 'type', 'user', 'starttime']) ]
+  _print_tableoutput(output)
+
+def _print_task(proxmox, upid, follow = False):
+  task = proxmox.find_task(upid)
+  logging.debug("Task: %s", task)
+  _print_taskstatus(task)
+  log = task.log(limit=0)
+  logging.debug("Task Log: %s", log)
+  if task.running() and follow:
+    lastline = 0
+    print("log output, follow mode")
+    while task.running():
+      task.refresh()
+#      logging.debug("Task status: %s", status)
+      log = task.log(limit=0, start=lastline)
+      logging.debug("Task Log: %s", log)
+      for line in log:
+        print("%s"%line['t'])
+        if line['n'] > lastline:
+          lastline = line['n']
+      time.sleep(1)
+    _print_taskstatus(task)
+  else:
+    _print_tableoutput([{"log output": task.decode_log()}])
