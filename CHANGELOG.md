@@ -1,27 +1,54 @@
 # CHANGELOG
 
+
+## v0.4.0 (2024-11-04)
+
+### Bug Fixes
+
+* fix: PEP8 compliance update private method ([`8d260b3`](https://github.com/enix/pvecontrol/commit/8d260b3c5530218c8e2a03ff514a35ba98709962))
+
+* fix: Patch test ([`902fd2a`](https://github.com/enix/pvecontrol/commit/902fd2ac90ffd5b2282a45094d1a6dcc32df9020))
+
+### Features
+
+* feat: Split actions into mutliple files, add a config.py to resolve issue due to global validconfig ([`32f4534`](https://github.com/enix/pvecontrol/commit/32f4534aa8702a82d800d1f1e3e099cae11e762b))
+
+
 ## v0.3.1 (2024-10-02)
 
-### Chore
+### Bug Fixes
+
+* fix(package): Fix module package and install ([`858d20f`](https://github.com/enix/pvecontrol/commit/858d20f6bde59b0140a1ca7dd68afd5818bfe05e))
+
+### Chores
 
 * chore(ci): update python version
 
 Also update action versions
 Run ci on dev branch ([`c79b5a3`](https://github.com/enix/pvecontrol/commit/c79b5a341acdf840824b3e74f836be80b265bc39))
 
-### Fix
-
-* fix(package): Fix module package and install ([`858d20f`](https://github.com/enix/pvecontrol/commit/858d20f6bde59b0140a1ca7dd68afd5818bfe05e))
 
 ## v0.3.0 (2024-10-01)
 
-### Chore
+### Bug Fixes
+
+* fix(task): Fix issue with status refresh ([`43c72c0`](https://github.com/enix/pvecontrol/commit/43c72c01fac3ea5b03d931d7b44d13c226012f15))
+
+* fix(node): linter output ([`5e0bea1`](https://github.com/enix/pvecontrol/commit/5e0bea113ba728b457ed0d1bd7626be22f907e66))
+
+* fix(task): Revert fix for not available node ([`3cbd35a`](https://github.com/enix/pvecontrol/commit/3cbd35a98504b61b79aaba817117c32e2093facd))
+
+* fix(node): add cast on memory ([`2298276`](https://github.com/enix/pvecontrol/commit/229827651a99dd68838b91b5b0a05900ede37220))
+
+* fix(PVENode): Fix issue with offline node ([`a128eb3`](https://github.com/enix/pvecontrol/commit/a128eb3be53071503cdd6769279021ec0bb64d12))
+
+### Chores
 
 * chore(README): Update config ([`4f62fc7`](https://github.com/enix/pvecontrol/commit/4f62fc7af56da5aaa7bd3ed388e4b071c7bab9a7))
 
 * chore(pvecontrol): Add some debug ([`21d332a`](https://github.com/enix/pvecontrol/commit/21d332af8f416c060654169b604ed1ed0b23c980))
 
-### Feature
+### Features
 
 * feat(pvecontrol): Add nodeevacuate feature
 
@@ -46,27 +73,28 @@ This new fonction take over management of VM migration ([`9b01237`](https://gith
 Create classes to manage PVECluster, PVENode and PVEVM objects. This will allow
 lot more simple operations now. ([`119b01c`](https://github.com/enix/pvecontrol/commit/119b01cc42355d93db1f8c8afd77427ce1b7a5ab))
 
-### Fix
-
-* fix(task): Fix issue with status refresh ([`43c72c0`](https://github.com/enix/pvecontrol/commit/43c72c01fac3ea5b03d931d7b44d13c226012f15))
-
-* fix(node): linter output ([`5e0bea1`](https://github.com/enix/pvecontrol/commit/5e0bea113ba728b457ed0d1bd7626be22f907e66))
-
-* fix(task): Revert fix for not available node ([`3cbd35a`](https://github.com/enix/pvecontrol/commit/3cbd35a98504b61b79aaba817117c32e2093facd))
-
-* fix(node): add cast on memory ([`2298276`](https://github.com/enix/pvecontrol/commit/229827651a99dd68838b91b5b0a05900ede37220))
-
-* fix(PVENode): Fix issue with offline node ([`a128eb3`](https://github.com/enix/pvecontrol/commit/a128eb3be53071503cdd6769279021ec0bb64d12))
-
 ### Unknown
 
 * Merge pull request #3 from enix/dev
 
 Split code using lib and objects ([`b411d19`](https://github.com/enix/pvecontrol/commit/b411d19a2136973ce26613e202a5a5d53da744f8))
 
+
 ## v0.2.0 (2023-10-06)
 
-### Chore
+### Bug Fixes
+
+* fix(pvecontrol): Update parser help output ([`4a484f3`](https://github.com/enix/pvecontrol/commit/4a484f310c0c23dfababd7e700bf4d3678653fee))
+
+* fix(requirements): Bump proxmoxer version ([`09fd1fb`](https://github.com/enix/pvecontrol/commit/09fd1fb06e0c4b1f37e315855f2ae9260bf8b6ce))
+
+* fix(config): Use a more comprehensive default ([`5b9d4fc`](https://github.com/enix/pvecontrol/commit/5b9d4fc98ab6461cab30a89d242a440425e81b3c))
+
+* fix(pvecontrol): convert vmid to int ([`bb493fa`](https://github.com/enix/pvecontrol/commit/bb493fa4d1dac1f9e8d8e888957e6684e3f706be))
+
+* fix(nodelist): add some defaults for optional ([`f1ece32`](https://github.com/enix/pvecontrol/commit/f1ece32b936d1f8d187abd4426fa08de0a0ce6e8))
+
+### Chores
 
 * chore(README): Add badges, fix typos ([`e51df76`](https://github.com/enix/pvecontrol/commit/e51df76aa0625c0c9e40ed95215c16ce06964175))
 
@@ -78,23 +106,11 @@ Split code using lib and objects ([`b411d19`](https://github.com/enix/pvecontrol
 
 * chore(setup): Change README content type ([`08aabcb`](https://github.com/enix/pvecontrol/commit/08aabcbde7cc6630e86029da965ed1fb25d84a91))
 
-### Feature
+### Features
 
 * feat(vmmigrate): Add dry-run ([`9a5941e`](https://github.com/enix/pvecontrol/commit/9a5941e8639bc0c5010bbaa1911fe6ac368a36d1))
 
 * feat(vmmigrate): First version with migration ([`c908672`](https://github.com/enix/pvecontrol/commit/c908672e60ab60029a1b2c71ec9edce5edc41111))
-
-### Fix
-
-* fix(pvecontrol): Update parser help output ([`4a484f3`](https://github.com/enix/pvecontrol/commit/4a484f310c0c23dfababd7e700bf4d3678653fee))
-
-* fix(requirements): Bump proxmoxer version ([`09fd1fb`](https://github.com/enix/pvecontrol/commit/09fd1fb06e0c4b1f37e315855f2ae9260bf8b6ce))
-
-* fix(config): Use a more comprehensive default ([`5b9d4fc`](https://github.com/enix/pvecontrol/commit/5b9d4fc98ab6461cab30a89d242a440425e81b3c))
-
-* fix(pvecontrol): convert vmid to int ([`bb493fa`](https://github.com/enix/pvecontrol/commit/bb493fa4d1dac1f9e8d8e888957e6684e3f706be))
-
-* fix(nodelist): add some defaults for optional ([`f1ece32`](https://github.com/enix/pvecontrol/commit/f1ece32b936d1f8d187abd4426fa08de0a0ce6e8))
 
 ### Unknown
 
@@ -110,30 +126,43 @@ Update README.md ([`e65bd77`](https://github.com/enix/pvecontrol/commit/e65bd770
 
 Fix typos ([`4fb2d47`](https://github.com/enix/pvecontrol/commit/4fb2d47dabdce0a75183b424eb8a53fbf0c9accc))
 
+
 ## v0.1.1 (2023-09-13)
 
-### Chore
+### Bug Fixes
+
+* fix(pvecontrol): Add missing empty line ([`b825a95`](https://github.com/enix/pvecontrol/commit/b825a9516a48c70a950cb8faf4bd9113f981ccbc))
+
+### Chores
 
 * chore(README): update python version ([`14b4ad1`](https://github.com/enix/pvecontrol/commit/14b4ad17cc2245db9540915c4fd1cf30acba1a80))
 
 * chore(release): Use unified release workflow ([`6c481a7`](https://github.com/enix/pvecontrol/commit/6c481a7f81c755fd685d6111071469955b0660a9))
 
-### Fix
-
-* fix(pvecontrol): Add missing empty line ([`b825a95`](https://github.com/enix/pvecontrol/commit/b825a9516a48c70a950cb8faf4bd9113f981ccbc))
 
 ## v0.1.0 (2023-09-13)
 
-### Feature
+### Features
 
 * feat(semantic-release): Add semantic-release configuration
 
 This include semantic-release gh action to build a new release when push
 to main branch ([`d1c86b5`](https://github.com/enix/pvecontrol/commit/d1c86b513fc3ab7a6b402b0156cd1b16b8481d4e))
 
+
 ## v0.0.1 (2023-09-13)
 
-### Chore
+### Bug Fixes
+
+* fix(main): proper definition of main function ([`8253449`](https://github.com/enix/pvecontrol/commit/8253449163635a2f32f2e1e74dd76208b2beb853))
+
+* fix(taskget): fix output of running tasks ([`b720c1b`](https://github.com/enix/pvecontrol/commit/b720c1b30cf71dae66ce0828f84d45d497d4d2cb))
+
+* fix(nodelist): skip offline nodes ([`9c67414`](https://github.com/enix/pvecontrol/commit/9c6741488365555f8a578eb029e4fead3dae47e5))
+
+* fix(allocated_cpu): sockets is optional ([`a858e9b`](https://github.com/enix/pvecontrol/commit/a858e9b5d00f6dd6c848d27e1a135bb42f23eff4))
+
+### Chores
 
 * chore(test): Add simple test ([`2a6e14e`](https://github.com/enix/pvecontrol/commit/2a6e14e663023df32e333cdf917228179eba1b40))
 
@@ -141,7 +170,7 @@ to main branch ([`d1c86b5`](https://github.com/enix/pvecontrol/commit/d1c86b513f
 
 * chore(package): add gh action package ([`477e243`](https://github.com/enix/pvecontrol/commit/477e243f41abc8cfe9621f601210dcf65d49df97))
 
-### Feature
+### Features
 
 * feat(packaging): Package the app ([`63e3bec`](https://github.com/enix/pvecontrol/commit/63e3bec60619d4db58077265fac4746d90213c24))
 
@@ -154,16 +183,6 @@ to main branch ([`d1c86b5`](https://github.com/enix/pvecontrol/commit/d1c86b513f
 * feat(gettasks): new function ([`f479bf4`](https://github.com/enix/pvecontrol/commit/f479bf475506219623ff178eee3e5d8ccce5c1a2))
 
 * feat(get_nodes): new fonction ([`41fc8ae`](https://github.com/enix/pvecontrol/commit/41fc8aefdd7dfe314e4f836a9dbb3013105489c6))
-
-### Fix
-
-* fix(main): proper definition of main function ([`8253449`](https://github.com/enix/pvecontrol/commit/8253449163635a2f32f2e1e74dd76208b2beb853))
-
-* fix(taskget): fix output of running tasks ([`b720c1b`](https://github.com/enix/pvecontrol/commit/b720c1b30cf71dae66ce0828f84d45d497d4d2cb))
-
-* fix(nodelist): skip offline nodes ([`9c67414`](https://github.com/enix/pvecontrol/commit/9c6741488365555f8a578eb029e4fead3dae47e5))
-
-* fix(allocated_cpu): sockets is optional ([`a858e9b`](https://github.com/enix/pvecontrol/commit/a858e9b5d00f6dd6c848d27e1a135bb42f23eff4))
 
 ### Unknown
 
