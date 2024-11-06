@@ -101,12 +101,18 @@ The simpliest operation on a cluster that allows to check that user is correctly
 ```shell
 $ pvecontrol --cluster my-test-cluster clusterstatus
 INFO:root:Proxmox cluster: my-test-cluster
-INFO:root:{'nodes': 9, 'id': 'cluster', 'type': 'cluster', 'quorate': 1, 'version': 17, 'name': 'pve-r1az2'}
-+-----------+-------+---------+--------------+--------------+
-| name      | nodes | quorate | allocatedmem | allocatedcpu |
-+-----------+-------+---------+--------------+--------------+
-| pve-r1az2 | 9     | 1       | 583.5 GiB    | 167          |
-+-----------+-------+---------+--------------+--------------+
+
+  Status: healthy
+  VMs: 0
+  Templates: 0
+  Metrics:
+    CPU: 0.00/64(0.0%), allocated: 0
+    Memory: 0.00 GiB/128.00 GiB(0.0%), allocated: 0.00 GiB
+    Disk: 0.00 GiB/2.66 TiB(0.0%)
+  Nodes:
+    Offline: 0
+    Online: 3
+    Unknown: 0
 ```
 
 If this works, you're ready to go
