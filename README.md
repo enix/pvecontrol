@@ -41,11 +41,14 @@ clusters:
     host: 192.168.1.10
     user: pvecontrol@pve
     password: superpasssecret
+    # node in cluster overwrite global node value
+    node:
+      cpufactor: 1
 - name: prod-cluster-1
     host: 10.10.10.10
     user: pvecontrol@pve
     password: Supers3cUre
-node_factors:
+node:
   # Overcommit cpu factor. can be 1 for not overcommit
   cpufactor: 2.5
   # Memory to reserve for system on a node. in Bytes

@@ -6,6 +6,6 @@ clusters:
     user: pvecontrol@pve
     password: somerandomsecret
 
-node_factors:
+node:
   cpufactor: 2.5
   memoryminimum: 81928589934592
