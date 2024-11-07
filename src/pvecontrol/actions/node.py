@@ -57,9 +57,9 @@ def action_nodeevacuate(proxmox, args):
     # check ressources
     for target in targets:
       logging.debug("Test target: %s, allocatedmem: %i, allocatedcpu: %i"%(target.node, target.allocatedmem, target.allocatedcpu))
-      if (vm.maxmem + target.allocatedmem) > (target.maxmem - proxmox.node_factors['memoryminimum']):
+      if (vm.maxmem + target.allocatedmem) > (target.maxmem - proxmox.node['memoryminimum']):
         logging.debug("Discard target: %s, will overcommit ram"%(target.node))
-      elif (vm.cpus + target.allocatedcpu) > (target.maxcpu *  proxmox.node_factors['cpufactor']):
+      elif (vm.cpus + target.allocatedcpu) > (target.maxcpu *  proxmox.node['cpufactor']):
         logging.debug("Discard target: %s, will overcommit cpu"%(target.node))
       else:
         plan.append({"vmid": vm.vmid, "vm": vm, "node": args.node, "target": target})
