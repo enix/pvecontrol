@@ -11,10 +11,10 @@ class PVECluster:
   """Proxmox VE Cluster"""
 
 
-  def __init__(self, name, host, user, password, node_factors, verify_ssl=False):
+  def __init__(self, name, host, user, password, node, verify_ssl=False):
     self._api = ProxmoxAPI(host, user=user, password=password, verify_ssl=verify_ssl)
     self.name =  name
-    self.node_factors = node_factors
+    self.node = node
     self._initstatus()
 
   def _initstatus(self):
