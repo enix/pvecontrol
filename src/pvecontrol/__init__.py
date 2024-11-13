@@ -8,7 +8,7 @@ import logging
 
 from pvecontrol.cluster import PVECluster
 from pvecontrol.config import set_config
-from pvecontrol.actions import cluster, node, vm, task
+from pvecontrol.actions import cluster, node, vm, storage, task
 
 def action_test(proxmox, args):
   """Hidden optional test action"""
@@ -28,6 +28,10 @@ def _parser():
   # clusterstatus parser
   parser_clusterstatus = subparsers.add_parser('clusterstatus', help='Show cluster status')
   parser_clusterstatus.set_defaults(func=cluster.action_clusterstatus)
+
+  # storagelist parser
+  parser_clusterstatus = subparsers.add_parser('storagelist', help='Show cluster status')
+  parser_clusterstatus.set_defaults(func=storage.action_storagelist)
 
   # nodelist parser
   parser_nodelist = subparsers.add_parser('nodelist', help='List nodes in the cluster')
