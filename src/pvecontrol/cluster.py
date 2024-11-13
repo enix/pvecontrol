@@ -1,6 +1,7 @@
 from proxmoxer import ProxmoxAPI
 
 from pvecontrol.node import PVENode
+from pvecontrol.storage import PVEStorage
 from pvecontrol.task import PVETask
 
 
@@ -20,6 +21,10 @@ class PVECluster:
     self.nodes = []
     for node in self._api.nodes.get():
       self.nodes.append(PVENode(self._api, node["node"], node["status"], node))
+
+    self.storages = []
+    for storage in self.get_resources_storages():
+      self.storages.append(PVEStorage(storage.pop("node"), storage.pop("id"), **storage))
 
     self.tasks = []
     for task in self._api.cluster.tasks.get():
