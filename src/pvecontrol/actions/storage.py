@@ -1,3 +1,4 @@
+from pvecontrol.storage import StorageShared
 from pvecontrol.utils import filter_keys, print_tableoutput
 
 
@@ -13,7 +14,7 @@ def action_storagelist(proxmox, args):
       'nodes': [],
       'usage': f"{storage.percentage:.1f}%"
     }
-    if storage.shared:
+    if StorageShared[storage.shared] == StorageShared.shared:
       storages[storage.storage] = storages.get(storage.storage, value)
       storages[storage.storage]['nodes'] += [node]
     else:

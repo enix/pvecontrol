@@ -24,7 +24,7 @@ class PVECluster:
 
     self.storages = []
     for storage in self.get_resources_storages():
-      self.storages.append(PVEStorage(storage.pop("node"), storage.pop("id"), **storage))
+      self.storages.append(PVEStorage(storage.pop("node"), storage.pop("id"), storage.pop("shared"), **storage))
 
     self.tasks = []
     for task in self._api.cluster.tasks.get():

@@ -1,13 +1,24 @@
+from enum import Enum
+
+
+STORAGE_SHARED_ENUM = ['local', 'shared']
+
+class StorageShared(Enum):
+  local = 0
+  shared = 1
+
 class PVEStorage:
   """Proxmox VE Storage"""
 
   _acceptable_kwargs = (
-    'storage', 'shared', 'maxdisk', 'disk', 'plugintype', 'status'
+    'storage', 'maxdisk', 'disk', 'plugintype', 'status'
   )
 
-  def __init__(self, node, id, **kwargs):
+  def __init__(self, node, id, shared, **kwargs):
     self.id = id
     self.node = node
+
+    self.shared = STORAGE_SHARED_ENUM[shared]
 
     for k in kwargs.keys():
       if k in self._acceptable_kwargs:
