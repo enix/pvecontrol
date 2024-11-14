@@ -6,4 +6,4 @@ def action_tasklist(proxmox, args):
   print_tableoutput(tasks, sortby='starttime')
 
 def action_taskget(proxmox, args):
-  print_task(proxmox, args.upid, args.follow, args.wait)
+  print_task(proxmox, args.upid, args.follow, args.wait, show_logs = True)
