@@ -96,16 +96,9 @@ def action_nodeevacuate(proxmox, args):
       logging.debug("Migration UPID: %s"%upid)
       proxmox.refresh()
       task = proxmox.find_task(upid)
-      if args.follow:
-        print_task(proxmox, upid, args.follow)
+      if args.follow or args.wait:
+        print_task(proxmox, upid, args.follow, args.wait)
       else:
         print_taskstatus(task)
-      # wait for task completion
-      while task.running():
-        logging.debug("Task status: %s", task.runningstatus)
-        task.refresh()
-        time.sleep(1)
-      print_taskstatus(task)
-
     else:
       print("Dry run, skipping migration")
