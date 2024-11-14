@@ -52,9 +52,9 @@ def print_task(proxmox, upid, follow = False, wait = False):
         if line['n'] > lastline:
           lastline = line['n']
       time.sleep(1)
-    print_taskstatus(task)
 
   if task.running() and wait:
+    print_log_output = False
     while task.running():
       task.refresh()
       print(".", end="")
@@ -63,3 +63,4 @@ def print_task(proxmox, upid, follow = False, wait = False):
     print("")
   if print_log_output:
     print_tableoutput([{"log output": task.decode_log()}])
+    print_taskstatus(task)

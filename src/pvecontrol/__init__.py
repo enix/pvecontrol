@@ -51,6 +51,7 @@ def _parser():
   parser_vmmigrate.add_argument('--target', action='store', required=True, help="Destination Proxmox VE node")
   parser_vmmigrate.add_argument('--online', action='store_true', help="Online migrate the VM, default True", default=True)
   parser_vmmigrate.add_argument('-f', '--follow', action='store_true', help="Follow task log output")
+  parser_vmmigrate.add_argument('-w', '--wait', action='store_true', help="Wait task end")
   parser_vmmigrate.add_argument('--dry-run', action='store_true', help="Dry run, do not execute migration")
   parser_vmmigrate.set_defaults(func=vm.action_vmmigrate)
 
