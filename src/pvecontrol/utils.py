@@ -1,5 +1,6 @@
 import logging
 import time
+import sys
 
 from prettytable import PrettyTable
 from collections import OrderedDict
@@ -30,13 +31,15 @@ def print_taskstatus(task):
   output = [ filter_keys(task.__dict__, ['upid', 'exitstatus', 'node', 'runningstatus', 'type', 'user', 'starttime']) ]
   print_tableoutput(output)
 
-def print_task(proxmox, upid, follow = False):
+def print_task(proxmox, upid, follow = False, wait = False):
   task = proxmox.find_task(upid)
   logging.debug("Task: %s", task)
   print_taskstatus(task)
   log = task.log(limit=0)
   logging.debug("Task Log: %s", log)
+  print_log_output = True
   if task.running() and follow:
+    print_log_output = False
     lastline = 0
     print("log output, follow mode")
     while task.running():
@@ -50,5 +53,13 @@ def print_task(proxmox, upid, follow = False):
           lastline = line['n']
       time.sleep(1)
     print_taskstatus(task)
-  else:
+
+  if task.running() and wait:
+    while task.running():
+      task.refresh()
+      print(".", end="")
+      sys.stdout.flush()
+      time.sleep(1)
+    print("")
+  if print_log_output:
     print_tableoutput([{"log output": task.decode_log()}])
