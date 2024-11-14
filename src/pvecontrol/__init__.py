@@ -61,6 +61,7 @@ def _parser():
   parser_taskget = subparsers.add_parser('taskget', help='Get task detail')
   parser_taskget.add_argument('--upid', action='store', required=True, help="Proxmox tasks UPID to get informations")
   parser_taskget.add_argument('-f', '--follow', action='store_true', help="Follow task log output")
+  parser_taskget.add_argument('-w', '--wait', action='store_true', help="Wait task end")
   parser_taskget.set_defaults(func=task.action_taskget)
 
   # sanitycheck parser
