@@ -31,15 +31,16 @@ def print_taskstatus(task):
   output = [ filter_keys(task.__dict__, ['upid', 'exitstatus', 'node', 'runningstatus', 'type', 'user', 'starttime']) ]
   print_tableoutput(output)
 
-def print_task(proxmox, upid, follow = False, wait = False):
+def print_task(proxmox, upid, follow = False, wait = False, show_logs = False):
   task = proxmox.find_task(upid)
   logging.debug("Task: %s", task)
-  print_taskstatus(task)
+
+  if task.running() and (follow or wait):
+    print_taskstatus(task)
+
   log = task.log(limit=0)
   logging.debug("Task Log: %s", log)
-  print_log_output = True
   if task.running() and follow:
-    print_log_output = False
     lastline = 0
     print("log output, follow mode")
     while task.running():
@@ -54,13 +55,14 @@ def print_task(proxmox, upid, follow = False, wait = False):
       time.sleep(1)
 
   if task.running() and wait:
-    print_log_output = False
     while task.running():
       task.refresh()
       print(".", end="")
       sys.stdout.flush()
       time.sleep(1)
     print("")
-  if print_log_output:
+
+  if (show_logs and not follow) or not (task.running() or follow or wait):
     print_tableoutput([{"log output": task.decode_log()}])
-    print_taskstatus(task)
+
+  print_taskstatus(task)
