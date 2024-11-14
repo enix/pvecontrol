@@ -37,6 +37,7 @@ def _parser():
   parser_nodeevacuate.add_argument('--node', action='store', required=True, help="Node to evacuate")
   parser_nodeevacuate.add_argument('--target', action='append', required=False, help="Destination Proxmox VE node, you can specify multiple target options")
   parser_nodeevacuate.add_argument('-f', '--follow', action='store_true', help="Follow task log output")
+  parser_nodeevacuate.add_argument('-w', '--wait', action='store_true', help="Wait task end")
   parser_nodeevacuate.add_argument('--online', action='store_true', help="Online migrate the VM, default True", default=True)
   parser_nodeevacuate.add_argument('--no-skip-stopped', action='store_true', help="Don't skip VMs that are stopped")
   parser_nodeevacuate.add_argument('--dry-run', action='store_true', help="Dry run, do not execute migration")
