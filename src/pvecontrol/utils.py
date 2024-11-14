@@ -4,6 +4,7 @@ import time
 from prettytable import PrettyTable
 from collections import OrderedDict
 from humanize import naturalsize
+from enum import Enum
 
 
 # Pretty output a table from a table of dicts
@@ -11,13 +12,16 @@ from humanize import naturalsize
 def print_tableoutput(table, sortby=None, filter=[]):
   x = PrettyTable()
   x.align = 'l'
-  x.field_names = table[0].keys()
+  x.field_names = [*table[0].keys(), "sortby"]
   for line in table:
+    sort_data = line[sortby]
+    if isinstance(sort_data, Enum):
+      sort_data = str(sort_data)
     for key in ['mem', 'allocatedmem', 'maxmem', 'disk', 'allocateddisk', 'maxdisk'] :
       if key in line:
         line[key] = naturalsize(line[key], binary=True)
-    x.add_row( line.values() )
-  print(x.get_string(sortby=sortby))
+    x.add_row( [*line.values(), sort_data] )
+  print(x.get_string(sortby="sortby", fields=table[0].keys()))
 
 def filter_keys(input, keys):
   # Filter keys from input dict
