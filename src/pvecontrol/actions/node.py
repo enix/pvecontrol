@@ -12,7 +12,7 @@ from pvecontrol.utils import (
 def action_nodelist(proxmox, args):
   """List proxmox nodes in the cluster using proxmoxer api"""
   nodes = [ filter_keys(n.__dict__, ['node', 'status', 'allocatedcpu', 'maxcpu', 'mem', 'allocatedmem', 'maxmem']) for n in proxmox.nodes ]
-  print_tableoutput(nodes, sortby='node')
+  print_tableoutput(nodes, args.sort_by)
 
 def action_nodeevacuate(proxmox, args):
   """Evacuate a node by migrating all it's VM out"""

@@ -31,6 +31,7 @@ def _parser():
 
   # nodelist parser
   parser_nodelist = subparsers.add_parser('nodelist', help='List nodes in the cluster')
+  parser_nodelist.add_argument('--sort-by', action='store', help="Key used to sort items", default="node")
   parser_nodelist.set_defaults(func=node.action_nodelist)
   # nodeevacuate parser
   parser_nodeevacuate = subparsers.add_parser('nodeevacuate', help='Evacuate an host by migrating all VMs')
@@ -45,6 +46,7 @@ def _parser():
 
   # vmlist parser
   parser_vmlist = subparsers.add_parser('vmlist', help='List VMs in the cluster')
+  parser_vmlist.add_argument('--sort-by', action='store', help="Key used to sort items", default="vmid")
   parser_vmlist.set_defaults(func=vm.action_vmlist)
   # vmmigrate parser
   parser_vmmigrate = subparsers.add_parser('vmmigrate', help='Migrate VMs in the cluster')
@@ -58,6 +60,7 @@ def _parser():
 
   # tasklist parser
   parser_tasklist = subparsers.add_parser('tasklist', help='List tasks')
+  parser_tasklist.add_argument('--sort-by', action='store', help="Key used to sort items", default="starttime")
   parser_tasklist.set_defaults(func=task.action_tasklist)
   # taskget parser
   parser_taskget = subparsers.add_parser('taskget', help='Get task detail')
