@@ -64,4 +64,4 @@ def action_vmmigrate(proxmox, args):
 def action_vmlist(proxmox, args):
   """List VMs in the Proxmox Cluster"""
   vms = [ filter_keys(n.__dict__, ['vmid', 'name', 'status', 'node', 'cpus', 'maxmem', 'maxdisk']) for n in proxmox.vms() ]
-  print_tableoutput(vms, sortby=args.sort_by)
+  print_tableoutput(vms, sortby=args.sort_by, filters=args.filter)
