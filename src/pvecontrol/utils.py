@@ -55,6 +55,10 @@ def print_taskstatus(task):
 def print_task(proxmox, upid, follow = False, wait = False, show_logs = False):
   task = proxmox.find_task(upid)
   logging.debug("Task: %s", task)
+  # Vanished tasks don't have any more information available in the API
+  if task.vanished():
+    print_taskstatus(task)
+    return
 
   if task.running() and (follow or wait):
     print_taskstatus(task)
