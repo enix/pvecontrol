@@ -1,4 +1,5 @@
 from enum import Enum
+import proxmoxer.core
 from proxmoxer.tools import Tasks
 
 from pvecontrol.node import NodeStatus
@@ -7,6 +8,7 @@ from pvecontrol.node import NodeStatus
 class TaskRunningStatus(Enum):
   running = 0
   stopped = 1
+  vanished = 2
 
 
 class PVETask:
@@ -34,21 +36,31 @@ class PVETask:
 # This is bugguy. replace with a catch / except ?
 #    if self.node != NodeStatus.online:
 #      return
-    status = self._api.nodes(self.node).tasks(self.upid).status.get()
-    for k in status:
-      if k == "status":
-        self.runningstatus = TaskRunningStatus[status["status"]]
-      elif k == "endtime":
-        self.endtime = status["endtime"]
-      elif k == "exitstatus":
-        self.exitstatus = status["exitstatus"]
-
+    try: 
+      status = self._api.nodes(self.node).tasks(self.upid).status.get()
+    # Some taks informations can be vanished over time (tasks status files removed from the node filesystem)
+    # In this case API return an error and we consider this tasks vanished and don't get more informations
+    except proxmoxer.core.ResourceException:
+      self.runningstatus = TaskRunningStatus["vanished"]
+      self.endtime = 0
+      self.exitstatus = "UNK"
+    else:
+      for k in status:
+        if k == "status":
+          self.runningstatus = TaskRunningStatus[status["status"]]
+        elif k == "endtime":
+          self.endtime = status["endtime"]
+        elif k == "exitstatus":
+          self.exitstatus = status["exitstatus"]
 
   def log(self, limit = 0, start = 0):
     return(self._api.nodes(self.node).tasks(self.upid).log.get(limit=limit, start=start))
 
   def running(self):
     return(self.runningstatus == TaskRunningStatus.running)
+
+  def vanished(self):
+    return(self.runningstatus == TaskRunningStatus.vanished)
 
   def refresh(self):
     self._initstatus()

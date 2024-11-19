@@ -1,3 +1,5 @@
+import logging
+
 from proxmoxer import ProxmoxAPI
 
 from pvecontrol.node import PVENode
@@ -23,6 +25,7 @@ class PVECluster:
 
     self.tasks = []
     for task in self._api.cluster.tasks.get():
+      logging.debug("Get task informations: %s"%(str(task)))
       self.tasks.append(PVETask(self._api, task["upid"]))
 
   def refresh(self):
