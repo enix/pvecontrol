@@ -3,6 +3,9 @@ from enum import Enum
 from pvecontrol.vm import PVEVm
 from pvecontrol.vm import VmStatus
 
+
+COLUMNS = ["node", "status", "allocatedcpu", "maxcpu", "mem", "allocatedmem", "maxmem"]
+
 class NodeStatus(Enum):
   unknown = 0
   online = 1

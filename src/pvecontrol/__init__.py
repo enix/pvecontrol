@@ -6,28 +6,36 @@ import confuse
 import urllib3
 import logging
 import re
+import pvecontrol.actions
 
 from pvecontrol.cluster import PVECluster
 from pvecontrol.config import set_config
-from pvecontrol.actions import cluster, node, vm, storage, task
 
 def action_test(proxmox, args):
   """Hidden optional test action"""
   print(proxmox)
 
-def _regexp_type(value):
-  try:
-    return re.compile(value)
-  except re.error:
-    raise argparse.ArgumentTypeError(f"Invalid regular expression: {value}")
 
-def _make_filter_type_generator():
+def _make_filter_type_generator(columns):
+  def _regexp_type(value):
+    try:
+      return re.compile(value)
+    except re.error:
+      raise argparse.ArgumentTypeError(f"invalid regular expression: '{value}'")
+  def _column_type(value):
+    if not value in columns:
+      choices = ', '.join([f"'{c}'" for c in columns])
+      raise argparse.ArgumentTypeError(f"invalid choice: '{value}' (choose from {choices})")
+    return value
   while True:
-    yield lambda x: x
+    yield _column_type
     yield _regexp_type
 
-_filter_type_generator = _make_filter_type_generator()
-_filter_type = lambda x: next(_filter_type_generator)(x)
+def add_table_related_arguments(parser, columns, default_sort):
+  filter_type_generator = _make_filter_type_generator(columns)
+  filter_type = lambda x: next(filter_type_generator)(x)
+  parser.add_argument('--sort-by', action='store', help="Key used to sort items", default=default_sort, choices=columns)
+  parser.add_argument('--filter', action='append', nargs=2, type=filter_type, metavar=('COLUMN', 'REGEXP'), help="Regexp to filter items", default=[])
 
 def _parser():
 ## FIXME
@@ -42,19 +50,17 @@ def _parser():
 
   # clusterstatus parser
   parser_clusterstatus = subparsers.add_parser('clusterstatus', help='Show cluster status')
-  parser_clusterstatus.set_defaults(func=cluster.action_clusterstatus)
+  parser_clusterstatus.set_defaults(func=actions.cluster.action_clusterstatus)
 
   # storagelist parser
   parser_storagelist = subparsers.add_parser('storagelist', help='Show cluster status')
-  parser_storagelist.add_argument('--sort-by', action='store', help="Key used to sort items", default="storage")
-  parser_storagelist.add_argument('--filter', action='append', nargs=2, type=_filter_type, metavar=('COLUMN', 'REGEXP'), help="Regexp to filter items", default=[])
-  parser_storagelist.set_defaults(func=storage.action_storagelist)
+  add_table_related_arguments(parser_storagelist, storage.COLUMNS, "storage")
+  parser_storagelist.set_defaults(func=actions.storage.action_storagelist)
 
   # nodelist parser
   parser_nodelist = subparsers.add_parser('nodelist', help='List nodes in the cluster')
-  parser_nodelist.add_argument('--sort-by', action='store', help="Key used to sort items", default="node")
-  parser_nodelist.add_argument('--filter', action='append', nargs=2, type=_filter_type, metavar=('COLUMN', 'REGEXP'), help="Regexp to filter items", default=[])
-  parser_nodelist.set_defaults(func=node.action_nodelist)
+  add_table_related_arguments(parser_nodelist, node.COLUMNS, "node")
+  parser_nodelist.set_defaults(func=actions.node.action_nodelist)
   # nodeevacuate parser
   parser_nodeevacuate = subparsers.add_parser('nodeevacuate', help='Evacuate an host by migrating all VMs')
   parser_nodeevacuate.add_argument('--node', action='store', required=True, help="Node to evacuate")
@@ -64,13 +70,12 @@ def _parser():
   parser_nodeevacuate.add_argument('--online', action='store_true', help="Online migrate the VM, default True", default=True)
   parser_nodeevacuate.add_argument('--no-skip-stopped', action='store_true', help="Don't skip VMs that are stopped")
   parser_nodeevacuate.add_argument('--dry-run', action='store_true', help="Dry run, do not execute migration")
-  parser_nodeevacuate.set_defaults(func=node.action_nodeevacuate)
+  parser_nodeevacuate.set_defaults(func=actions.node.action_nodeevacuate)
 
   # vmlist parser
   parser_vmlist = subparsers.add_parser('vmlist', help='List VMs in the cluster')
-  parser_vmlist.add_argument('--sort-by', action='store', help="Key used to sort items", default="vmid")
-  parser_vmlist.add_argument('--filter', action='append', nargs=2, type=_filter_type, metavar=('COLUMN', 'REGEXP'), help="Regexp to filter items", default=[])
-  parser_vmlist.set_defaults(func=vm.action_vmlist)
+  add_table_related_arguments(parser_vmlist, vm.COLUMNS, "vmid")
+  parser_vmlist.set_defaults(func=actions.vm.action_vmlist)
   # vmmigrate parser
   parser_vmmigrate = subparsers.add_parser('vmmigrate', help='Migrate VMs in the cluster')
   parser_vmmigrate.add_argument('--vmid', action='store', required=True, type=int, help="VM to migrate")
@@ -79,23 +84,22 @@ def _parser():
   parser_vmmigrate.add_argument('-f', '--follow', action='store_true', help="Follow task log output")
   parser_vmmigrate.add_argument('-w', '--wait', action='store_true', help="Wait task end")
   parser_vmmigrate.add_argument('--dry-run', action='store_true', help="Dry run, do not execute migration")
-  parser_vmmigrate.set_defaults(func=vm.action_vmmigrate)
+  parser_vmmigrate.set_defaults(func=actions.vm.action_vmmigrate)
 
   # tasklist parser
   parser_tasklist = subparsers.add_parser('tasklist', help='List tasks')
-  parser_tasklist.add_argument('--sort-by', action='store', help="Key used to sort items", default="starttime")
-  parser_tasklist.add_argument('--filter', action='append', nargs=2, type=_filter_type, metavar=('COLUMN', 'REGEXP'), help="Regexp to filter items", default=[])
-  parser_tasklist.set_defaults(func=task.action_tasklist)
+  add_table_related_arguments(parser_tasklist, task.COLUMNS, "starttime")
+  parser_tasklist.set_defaults(func=actions.task.action_tasklist)
   # taskget parser
   parser_taskget = subparsers.add_parser('taskget', help='Get task detail')
   parser_taskget.add_argument('--upid', action='store', required=True, help="Proxmox tasks UPID to get informations")
   parser_taskget.add_argument('-f', '--follow', action='store_true', help="Follow task log output")
   parser_taskget.add_argument('-w', '--wait', action='store_true', help="Wait task end")
-  parser_taskget.set_defaults(func=task.action_taskget)
+  parser_taskget.set_defaults(func=actions.task.action_taskget)
 
   # sanitycheck parser
   parser_sanitycheck = subparsers.add_parser('sanitycheck', help='Run Sanity checks on the cluster')
-  parser_sanitycheck.set_defaults(func=cluster.action_sanitycheck)
+  parser_sanitycheck.set_defaults(func=actions.cluster.action_sanitycheck)
 
   # _test parser, hidden from help
   parser_test = subparsers.add_parser('_test')
