@@ -2,6 +2,7 @@ from enum import Enum
 
 
 STORAGE_SHARED_ENUM = ['local', 'shared']
+COLUMNS = ['storage', 'nodes', 'shared', 'usage', 'maxdisk', 'disk', 'plugintype', 'status']
 
 class StorageShared(Enum):
   local = 0

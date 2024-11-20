@@ -1,5 +1,8 @@
 from enum import Enum
 
+
+COLUMNS = ["vmid", "name", "status", "node", "cpus", "maxmem", "maxdisk"]
+
 class VmStatus(Enum):
   stopped = 0
   running = 1

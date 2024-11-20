@@ -1,10 +1,9 @@
-from pvecontrol.storage import StorageShared
+from pvecontrol.storage import StorageShared, COLUMNS
 from pvecontrol.utils import filter_keys, print_tableoutput
 
 
 def action_storagelist(proxmox, args):
   """Describe cluster storages"""
-  keys_to_order = ['storage', 'nodes', 'shared', 'usage', 'maxdisk', 'disk', 'plugintype', 'status']
   storages = {}
   for storage in proxmox.storages:
     d = storage.__dict__
@@ -24,4 +23,4 @@ def action_storagelist(proxmox, args):
   for id, storage in storages.items():
     storages[id]['nodes'] = ', '.join(storages[id]['nodes'])
 
-  print_tableoutput(storages.values(), keys_to_order, args.sort_by, filters=args.filter)
+  print_tableoutput(storages.values(), COLUMNS, sortby=args.sort_by, filters=args.filter)

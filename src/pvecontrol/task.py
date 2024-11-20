@@ -5,6 +5,8 @@ from proxmoxer.tools import Tasks
 from pvecontrol.node import NodeStatus
 
 
+COLUMNS = ["upid", "exitstatus", "node", "type", "starttime", "endtime", "runningstatus"]
+
 class TaskRunningStatus(Enum):
   running = 0
   stopped = 1
