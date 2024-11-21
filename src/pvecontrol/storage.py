@@ -10,9 +10,14 @@ class StorageShared(Enum):
 class PVEStorage:
   """Proxmox VE Storage"""
 
-  _acceptable_kwargs = (
-    'storage', 'maxdisk', 'disk', 'plugintype', 'status'
-  )
+  _default_kwargs = {
+    'storage': None,
+    'maxdisk': None,
+    'disk': None,
+    'plugintype': None,
+    'status': None,
+    'test': None,
+  }
 
   def __init__(self, node, id, shared, **kwargs):
     self.id = id
@@ -20,9 +25,8 @@ class PVEStorage:
 
     self.shared = STORAGE_SHARED_ENUM[shared]
 
-    for k in kwargs.keys():
-      if k in self._acceptable_kwargs:
-        self.__setattr__(k, kwargs[k])
+    for k, v in self._default_kwargs.items():
+        self.__setattr__(k, kwargs.get(k, v))
 
   @property
   def percentage(self):
