@@ -26,32 +26,21 @@ class PVETask:
     self.type = task["type"]
     self.user = task["user"]
 
-    self.runningstatus = TaskRunningStatus.stopped
-    self.exitstatus = ""
-    self.endtime = 0
-    self.description = ""
-    self._initstatus()
-
-  def _initstatus(self):
-# This is bugguy. replace with a catch / except ?
-#    if self.node != NodeStatus.online:
-#      return
-    try: 
+    # This is bugguy. replace with a catch / except ?
+    #    if self.node != NodeStatus.online:
+    #      return
+    try:
       status = self._api.nodes(self.node).tasks(self.upid).status.get()
-    # Some taks informations can be vanished over time (tasks status files removed from the node filesystem)
+    # Some task information can be vanished over time (tasks status files removed from the node filesystem)
     # In this case API return an error and we consider this tasks vanished and don't get more informations
     except proxmoxer.core.ResourceException:
       self.runningstatus = TaskRunningStatus["vanished"]
       self.endtime = 0
       self.exitstatus = "UNK"
     else:
-      for k in status:
-        if k == "status":
-          self.runningstatus = TaskRunningStatus[status["status"]]
-        elif k == "endtime":
-          self.endtime = status["endtime"]
-        elif k == "exitstatus":
-          self.exitstatus = status["exitstatus"]
+      self.runningstatus = TaskRunningStatus[status.get("status", "stopped")]
+      self.endtime = status.get("endtime", 0)
+      self.exitstatus = status.get("exitstatus", "")
 
   def log(self, limit = 0, start = 0):
     return(self._api.nodes(self.node).tasks(self.upid).log.get(limit=limit, start=start))
