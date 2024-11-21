@@ -16,27 +16,14 @@ class PVENode:
     self.node = node
     self.status = NodeStatus[status]
     self._api = api
-    self.cpu = 0
+    self.cpu = input.get("cpu", 0)
     self.allocatedcpu = 0
-    self.maxcpu = 0
-    self.mem = 0
+    self.maxcpu = input.get("maxcpu", 0)
+    self.mem = input.get("mem", 0)
     self.allocatedmem = 0
-    self.maxmem = 0
-    self.disk = 0
-    self.maxdisk = 0
-    for k in input:
-      if k == "cpu":
-        self.cpu = input[k]
-      elif k == "maxcpu":
-        self.maxcpu = input[k]
-      elif k == "mem":
-        self.mem = input[k]
-      elif k == "maxmem":
-        self.maxmem = input[k]
-      elif k == "disk":
-        self.disk = input[k]
-      elif k == "maxdisk":
-        self.maxdisk = input[k]
+    self.maxmem = input.get("maxmem", 0)
+    self.disk = input.get("disk", 0)
+    self.maxdisk = input.get("maxdisk", 0)
     self._init_vms()
     self._init_allocatedmem()
     self._init_allocatedcpu()

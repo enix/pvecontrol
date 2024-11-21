@@ -15,32 +15,14 @@ class PVEVm:
     self.node = node
     self._api = api
 
-    self.name = ""
-    self.lock = ""
-    self.cpus = 0
-    self.maxdisk = 0
-    self.maxmem = 0
-    self.uptime = 0
-    self.tags = ""
-    self.template = 0
-
-    for k in input:
-      if k == "name":
-        self.name = input["name"]
-      elif k == "lock":
-        self.lock = input["lock"]
-      elif k == "cpus":
-        self.cpus = input["cpus"]
-      elif k == "maxdisk":
-        self.maxdisk = input["maxdisk"]
-      elif k == "maxmem":
-        self.maxmem = input["maxmem"]
-      elif k == "uptime":
-        self.uptime = input["uptime"]
-      elif k == "tags":
-        self.tags = input["tags"]
-      elif k == "template":
-        self.template = input["template"]
+    self.name = input.get("name", "")
+    self.lock = input.get("lock", "")
+    self.cpus = input.get("cpus", 0)
+    self.maxdisk = input.get("maxdisk", 0)
+    self.maxmem = input.get("maxmem", 0)
+    self.uptime = input.get("uptime", 0)
+    self.tags = input.get("tags", "")
+    self.template = input.get("template", 0)
 
     self.config = self._api.nodes(self.node).qemu(vmid).config.get()
 
