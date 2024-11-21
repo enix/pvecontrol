@@ -30,8 +30,9 @@ def _parser():
   parser_clusterstatus.set_defaults(func=cluster.action_clusterstatus)
 
   # storagelist parser
-  parser_clusterstatus = subparsers.add_parser('storagelist', help='Show cluster status')
-  parser_clusterstatus.set_defaults(func=storage.action_storagelist)
+  parser_storagelist = subparsers.add_parser('storagelist', help='Show cluster status')
+  parser_storagelist.add_argument('--sort-by', action='store', help="Key used to sort items", default="storage")
+  parser_storagelist.set_defaults(func=storage.action_storagelist)
 
   # nodelist parser
   parser_nodelist = subparsers.add_parser('nodelist', help='List nodes in the cluster')
