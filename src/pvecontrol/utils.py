@@ -12,14 +12,17 @@ from enum import Enum
 # Pretty output a table from a table of dicts
 # We assume all dicts have the same keys and are sorted by key
 def print_tableoutput(table, sortby=None, filters=[]):
+  do_sort = not sortby is None
+
   x = PrettyTable()
   x.align = 'l'
-  x.field_names = [*table[0].keys(), "sortby"]
+  x.field_names = [*table[0].keys(), "sortby"] if do_sort else table[0].keys()
 
   for line in table:
-    sort_data = line[sortby]
-    if isinstance(sort_data, Enum):
-      sort_data = str(sort_data)
+    if do_sort:
+      line["sortby"] = line[sortby]
+      if isinstance(line[sortby], Enum):
+        line["sortby"] = str(line[sortby])
     for key in ['mem', 'allocatedmem', 'maxmem', 'disk', 'allocateddisk', 'maxdisk'] :
       if key in line:
         line[key] = naturalsize(line[key], binary=True)
@@ -29,9 +32,9 @@ def print_tableoutput(table, sortby=None, filters=[]):
     table = [ line for line in table if re_filter.search(str(line[filter_key])) ]
 
   for line in table:
-    x.add_row( [*line.values(), sort_data] )
+    x.add_row( line.values() )
 
-  print(x.get_string(sortby="sortby", fields=table[0].keys()))
+  print(x.get_string(sortby="sortby" if do_sort else None, fields=table[0].keys()))
 
 def filter_keys(input, keys):
   # Filter keys from input dict
