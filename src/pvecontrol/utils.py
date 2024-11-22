@@ -11,7 +11,12 @@ from enum import Enum
 
 # Pretty output a table from a table of dicts
 # We assume all dicts have the same keys and are sorted by key
-def print_tableoutput(table, sortby=None, filters=[]):
+def print_tableoutput(table, columns=[], sortby=None, filters=[]):
+  if len(columns) == 0:
+    columns = table[0].keys()
+  else:
+    table = [ filter_keys(n.__dict__, columns) for n in table ]
+
   do_sort = not sortby is None
 
   x = PrettyTable()
@@ -34,7 +39,7 @@ def print_tableoutput(table, sortby=None, filters=[]):
   for line in table:
     x.add_row( line.values() )
 
-  print(x.get_string(sortby="sortby" if do_sort else None, fields=table[0].keys()))
+  print(x.get_string(sortby="sortby" if do_sort else None, fields=columns))
 
 def filter_keys(input, keys):
   # Filter keys from input dict
@@ -44,8 +49,8 @@ def filter_keys(input, keys):
   return output
 
 def print_taskstatus(task):
-  output = [ filter_keys(task.__dict__, ['upid', 'exitstatus', 'node', 'runningstatus', 'type', 'user', 'starttime']) ]
-  print_tableoutput(output)
+  columns = ['upid', 'exitstatus', 'node', 'runningstatus', 'type', 'user', 'starttime']
+  print_tableoutput([task], columns)
 
 def print_task(proxmox, upid, follow = False, wait = False, show_logs = False):
   task = proxmox.find_task(upid)
