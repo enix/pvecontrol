@@ -5,7 +5,6 @@ import time
 from pvecontrol.utils import (
   print_task, print_taskstatus, print_tableoutput, filter_keys
 )
-from pvecontrol.vm import columns
 
 
 def _get_vm(proxmox, vmid):
@@ -65,4 +64,4 @@ def action_vmmigrate(proxmox, args):
 def action_vmlist(proxmox, args):
   """List VMs in the Proxmox Cluster"""
   vms = proxmox.vms()
-  print_tableoutput(vms, columns, sortby=args.sort_by, filters=args.filter)
+  print_tableoutput(vms, columns=args.columns, sortby=args.sort_by, filters=args.filter)

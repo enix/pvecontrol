@@ -36,6 +36,7 @@ def add_table_related_arguments(parser, columns, default_sort):
   filter_type = lambda x: next(filter_type_generator)(x)
   parser.add_argument('--sort-by', action='store', help="Key used to sort items", default=default_sort, choices=columns)
   parser.add_argument('--filter', action='append', nargs=2, type=filter_type, metavar=('COLUMN', 'REGEXP'), help="Regexp to filter items", default=[])
+  parser.add_argument('--columns', action='store', nargs='+', help="", default=columns, choices=columns)
 
 def _parser():
 ## FIXME
@@ -114,6 +115,15 @@ def main():
 
   # get cli arguments
   args = _parser()
+
+  if hasattr(args, 'columns'):
+    if not args.sort_by is None and not args.sort_by in args.columns:
+      sys.stderr.write(f"error: cannot sort by column '{args.sort_by}' because it's not included in the --columns flag.\n")
+      sys.exit(1)
+    for (key, value) in args.filter:
+      if not key in args.columns:
+        sys.stderr.write(f"error: cannot filter on the column '{key}' because it's not included in the --columns flag.\n")
+        sys.exit(1)
 
   # configure logging
   logging.basicConfig(encoding='utf-8', level=logging.DEBUG if args.debug else logging.INFO)

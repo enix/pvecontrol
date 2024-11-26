@@ -1,7 +1,7 @@
 import logging
 import time
 
-from pvecontrol.node import NodeStatus, columns
+from pvecontrol.node import NodeStatus
 from pvecontrol.vm import VmStatus
 from pvecontrol.utils import (
     filter_keys, print_tableoutput, print_task, print_taskstatus
@@ -10,7 +10,7 @@ from pvecontrol.utils import (
 
 def action_nodelist(proxmox, args):
   """List proxmox nodes in the cluster using proxmoxer api"""
-  print_tableoutput(proxmox.nodes, columns, sortby=args.sort_by, filters=args.filter)
+  print_tableoutput(proxmox.nodes, columns=args.columns, sortby=args.sort_by, filters=args.filter)
 
 def action_nodeevacuate(proxmox, args):
   """Evacuate a node by migrating all it's VM out"""
