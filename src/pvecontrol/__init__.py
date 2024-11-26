@@ -122,7 +122,7 @@ def main():
     clusterconfig.host,
     user=clusterconfig.user,
     password=clusterconfig.password,
-    node=clusterconfig.node,
+    config={'node': clusterconfig.node},
     verify_ssl=False
   )
 
