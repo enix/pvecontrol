@@ -43,7 +43,7 @@ def set_config(cluster_name):
     sys.exit(1)
   logging.debug('clusterconfig is %s'%clusterconfig)
 
-  for k, v in clusterconfig.node.items():
-    clusterconfig.node[k] = validconfig.node.get(k, v)
+  for k, v in validconfig.node.items():
+    clusterconfig.node[k] = clusterconfig.node.get(k, v)
 
   return clusterconfig
