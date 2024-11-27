@@ -1,7 +1,10 @@
+import re
+
 from enum import Enum
 
 from pvecontrol.vm import PVEVm
 from pvecontrol.vm import VmStatus
+from pvecontrol.storage import StorageShared
 
 
 COLUMNS = ["node", "status", "allocatedcpu", "maxcpu", "mem", "allocatedmem", "maxmem"]
@@ -75,4 +78,4 @@ class PVENode:
   #   return False
 
   def templates(self):
-      return [vm for vm in self.vms if vm.template]
+    return [vm for vm in self.vms if vm.template]

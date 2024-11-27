@@ -1,6 +1,7 @@
 from humanize import naturalsize
 
 from pvecontrol.node import NodeStatus
+from pvecontrol.sanitycheck import SanityCheck
 
 
 def action_clusterstatus(proxmox, args):
@@ -48,7 +49,6 @@ def action_clusterstatus(proxmox, args):
 
 def action_sanitycheck(proxmox, args):
   """Check status of proxmox Cluster"""
-
   for node in proxmox.nodes:
     if (node.maxcpu *  proxmox.config['node']['cpufactor']) <= node.allocatedcpu:
       print("Node %s is in cpu overcommit status: %s allocated but %s available"%(node.node, node.allocatedcpu, node.maxcpu))
@@ -58,3 +58,6 @@ def action_sanitycheck(proxmox, args):
   # VM is started but 'startonboot' not set
   # VM is running in cpu = host
   # VM is running in cpu = qemu64
+  sc = SanityCheck(proxmox)
+  sc.run()
+  sc.display()
