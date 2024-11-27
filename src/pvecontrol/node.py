@@ -86,3 +86,15 @@ class PVENode:
 
   def templates(self):
       return [vm for vm in self.vms if vm.template]
+
+  def vms_onboot_not_consitent(self):
+    vms_not_consistent = []
+    vms = [vm for vm in self.vms if vm.template == 0]
+    for vm in vms:
+      if not (
+        (vm.config.get('onboot') == None and vm.status == VmStatus.stopped)
+        or
+        (vm.config.get('onboot') == 1 and vm.status == VmStatus.running)
+      ):
+        vms_not_consistent += [vm]
+    return vms_not_consistent
