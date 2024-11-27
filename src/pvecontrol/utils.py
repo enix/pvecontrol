@@ -8,6 +8,15 @@ from collections import OrderedDict
 from humanize import naturalsize
 from enum import Enum
 
+class fonts:
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'
+
 
 # Pretty output a table from a table of dicts
 # We assume all dicts have the same keys and are sorted by key
