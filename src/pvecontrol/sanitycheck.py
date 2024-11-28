@@ -117,6 +117,7 @@ class SanityCheck():
           msg = f"Node '{node.node}' isn't in cpu overcommit"
           check.add_messages(CheckMessage(CheckCode.OK, msg))
 
+      for node in self._proxmox.nodes:
         if self._check_mem_overcommit(node.allocatedmem, node_config['memoryminimum'], node.maxmem):
           msg = f"Node '{node.node}' is in mem overcommit status: {node.allocatedmem} allocated but {node.maxmem} available"
           check.add_messages(CheckMessage(CheckCode.CRIT, msg))
@@ -134,21 +135,14 @@ class SanityCheck():
           msg = f"Group {group['group']} contain only {num_nodes} node"
           check.add_messages(CheckMessage(CheckCode.WARN, msg))
 
-      if check.messages == None:
+      if not check.messages:
         msg = "HA Group checked"
         check.add_messages(CheckMessage(CheckCode.OK, msg))
       return check
 
-    # Check disk are shared
-    def _validate_ha_vms(self):
-      check = Check(CheckType.HA, "Check VMs in a HA group")
-      ha_resources = [r for r in self._ha['resources'] if r['type'] in ['vm']]
-      ha_vms = []
-      for resource in ha_resources:
-        id = resource['sid'].split(':')[1]
-        if resource['type'] == 'vm':
-            ha_vms.append(self._proxmox.get_vm(id))
-
+    def _check_disk_ha_consistency(self, ha_vms):
+      messages = []
+      # Value are quite hard to find from ressources keys if it's a disk
       regex = r"^(.*):(vm|base)-[0-9]+-(disk|cloudinit).*"
       vms_not_consistent = []
       for vm in ha_vms:
@@ -168,7 +162,33 @@ class SanityCheck():
 
         for vm in vms_not_consistent:
           msg = f"Node '{vm['node']}' has VM '{vm['name']}' with disk(s) '{', '.join(vm['disks'])}' not on shared storage"
-          check.add_messages(CheckMessage(CheckCode.WARN, msg))
+          messages.append(CheckMessage(CheckCode.WARN, msg))
+
+      return messages
+
+    def _check_cpu_ha_consistency(self, ha_vms):
+      messages = []
+      for vm in ha_vms:
+        if vm.config['cpu'] == 'host':
+          msg = f"Node '{vm.node}' has VM '{vm.name}' with cpu type host"
+          messages.append(CheckMessage(CheckCode.CRIT, msg))
+        else:
+          msg = f"Node '{vm.node}' has VM '{vm.name}' with cpu type {vm.config['cpu']}"
+          messages.append(CheckMessage(CheckCode.OK, msg))
+      return messages
+
+    # Check disk are shared
+    def _validate_ha_vms(self):
+      check = Check(CheckType.HA, "Check VMs in a HA group")
+      ha_resources = [r for r in self._ha['resources'] if r['type'] in ['vm']]
+      ha_vms = []
+      for resource in ha_resources:
+        id = resource['sid'].split(':')[1] # "sid = vm:100"
+        if resource['type'] == 'vm':
+            ha_vms.append(self._proxmox.get_vm(id))
+
+      check.add_messages(self._check_disk_ha_consistency(ha_vms))
+      check.add_messages(self._check_cpu_ha_consistency(ha_vms))
 
       if not check.messages:
         msg = "HA VMS checked"
