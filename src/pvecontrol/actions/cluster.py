@@ -49,11 +49,6 @@ def action_clusterstatus(proxmox, args):
 
 def action_sanitycheck(proxmox, args):
   """Check status of proxmox Cluster"""
-  for node in proxmox.nodes:
-    if (node.maxcpu *  proxmox.config['node']['cpufactor']) <= node.allocatedcpu:
-      print("Node %s is in cpu overcommit status: %s allocated but %s available"%(node.node, node.allocatedcpu, node.maxcpu))
-    if (node.allocatedmem +  proxmox.config['node']['memoryminimum']) >= node.maxmem:
-      print("Node %s is in mem overcommit status: %s allocated but %s available"%(node.node, node.allocatedmem, node.maxmem))
   # More checks to implement
   # VM is started but 'startonboot' not set
   # VM is running in cpu = host
