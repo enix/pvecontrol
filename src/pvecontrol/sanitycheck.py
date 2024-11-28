@@ -8,6 +8,7 @@ from pvecontrol.utils import fonts
 
 class CheckType(Enum):
   HA = 'HIGHT_AVAILABILITY'
+  Node = "NODE"
 
 class CheckCode(Enum):
   CRIT = 'CRITICAL'
@@ -15,18 +16,36 @@ class CheckCode(Enum):
   INFO = 'INFO'
   OK = 'OK'
 
+ICONS = {
+  CheckCode.CRIT.value: '❌',
+  CheckCode.WARN.value: '⚠️',
+  CheckCode.INFO.value: 'ℹ️',
+  CheckCode.OK.value: '✅',
+}
+
+class CheckMessage:
+  def __init__(self, code: CheckCode, message):
+    self.code = code
+    self.message = message
+
+  def display(self, padding_max_size):
+    padding = padding_max_size - len(self.message)
+    print(f"{self.message}{padding * '.'}{ICONS[self.code.value]}")
+
+  def __len__(self):
+    return len(self.message)
+
 class Check:
 
-  def __init__(self, type: CheckType, name: str, code: CheckCode, messages = None):
+  def __init__(self, type: CheckType, name: str, messages = None):
     if messages is None:
       messages = []
     self.type = type
-    self.code = code
     self.name = name
     self.messages = messages
 
   def add_messages(self, messages):
-    if isinstance(messages, str):
+    if isinstance(messages, CheckMessage):
       self.messages.append(messages)
     elif isinstance(messages, list):
       self.messages += messages
@@ -35,24 +54,16 @@ class Check:
     self.code = code
 
   def display(self, padding_max_size):
-    icon = {
-      CheckCode.CRIT.value: '❌',
-      CheckCode.WARN.value: '⚠️',
-      CheckCode.INFO.value: 'ℹ️',
-      CheckCode.OK.value: '✅',
-    }
     print(f"{fonts.BOLD}{self.name}{fonts.END}\n")
     for msg in self.messages:
-      padding = padding_max_size - len(msg)
-      print(f"{msg}{padding * '.'}{icon[self.code.value]}")
+      msg.display(padding_max_size)
     print()
-
 
 class SanityCheck():
 
     check_methods = (
       "_validate_ha_groups",
-      "_validate_ha_vms"
+      "_validate_ha_vms",
     )
 
     check_display_order = [
@@ -68,14 +79,6 @@ class SanityCheck():
       for method in SanityCheck.check_methods:
         self._checks.append(getattr(self, method)())
 
-    def order_checks(self):
-      # First, sort by the order of CheckType
-      checks_sorted = sorted(
-          self._checks,
-          key=lambda x: (self.check_display_order.index(x.type), x.code.value)
-      )
-      return checks_sorted
-
     def _get_longest_message(self):
       size = 0
       for check in self._checks:
@@ -86,7 +89,6 @@ class SanityCheck():
 
     def display(self):
       size = self._get_longest_message()
-      self.order_checks()
       current_type = None
       for check in self._checks:
         if current_type != check.type:
@@ -97,23 +99,21 @@ class SanityCheck():
 
     # Check HA groups
     def _validate_ha_groups(self):
-      check = Check(CheckType.HA, "Check HA groups", CheckCode.OK)
+      check = Check(CheckType.HA, "Check HA groups")
       for group in self._ha['groups']:
         num_nodes = len(group['nodes'].split(","))
         if num_nodes < 2:
-          check.add_messages(
-            f"Group {group['group']} contain only {num_nodes} node"
-          )
+          msg = f"Group {group['group']} contain only {num_nodes} node"
+          check.add_messages(CheckMessage(CheckCode.WARN, msg))
 
-      if check.messages:
-        check.code = CheckCode.WARN
-        return check
-      check.add_messages("HA Group checked")
+      if check.messages == None:
+        msg = "HA Group checked"
+        check.add_messages(CheckMessage(CheckCode.OK, msg))
       return check
 
     # Check disk are shared
     def _validate_ha_vms(self):
-      check = Check(CheckType.HA, "Check VMs in a HA group", CheckCode.OK)
+      check = Check(CheckType.HA, "Check VMs in a HA group")
       ha_resources = [r for r in self._ha['resources'] if r['type'] in ['vm']]
       ha_vms = []
       for resource in ha_resources:
@@ -139,11 +139,10 @@ class SanityCheck():
             vms_not_consistent.append(result)
 
         for vm in vms_not_consistent:
-          check.add_messages("Node '%s' has VM '%s' with disk(s) '%s' not on shared storage" % (vm['node'], vm['name'], ', '.join(vm['disks'])))
+          msg = f"Node '{vm['node']}' has VM '{vm['name']}' with disk(s) '{', '.join(vm['disks'])}' not on shared storage"
+          check.add_messages(CheckMessage(CheckCode.WARN, msg))
 
-      if check.messages:
-        check.code = CheckCode.WARN
-        return check
-
-      check.add_messages("HA VMS checked")
+      if not check.messages:
+        msg = "HA VMS checked"
+        check.add_messages(CheckMessage(CheckCode.OK, msg))
       return check
