@@ -15,7 +15,7 @@ def print_tableoutput(table, columns=[], sortby=None, filters=[]):
   if len(columns) == 0:
     columns = table[0].keys()
   else:
-    table = [ filter_keys(n.__dict__, columns) for n in table ]
+    table = [ filter_keys(n.__dict__ if hasattr(n, '__dict__') else n, columns) for n in table ]
 
   do_sort = not sortby is None
 
