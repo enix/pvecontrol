@@ -24,4 +24,4 @@ def action_storagelist(proxmox, args):
   for id, storage in storages.items():
     storages[id]['nodes'] = ', '.join(storages[id]['nodes'])
 
-  print_tableoutput(storages.values(), keys_to_order, args.sort_by)
+  print_tableoutput(storages.values(), keys_to_order, args.sort_by, filters=args.filter)

@@ -47,6 +47,7 @@ def _parser():
   # storagelist parser
   parser_storagelist = subparsers.add_parser('storagelist', help='Show cluster status')
   parser_storagelist.add_argument('--sort-by', action='store', help="Key used to sort items", default="storage")
+  parser_storagelist.add_argument('--filter', action='append', nargs=2, type=_filter_type, metavar=('COLUMN', 'REGEXP'), help="Regexp to filter items", default=[])
   parser_storagelist.set_defaults(func=storage.action_storagelist)
 
   # nodelist parser
