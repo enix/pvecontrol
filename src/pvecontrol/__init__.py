@@ -4,6 +4,7 @@ import sys
 import argparse
 import logging
 import re
+import subprocess
 import urllib3
 
 from pvecontrol import actions, node, vm, task, storage
@@ -148,6 +149,19 @@ def _parser():
 
     return parser.parse_args()
 
+def _execute_command(cmd):
+  cmd = f'printf "%s" "$({cmd})"'  # avoid terminal \n
+  return subprocess.run(cmd, shell=True, check=True, capture_output=True).stdout
+
+def run_auth_commands(clusterconfig):
+  regex = r"^\$\((.*)\)$"
+  result = re.match(regex, clusterconfig.user)
+  if result:
+    clusterconfig.user = _execute_command(result.group(1))
+
+  result = re.match(regex, clusterconfig.password)
+  if result:
+    clusterconfig.password = _execute_command(result.group(1))
 
 def main():
     # Disable urllib3 warnings about invalid certs
@@ -175,7 +189,7 @@ def main():
     logging.info("Proxmox cluster: %s", args.cluster)
 
     clusterconfig = set_config(args.cluster)
-
+    run_auth_commands(clusterconfig)
     proxmoxcluster = PVECluster(
         clusterconfig.name,
         clusterconfig.host,
