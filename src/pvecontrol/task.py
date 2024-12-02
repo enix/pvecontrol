@@ -27,22 +27,11 @@ class PVETask:
     self.starttime = task["starttime"]
     self.type = task["type"]
     self.user = task["user"]
+    self.runningstatus = TaskRunningStatus["vanished"]
+    self.endtime = 0
+    self.exitstatus = "UNK"
 
-    # This is bugguy. replace with a catch / except ?
-    #    if self.node != NodeStatus.online:
-    #      return
-    try:
-      status = self._api.nodes(self.node).tasks(self.upid).status.get()
-    # Some task information can be vanished over time (tasks status files removed from the node filesystem)
-    # In this case API return an error and we consider this tasks vanished and don't get more informations
-    except proxmoxer.core.ResourceException:
-      self.runningstatus = TaskRunningStatus["vanished"]
-      self.endtime = 0
-      self.exitstatus = "UNK"
-    else:
-      self.runningstatus = TaskRunningStatus[status.get("status", "stopped")]
-      self.endtime = status.get("endtime", 0)
-      self.exitstatus = status.get("exitstatus", "")
+    self.refresh()
 
   def log(self, limit = 0, start = 0):
     return(self._api.nodes(self.node).tasks(self.upid).log.get(limit=limit, start=start))
@@ -54,7 +43,19 @@ class PVETask:
     return(self.runningstatus == TaskRunningStatus.vanished)
 
   def refresh(self):
-    self._initstatus()
+    # This is bugguy. replace with a catch / except ?
+    #    if self.node != NodeStatus.online:
+    #      return
+    try:
+      status = self._api.nodes(self.node).tasks(self.upid).status.get()
+    # Some task information can be vanished over time (tasks status files removed from the node filesystem)
+    # In this case API return an error and we consider this tasks vanished and don't get more informations
+    except proxmoxer.core.ResourceException:
+      pass
+    else:
+      self.runningstatus = TaskRunningStatus[status.get("status", "stopped")]
+      self.endtime = status.get("endtime", 0)
+      self.exitstatus = status.get("exitstatus", "")
 
   def decode_log(self, limit = 0, start = 0):
     log = self.log(limit, start)
