@@ -150,8 +150,7 @@ def _parser():
     return parser.parse_args()
 
 def _execute_command(cmd):
-  cmd = f'printf "%s" "$({cmd})"'  # avoid terminal \n
-  return subprocess.run(cmd, shell=True, check=True, capture_output=True).stdout
+  return subprocess.run(cmd, shell=True, check=True, capture_output=True).stdout.rstrip()
 
 def run_auth_commands(clusterconfig):
   regex = r"^\$\((.*)\)$"
