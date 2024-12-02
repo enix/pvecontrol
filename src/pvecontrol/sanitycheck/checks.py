@@ -15,7 +15,6 @@ class CheckCode(Enum):
 ICONS = {
   CheckCode.CRIT.value: '❌',
   CheckCode.WARN.value: '⚠️',
-  CheckCode.INFO.value: 'ℹ️',
   CheckCode.OK.value: '✅',
 }
 

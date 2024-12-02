@@ -1,10 +1,7 @@
-import re
-
 from enum import Enum
 
 from pvecontrol.vm import PVEVm
 from pvecontrol.vm import VmStatus
-from pvecontrol.storage import StorageShared
 
 
 COLUMNS = ["node", "status", "allocatedcpu", "maxcpu", "mem", "allocatedmem", "maxmem"]
