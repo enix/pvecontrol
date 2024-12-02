@@ -100,6 +100,7 @@ def _parser():
 
   # sanitycheck parser
   parser_sanitycheck = subparsers.add_parser('sanitycheck', help='Run Sanity checks on the cluster')
+  parser_sanitycheck.add_argument('--check', action='append', required=False, help="Check to run", default=[])
   parser_sanitycheck.set_defaults(func=actions.cluster.action_sanitycheck)
 
   # _test parser, hidden from help
