@@ -54,5 +54,6 @@ def action_sanitycheck(proxmox, args):
   # VM is running in cpu = host
   # VM is running in cpu = qemu64
   sc = SanityCheck(proxmox)
-  sc.run()
+  print(args.check)
+  sc.run(checks=args.check)
   sc.display()
