@@ -55,3 +55,16 @@ env = "GH_TOKEN"
 [tool.semantic_release.publish]
 dist_glob_patterns = ["dist/*"]
 upload_to_vcs_release = true
+
+[tool.black]
+line-length = 120
+exclude = '''
+/(
+    .git
+    .tox
+    .nox
+    .venv
+    build
+    dist
+)/
+'''
