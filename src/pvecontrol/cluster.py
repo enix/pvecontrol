@@ -29,23 +29,28 @@ class PVECluster:
         for storage in self.get_resources_storages():
             self.storages.append(PVEStorage(storage.pop("node"), storage.pop("id"), storage.pop("shared"), **storage))
 
-        self.nodes = []
-        for node in self._api.nodes.get():
-            self.nodes.append(PVENode(self._api, node["node"], node["status"], node))
-
-        self.tasks = []
-        for task in self._api.cluster.tasks.get():
-            logging.debug("Get task informations: %s" % (str(task)))
-            self.tasks.append(PVETask(self._api, task["upid"]))
-
         self.ha = {
             "groups": self._api.cluster.ha.groups.get(),
             "manager_status": self._api.cluster.ha.status.manager_status.get(),
             "resources": self._api.cluster.ha.resources.get(),
         }
 
+        self.tasks = []
+        for task in self._api.cluster.tasks.get():
+            logging.debug("Get task informations: %s" % (str(task)))
+            self.tasks.append(PVETask(self._api, task["upid"]))
+
     def refresh(self):
         self._initstatus()
+
+        def __str__(self):
+        output = "Proxmox VE Cluster %s\n" % self.name
+        output += "  Status: " + str(self.status) + "\n"
+        output += "  Resources: " + str(self.resources) + "\n"
+        output += "  Nodes:\n"
+        for node in self.nodes:
+            output += str(node) + "\n"
+        return output
 
     def vms(self):
         """Return all vms on this cluster"""
@@ -95,9 +100,6 @@ class PVECluster:
 
     def get_resources_vms(self):
         return [resource for resource in self.resources if resource["type"] == "qemu"]
-
-    def get_resources_nodes(self):
-        return [resource for resource in self.resources if resource["type"] == "node"]
 
     def get_resources_storages(self):
         return [resource for resource in self.resources if resource["type"] == "storage"]
