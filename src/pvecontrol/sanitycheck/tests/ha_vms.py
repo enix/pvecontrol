@@ -47,7 +47,7 @@ class HaVms(Check):
 
       for vm in vms_not_consistent:
         msg = f"Node '{vm['node']}' has VM '{vm['name']}' with disk(s) '{', '.join(vm['disks'])}' not on shared storage"
-        messages.append(CheckMessage(CheckCode.WARN, msg))
+        messages.append(CheckMessage(CheckCode.CRIT, msg))
 
     return messages
 
@@ -56,7 +56,7 @@ class HaVms(Check):
     for vm in ha_vms:
       if vm.config['cpu'] == 'host':
         msg = f"Node '{vm.node}' has VM '{vm.name}' with cpu type host"
-        messages.append(CheckMessage(CheckCode.CRIT, msg))
+        messages.append(CheckMessage(CheckCode.WARN, msg))
       else:
         msg = f"Node '{vm.node}' has VM '{vm.name}' with cpu type {vm.config['cpu']}"
         messages.append(CheckMessage(CheckCode.OK, msg))

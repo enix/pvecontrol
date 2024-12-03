@@ -1,3 +1,5 @@
+import sys
+
 from humanize import naturalsize
 
 from pvecontrol.node import NodeStatus
@@ -54,5 +56,6 @@ def action_sanitycheck(proxmox, args):
   # VM is running in cpu = host
   # VM is running in cpu = qemu64
   sc = SanityCheck(proxmox)
-  sc.run(checks=args.check)
+  exitcode = sc.run(checks=args.check)
   sc.display()
+  sys.exit(exitcode)

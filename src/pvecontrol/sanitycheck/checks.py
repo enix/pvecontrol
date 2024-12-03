@@ -46,6 +46,24 @@ class Check(ABC):
   def run(self):
     pass
 
+  @property
+  def status(self):
+    """Define status by the most import status in messages"""
+    status = []
+    for msg in self.messages:
+      # exit early if most import code is found.
+      if CheckCode.CRIT == msg.code:
+        return CheckCode.CRIT
+      status += msg.code
+
+    if CheckCode.WARN in status:
+      return CheckCode.WARN
+
+    if CheckCode.INFO in status:
+      return CheckCode.INFO
+
+    return CheckCode.OK
+
   def add_messages(self, messages):
     if isinstance(messages, CheckMessage):
       self.messages.append(messages)
