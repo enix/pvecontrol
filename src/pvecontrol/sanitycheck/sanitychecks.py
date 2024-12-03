@@ -1,4 +1,5 @@
 from pvecontrol.cluster import PVECluster
+from pvecontrol.sanitycheck.checks import CheckCode
 from pvecontrol.sanitycheck.tests import DEFAULT_CHECKS, DEFAULT_CHECK_IDS
 
 
@@ -18,12 +19,21 @@ class SanityCheck():
             f"Sanity check '{check}' doesn't exists.\n"
             f"Here available values are:\n{', '.join(DEFAULT_CHECK_IDS)}"
           )
-          return
+          return 1
 
       for id in checks:
         check = DEFAULT_CHECKS[id](self._proxmox)
         check.run()
         self._checks.append(check)
+
+      return self.get_exit_code()
+
+    def get_exit_code(self):
+      for check in self._checks:
+        # exit early if most import code is found.
+        if CheckCode.CRIT == check.status:
+          return 1
+      return 0
 
     def _get_longest_message(self):
       size = 0

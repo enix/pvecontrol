@@ -24,7 +24,7 @@ class Nodes(Check):
     for node in self.proxmox.nodes:
       if self._cpu_is_overcommited(node.maxcpu, self.proxmox.config['node']['cpufactor'], node.allocatedcpu):
         msg = f"Node {node.node} is in cpu overcommit status: {node.allocatedcpu} allocated but {node.maxcpu} available"
-        self.add_messages(CheckMessage(CheckCode.CRIT, msg))
+        self.add_messages(CheckMessage(CheckCode.WARN, msg))
       else:
         msg = f"Node '{node.node}' isn't in cpu overcommit"
         self.add_messages(CheckMessage(CheckCode.OK, msg))
