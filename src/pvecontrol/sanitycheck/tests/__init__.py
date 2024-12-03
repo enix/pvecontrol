@@ -1,15 +1,11 @@
-from pvecontrol.sanitycheck.checks import Check, CheckType, CheckMessage, CheckCode
+from .nodes import Nodes
+from .ha_groups import HaGroups
+from .ha_vms import HaVms
 
-# Check HA groups
-def get_checks(sanity):
-  check = Check(CheckType.HA, "Check HA groups")
-  for group in sanity._ha['groups']:
-    num_nodes = len(group['nodes'].split(","))
-    if num_nodes < 2:
-      msg = f"Group {group['group']} contain only {num_nodes} node"
-      check.add_messages(CheckMessage(CheckCode.WARN, msg))
+DEFAULT_CHECKS = {
+    Nodes.id: Nodes,
+    HaGroups.id: HaGroups,
+    HaVms.id: HaVms
+}
 
-  if not check.messages:
-    msg = "HA Group checked"
-    check.add_messages(CheckMessage(CheckCode.OK, msg))
-  return check
+DEFAULT_CHECK_IDS = DEFAULT_CHECKS.keys()

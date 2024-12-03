@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from enum import Enum
 
 from pvecontrol.utils import fonts
@@ -30,14 +31,20 @@ class CheckMessage:
   def __len__(self):
     return len(self.message)
 
-class Check:
+class Check(ABC):
 
-  def __init__(self, type: CheckType, name: str, messages = None):
+  type = ""
+  name = ""
+
+  def __init__(self, proxmox, messages = None):
     if messages is None:
       messages = []
-    self.type = type
-    self.name = name
+    self.proxmox = proxmox
     self.messages = messages
+
+  @abstractmethod
+  def run(self):
+    pass
 
   def add_messages(self, messages):
     if isinstance(messages, CheckMessage):
