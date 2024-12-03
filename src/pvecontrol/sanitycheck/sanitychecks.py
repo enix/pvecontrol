@@ -13,7 +13,9 @@ class SanityCheck():
         checks = DEFAULT_CHECK_IDS
 
       for id in checks:
-        DEFAULT_CHECKS[id](self._proxmox).run()
+        check = DEFAULT_CHECKS[id](self._proxmox)
+        check.run()
+        self._checks.append(check)
 
     def _get_longest_message(self):
       size = 0
