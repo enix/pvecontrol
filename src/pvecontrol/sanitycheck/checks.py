@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 
-from pvecontrol.utils import fonts
+from pvecontrol.utils import fonts, teminal_support_bold, teminal_support_utf_8
 
 class CheckType(Enum):
   HA = 'HIGHT_AVAILABILITY'
@@ -13,10 +13,18 @@ class CheckCode(Enum):
   INFO = 'INFO'
   OK = 'OK'
 
-ICONS = {
+ICONS_UTF8 = {
   CheckCode.CRIT.value: '❌',
   CheckCode.WARN.value: '⚠️',
+  CheckCode.INFO.value: 'ℹ️',
   CheckCode.OK.value: '✅',
+}
+
+ICONS_ASCII = {
+  CheckCode.CRIT.value: '[CRIT]',
+  CheckCode.WARN.value: '[WARN]',
+  CheckCode.INFO.value: '[INFO]',
+  CheckCode.OK.value: '[OK]',
 }
 
 class CheckMessage:
@@ -26,7 +34,12 @@ class CheckMessage:
 
   def display(self, padding_max_size):
     padding = padding_max_size - len(self.message)
-    print(f"{self.message}{padding * '.'}{ICONS[self.code.value]}")
+    msg = f"{self.message}{padding * '.'}"
+    if teminal_support_utf_8():
+      msg += ICONS_UTF8[self.code.value]
+    else:
+      msg += ICONS_ASCII[self.code.value]
+    print(msg)
 
   def __len__(self):
     return len(self.message)
@@ -54,7 +67,7 @@ class Check(ABC):
       # exit early if most import code is found.
       if CheckCode.CRIT == msg.code:
         return CheckCode.CRIT
-      status += msg.code
+      status.append(msg.code)
 
     if CheckCode.WARN in status:
       return CheckCode.WARN
@@ -74,7 +87,12 @@ class Check(ABC):
     self.code = code
 
   def display(self, padding_max_size):
-    print(f"{fonts.BOLD}{self.name}{fonts.END}\n")
+    if teminal_support_bold():
+      name = f"{fonts.BOLD}{self.name}{fonts.END}\n"
+    else:
+      name = f"{self.name}\n"
+    print(name)
+
     for msg in self.messages:
       msg.display(padding_max_size)
     print()
