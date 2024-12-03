@@ -2,6 +2,7 @@ import logging
 import time
 import sys
 import re
+import subprocess
 
 from prettytable import PrettyTable
 from collections import OrderedDict
@@ -17,6 +18,23 @@ class fonts:
    UNDERLINE = '\033[4m'
    END = '\033[0m'
 
+
+def teminal_support_colors():
+  try:
+    subprocess.run(["tput", "colors"], check=True, capture_output=True)
+  except subprocess.CalledProcessError:
+    return False
+  return True
+
+def teminal_support_bold():
+  try:
+    subprocess.run(["tput", "bold"], check=True, capture_output=True)
+  except subprocess.CalledProcessError:
+    return False
+  return True
+
+def teminal_support_utf_8():
+  return sys.stdout.encoding.lower() == 'utf-8'
 
 # Pretty output a table from a table of dicts
 # We assume all dicts have the same keys and are sorted by key
