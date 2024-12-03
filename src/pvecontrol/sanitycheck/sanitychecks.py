@@ -12,6 +12,14 @@ class SanityCheck():
       if not checks:
         checks = DEFAULT_CHECK_IDS
 
+      for check in checks:
+        if not check in DEFAULT_CHECK_IDS:
+          print(
+            f"Sanity check '{check}' doesn't exists.\n"
+            f"Here available values are:\n{', '.join(DEFAULT_CHECK_IDS)}"
+          )
+          return
+
       for id in checks:
         check = DEFAULT_CHECKS[id](self._proxmox)
         check.run()
