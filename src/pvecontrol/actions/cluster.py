@@ -54,7 +54,11 @@ def action_sanitycheck(proxmox, args):
       print("Node %s is in cpu overcommit status: %s allocated but %s available"%(node.node, node.allocatedcpu, node.maxcpu))
     if (node.allocatedmem +  proxmox.config['node']['memoryminimum']) >= node.maxmem:
       print("Node %s is in mem overcommit status: %s allocated but %s available"%(node.node, node.allocatedmem, node.maxmem))
+
+    vms_not_consitents = node.vms_onboot_not_consitent()
+    if len(vms_not_consitents) > 0:
+      print("Node %s has VM not set at start on boot: %s"%(node.node, [vm.name for vm in vms_not_consitents]))
+
   # More checks to implement
-  # VM is started but 'startonboot' not set
   # VM is running in cpu = host
   # VM is running in cpu = qemu64
