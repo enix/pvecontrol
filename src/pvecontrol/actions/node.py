@@ -25,7 +25,7 @@ def action_nodeevacuate(proxmox, args):
         print("Node %s does not exist" % args.node)
         return
     # check node is online
-    if srcnode.status != NodeStatus.online:
+    if srcnode.status != NodeStatus.ONLINE:
         print("Node %s is not online" % args.node)
         return
 
@@ -40,12 +40,12 @@ def action_nodeevacuate(proxmox, args):
             if not tg:
                 print("Target node %s does not exist, skipping" % t)
                 continue
-            if tg.status != NodeStatus.online:
+            if tg.status != NodeStatus.ONLINE:
                 print("Target node %s is not online, skipping" % t)
                 continue
             targets.append(tg)
     else:
-        targets = [n for n in proxmox.nodes if n.status == NodeStatus.online and n.node != srcnode.node]
+        targets = [n for n in proxmox.nodes if n.status == NodeStatus.ONLINE and n.node != srcnode.node]
     if len(targets) == 0:
         print("No target node available")
         return
@@ -54,7 +54,7 @@ def action_nodeevacuate(proxmox, args):
     plan = []
     for vm in srcnode.vms:
         logging.debug("Selecting node for VM: %i, maxmem: %i, cpus: %i" % (vm.vmid, vm.maxmem, vm.cpus))
-        if vm.status != VmStatus.running and not args.no_skip_stopped:
+        if vm.status != VmStatus.RUNNING and not args.no_skip_stopped:
             logging.debug("VM %i is not running, skipping" % (vm.vmid))
             continue
         # check ressources

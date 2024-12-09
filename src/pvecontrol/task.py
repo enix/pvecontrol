@@ -2,8 +2,6 @@ from enum import Enum
 import proxmoxer.core
 from proxmoxer.tools import Tasks
 
-from pvecontrol.node import NodeStatus
-
 
 COLUMNS = [
     "upid",
@@ -17,9 +15,9 @@ COLUMNS = [
 
 
 class TaskRunningStatus(Enum):
-    running = 0
-    stopped = 1
-    vanished = 2
+    RUNNING = 0
+    STOPPED = 1
+    VANISHED = 2
 
 
 class PVETask:
@@ -36,7 +34,7 @@ class PVETask:
         self.starttime = task["starttime"]
         self.type = task["type"]
         self.user = task["user"]
-        self.runningstatus = TaskRunningStatus["vanished"]
+        self.runningstatus = TaskRunningStatus.VANISHED
         self.endtime = 0
         self.exitstatus = "UNK"
 
@@ -46,10 +44,10 @@ class PVETask:
         return self._api.nodes(self.node).tasks(self.upid).log.get(limit=limit, start=start)
 
     def running(self):
-        return self.runningstatus == TaskRunningStatus.running
+        return self.runningstatus == TaskRunningStatus.RUNNING
 
     def vanished(self):
-        return self.runningstatus == TaskRunningStatus.vanished
+        return self.runningstatus == TaskRunningStatus.VANISHED
 
     def refresh(self):
         # This is bugguy. replace with a catch / except ?
@@ -62,7 +60,7 @@ class PVETask:
         except proxmoxer.core.ResourceException:
             pass
         else:
-            self.runningstatus = TaskRunningStatus[status.get("status", "stopped")]
+            self.runningstatus = TaskRunningStatus[status.get("status", "stopped").upper()]
             self.endtime = status.get("endtime", 0)
             self.exitstatus = status.get("exitstatus", "")
 

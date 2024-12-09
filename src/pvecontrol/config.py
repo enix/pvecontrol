@@ -1,6 +1,6 @@
-import confuse
 import logging
 import sys
+import confuse
 
 
 configtemplate = {
@@ -25,13 +25,9 @@ configtemplate = {
 
 config = confuse.LazyConfig("pvecontrol", __name__)
 
-validconfig = None
-
-
 def set_config(cluster_name):
-    global validconfig
     validconfig = config.get(configtemplate)
-    logging.debug("configuration is %s" % validconfig)
+    logging.debug("configuration is %s", validconfig)
 
     # FIXME trouver une methode plus clean pour recuperer la configuration du bon cluster
     # Peut etre rework la configuration completement avec un dict
@@ -40,9 +36,9 @@ def set_config(cluster_name):
         if c.name == cluster_name:
             clusterconfig = c
     if not clusterconfig:
-        print("No such cluster %s" % cluster_name)
+        print("No such cluster %s", cluster_name)
         sys.exit(1)
-    logging.debug("clusterconfig is %s" % clusterconfig)
+    logging.debug("clusterconfig is %s", clusterconfig)
 
     for k, v in validconfig.node.items():
         clusterconfig.node[k] = clusterconfig.node[k] if clusterconfig.node.get(k) else v

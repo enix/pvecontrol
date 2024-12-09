@@ -2,17 +2,17 @@
 
 import sys
 import argparse
-import confuse
-import urllib3
 import logging
 import re
-import pvecontrol.actions
+import confuse
+import urllib3
 
+from pvecontrol import actions, node, vm, task, storage
 from pvecontrol.cluster import PVECluster
 from pvecontrol.config import set_config
 
 
-def action_test(proxmox, args):
+def action_test(proxmox, _args):
     """Hidden optional test action"""
     print(proxmox)
 
@@ -21,8 +21,8 @@ def _make_filter_type_generator(columns):
     def _regexp_type(value):
         try:
             return re.compile(value)
-        except re.error:
-            raise argparse.ArgumentTypeError(f"invalid regular expression: '{value}'")
+        except re.error as e:
+            raise argparse.ArgumentTypeError(f"invalid regular expression: '{value}'", e)
 
     def _column_type(value):
         if not value in columns:
@@ -37,7 +37,8 @@ def _make_filter_type_generator(columns):
 
 def add_table_related_arguments(parser, columns, default_sort):
     filter_type_generator = _make_filter_type_generator(columns)
-    filter_type = lambda x: next(filter_type_generator)(x)
+    def filter_type(x):
+        return next(filter_type_generator)(x)
     parser.add_argument(
         "--sort-by",
         action="store",
@@ -160,7 +161,7 @@ def main():
                 f"error: cannot sort by column '{args.sort_by}' because it's not included in the --columns flag.\n"
             )
             sys.exit(1)
-        for key, value in args.filter:
+        for key, _value in args.filter:
             if not key in args.columns:
                 sys.stderr.write(
                     f"error: cannot filter on the column '{key}' because it's not included in the --columns flag.\n"
@@ -169,8 +170,8 @@ def main():
 
     # configure logging
     logging.basicConfig(encoding="utf-8", level=logging.DEBUG if args.debug else logging.INFO)
-    logging.debug("Arguments: %s" % args)
-    logging.info("Proxmox cluster: %s" % args.cluster)
+    logging.debug("Arguments: %s", args)
+    logging.info("Proxmox cluster: %s", args.cluster)
 
     clusterconfig = set_config(args.cluster)
 

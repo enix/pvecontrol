@@ -5,8 +5,8 @@ COLUMNS = ["vmid", "name", "status", "node", "cpus", "maxmem", "maxdisk"]
 
 
 class VmStatus(Enum):
-    stopped = 0
-    running = 1
+    STOPPED = 0
+    RUNNING = 1
 
 
 class PVEVm:
@@ -14,20 +14,23 @@ class PVEVm:
 
     _api = None
 
-    def __init__(self, api, node, vmid, status, input={}):
+    def __init__(self, api, node, vmid, status, kwargs=None):
+        if not kwargs:
+            kwargs = {}
+
         self.vmid = vmid
-        self.status = VmStatus[status]
+        self.status = VmStatus[status.upper()]
         self.node = node
         self._api = api
 
-        self.name = input.get("name", "")
-        self.lock = input.get("lock", "")
-        self.cpus = input.get("cpus", 0)
-        self.maxdisk = input.get("maxdisk", 0)
-        self.maxmem = input.get("maxmem", 0)
-        self.uptime = input.get("uptime", 0)
-        self.tags = input.get("tags", "")
-        self.template = input.get("template", 0)
+        self.name = kwargs.get("name", "")
+        self.lock = kwargs.get("lock", "")
+        self.cpus = kwargs.get("cpus", 0)
+        self.maxdisk = kwargs.get("maxdisk", 0)
+        self.maxmem = kwargs.get("maxmem", 0)
+        self.uptime = kwargs.get("uptime", 0)
+        self.tags = kwargs.get("tags", "")
+        self.template = kwargs.get("template", 0)
 
         self.config = self._api.nodes(self.node).qemu(vmid).config.get()
 
