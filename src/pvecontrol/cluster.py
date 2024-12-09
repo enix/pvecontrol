@@ -12,18 +12,18 @@ class PVECluster:
     """Proxmox VE Cluster"""
 
     def __init__(self, name, host, user, password, config, verify_ssl=False):
-        self._api = ProxmoxAPI(host, user=user, password=password, verify_ssl=verify_ssl)
+        self.api = ProxmoxAPI(host, user=user, password=password, verify_ssl=verify_ssl)
         self.name = name
         self.config = config
         self._initstatus()
 
     def _initstatus(self):
-        self.status = self._api.cluster.status.get()
-        self.resources = self._api.cluster.resources.get()
+        self.status = self.api.cluster.status.get()
+        self.resources = self.api.cluster.resources.get()
 
         self.nodes = []
-        for node in self._api.nodes.get():
-            self.nodes.append(PVENode(self._api, node["node"], node["status"], node))
+        for node in self.api.nodes.get():
+            self.nodes.append(PVENode(self.api, node["node"], node["status"], node))
 
         self.storages = []
         for storage in self.get_resources_storages():
@@ -36,16 +36,12 @@ class PVECluster:
         }
 
         self.tasks = []
-        for task in self._api.cluster.tasks.get():
+        for task in self.api.cluster.tasks.get():
             logging.debug("Get task informations: %s", (str(task)))
-            self.tasks.append(PVETask(self._api, task["upid"]))
+            self.tasks.append(PVETask(self.api, task["upid"]))
 
     def refresh(self):
         self._initstatus()
-
-    @property
-    def api(self):
-        self._api
 
     def __str__(self):
         output =  f"Proxmox VE Cluster {self.name}\n"

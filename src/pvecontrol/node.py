@@ -24,7 +24,7 @@ class PVENode:
 
         self.node = node
         self.status = NodeStatus[status.upper()]
-        self._api = api
+        self.api = api
         self.cpu = kwargs.get("cpu", 0)
         self.allocatedcpu = 0
         self.maxcpu = kwargs.get("maxcpu", 0)
@@ -52,8 +52,8 @@ class PVENode:
         self.vms = []
         if self.status == NodeStatus.ONLINE:
             self.vms = [
-                PVEVm(self._api, self.node, vm["vmid"], vm["status"], vm)
-                for vm in self._api.nodes(self.node).qemu.get()
+                PVEVm(self.api, self.node, vm["vmid"], vm["status"], vm)
+                for vm in self.api.nodes(self.node).qemu.get()
             ]
 
     def _init_allocatedmem(self):
