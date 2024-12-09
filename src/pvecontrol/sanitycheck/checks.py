@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 
-from pvecontrol.utils import fonts, teminal_support_bold, teminal_support_utf_8
+from pvecontrol.utils import fonts, teminal_support_bold, teminal_support_utf_8, teminal_support_colors
 
 class CheckType(Enum):
   HA = 'HIGHT_AVAILABILITY'
@@ -27,6 +27,22 @@ ICONS_ASCII = {
   CheckCode.OK.value: '[OK]',
 }
 
+ICONS_COLORED_ASCII = {
+  CheckCode.CRIT.value: f'{fonts.RED}[CRIT]{fonts.END}',
+  CheckCode.WARN.value: f'{fonts.YELLOW}[WARN]{fonts.END}',
+  CheckCode.INFO.value: f'{fonts.BLUE}[INFO]{fonts.END}',
+  CheckCode.OK.value: f'{fonts.GREEN}[OK]{fonts.END}',
+}
+
+def set_icons():
+  if teminal_support_utf_8():
+    return ICONS_UTF8
+  if teminal_support_colors():
+    return ICONS_COLORED_ASCII
+  return ICONS_ASCII
+
+ICONS = set_icons()
+
 class CheckMessage:
   def __init__(self, code: CheckCode, message):
     self.code = code
@@ -34,11 +50,7 @@ class CheckMessage:
 
   def display(self, padding_max_size):
     padding = padding_max_size - len(self.message)
-    msg = f"{self.message}{padding * '.'}"
-    if teminal_support_utf_8():
-      msg += ICONS_UTF8[self.code.value]
-    else:
-      msg += ICONS_ASCII[self.code.value]
+    msg = f"{self.message}{padding * '.'}{ICONS[self.code.value]}"
     print(msg)
 
   def __len__(self):
