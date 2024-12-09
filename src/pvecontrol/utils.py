@@ -4,10 +4,10 @@ import sys
 import re
 import curses
 
-from prettytable import PrettyTable
 from collections import OrderedDict
-from humanize import naturalsize
 from enum import Enum
+from humanize import naturalsize
+from prettytable import PrettyTable
 
 
 class fonts:
@@ -54,7 +54,12 @@ NATURALSIZE_KEYS = [
 
 # Pretty output a table from a table of dicts
 # We assume all dicts have the same keys and are sorted by key
-def print_tableoutput(table, columns=[], sortby=None, filters=[]):
+def print_tableoutput(table, columns=None, sortby=None, filters=None):
+    if not columns:
+        columns = []
+    if not filters:
+        filters = []
+
     if len(columns) == 0:
         columns = table[0].keys()
     else:
@@ -85,11 +90,11 @@ def print_tableoutput(table, columns=[], sortby=None, filters=[]):
     print(x.get_string(sortby="sortby" if do_sort else None, fields=columns))
 
 
-def filter_keys(input, keys):
+def filter_keys(input_d, keys):
     # Filter keys from input dict
     output = OrderedDict()
     for key in keys:
-        output[key] = input[key]
+        output[key] = input_d[key]
     return output
 
 
@@ -128,7 +133,7 @@ def print_task(proxmox, upid, follow=False, wait=False):
                 log = task.log(limit=0, start=lastline)
                 logging.debug("Task Log: %s", log)
                 for line in log:
-                    print("%s" % line["t"])
+                    print(str({line["t"]}))
                     if line["n"] > lastline:
                         lastline = line["n"]
                 time.sleep(1)
