@@ -127,7 +127,7 @@ Install python requirements and directly use the script. All the configurations 
 
 ```shell
 pip3 install -r requirements.txt
-python3 src/pvecontrol/pvecontrol.py -h
+python3 src/main.py -h
 ```
 
 This project use *semantic versioning* with [python-semantic-release](https://python-semantic-release.readthedocs.io/en/latest/) toolkit in order to automate release process. All the commits must so use the [Angular Commit Message Conventions](https://github.com/angular/angular/blob/master/CONTRIBUTING.md#-commit-message-format). Repository `main` branch is also protected to prevent any unwanted publish of a new release. All updates must go thru a PR with a review.
