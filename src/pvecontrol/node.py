@@ -8,9 +8,9 @@ COLUMNS = ["node", "status", "allocatedcpu", "maxcpu", "mem", "allocatedmem", "m
 
 
 class NodeStatus(Enum):
-    unknown = 0
-    online = 1
-    offline = 2
+    UNKNOWN = 0
+    ONLINE = 1
+    OFFLINE = 2
 
 
 class PVENode:
@@ -20,7 +20,7 @@ class PVENode:
 
     def __init__(self, api, node, status, input={}):
         self.node = node
-        self.status = NodeStatus[status]
+        self.status = NodeStatus[status.upper()]
         self._api = api
         self.cpu = input.get("cpu", 0)
         self.allocatedcpu = 0
@@ -47,7 +47,7 @@ class PVENode:
 
     def _init_vms(self):
         self.vms = []
-        if self.status == NodeStatus.online:
+        if self.status == NodeStatus.ONLINE:
             self.vms = [
                 PVEVm(self._api, self.node, vm["vmid"], vm["status"], vm)
                 for vm in self._api.nodes(self.node).qemu.get()
@@ -57,7 +57,7 @@ class PVENode:
         """Compute the amount of memory allocated to running VMs"""
         self.allocatedmem = 0
         for vm in self.vms:
-            if vm.status != VmStatus.running:
+            if vm.status != VmStatus.RUNNING:
                 continue
             # This is in MB in configuration
             self.allocatedmem += int(vm.config["memory"]) * 1024 * 1024
@@ -66,7 +66,7 @@ class PVENode:
         """Compute the amount of cpu allocated to running VMs"""
         self.allocatedcpu = 0
         for vm in self.vms:
-            if vm.status != VmStatus.running:
+            if vm.status != VmStatus.RUNNING:
                 continue
             if "sockets" in vm.config:
                 self.allocatedcpu += vm.config["sockets"] * vm.config["cores"]

@@ -42,9 +42,9 @@ def action_clusterstatus(proxmox, args):
     Memory: {metrics_memory_output}
     Disk: {metrics_disk_output}
   Nodes:
-    Offline: {len([node for node in proxmox.nodes if node.status == NodeStatus.offline])}
-    Online: {len([node for node in proxmox.nodes if node.status == NodeStatus.online])}
-    Unknown: {len([node for node in proxmox.nodes if node.status == NodeStatus.unknown])}
+    Offline: {len([node for node in proxmox.nodes if node.status == NodeStatus.OFFLINE])}
+    Online: {len([node for node in proxmox.nodes if node.status == NodeStatus.ONLINE])}
+    Unknown: {len([node for node in proxmox.nodes if node.status == NodeStatus.UNKNOWN])}
   """
 
     print(output)

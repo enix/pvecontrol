@@ -68,3 +68,17 @@ exclude = '''
     dist
 )/
 '''
+
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length = 150
+disable = '''
+no-member,
+missing-module-docstring,
+missing-function-docstring,
+too-many-instance-attributes,
+missing-class-docstring,
+too-few-public-methods,
+fixme,
+too-many-arguments,
+too-many-positional-arguments
+'''
