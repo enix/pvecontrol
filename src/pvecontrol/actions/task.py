@@ -1,4 +1,4 @@
-from pvecontrol.utils import print_task, print_tableoutput, filter_keys
+from pvecontrol.utils import print_task, print_tableoutput
 
 
 def action_tasklist(proxmox, args):
