@@ -15,8 +15,8 @@ COLUMNS = [
 
 
 class StorageShared(Enum):
-    local = 0
-    shared = 1
+    LOCAL = 0
+    SHARED = 1
 
 
 class PVEStorage:
@@ -31,8 +31,8 @@ class PVEStorage:
         "test": None,
     }
 
-    def __init__(self, node, id, shared, **kwargs):
-        self.id = id
+    def __init__(self, node, storage_id, shared, **kwargs):
+        self.id = storage_id
         self.node = node
 
         self.shared = STORAGE_SHARED_ENUM[shared]
