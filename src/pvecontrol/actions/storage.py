@@ -16,7 +16,7 @@ def action_storagelist(proxmox, args):
             storages[storage.id] = value
             storages[storage.id]["nodes"] += [node]
 
-    for id, storage in storages.items():
-        storages[id]["nodes"] = ", ".join(storages[id]["nodes"])
+    for _id, storage in storages.items():
+        storage["nodes"] = ", ".join(storage["nodes"])
 
     print_tableoutput(storages.values(), COLUMNS, sortby=args.sort_by, filters=args.filter)
