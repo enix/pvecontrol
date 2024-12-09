@@ -4,7 +4,6 @@ import sys
 import argparse
 import logging
 import re
-import confuse
 import urllib3
 
 from pvecontrol import actions, node, vm, task, storage
