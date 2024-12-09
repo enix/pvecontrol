@@ -37,19 +37,19 @@ class PVECluster:
 
         self.tasks = []
         for task in self._api.cluster.tasks.get():
-            logging.debug("Get task informations: %s" % (str(task)))
+            logging.debug("Get task informations: %s", (str(task)))
             self.tasks.append(PVETask(self._api, task["upid"]))
 
     def refresh(self):
         self._initstatus()
 
-        def __str__(self):
-        output = "Proxmox VE Cluster %s\n" % self.name
-        output += "  Status: " + str(self.status) + "\n"
-        output += "  Resources: " + str(self.resources) + "\n"
+    def __str__(self):
+        output =  f"Proxmox VE Cluster {self.name}\n"
+        output += f"  Status: {self.status}\n"
+        output += f"  Resources: {self.resources}\n"
         output += "  Nodes:\n"
         for node in self.nodes:
-            output += str(node) + "\n"
+            output += f"{node}\n"
         return output
 
     def vms(self):
@@ -109,9 +109,9 @@ class PVECluster:
 
     def cpu_metrics(self):
         nodes = self.get_resources_nodes()
-        total_cpu = sum([node["maxcpu"] for node in nodes])
-        total_cpu_usage = sum([node["cpu"] for node in nodes])
-        total_cpu_allocated = sum([node.allocatedcpu for node in self.nodes])
+        total_cpu = sum(node["maxcpu"] for node in nodes)
+        total_cpu_usage = sum(node["cpu"] for node in nodes)
+        total_cpu_allocated = sum(node.allocatedcpu for node in self.nodes)
         cpu_percent = total_cpu_usage / total_cpu * 100
 
         return {
@@ -123,9 +123,9 @@ class PVECluster:
 
     def memory_metrics(self):
         nodes = self.get_resources_nodes()
-        total_memory = sum([node["maxmem"] for node in nodes])
-        total_memory_usage = sum([node["mem"] for node in nodes])
-        total_memory_allocated = sum([node.allocatedmem for node in self.nodes])
+        total_memory = sum(node["maxmem"] for node in nodes)
+        total_memory_usage = sum(node["mem"] for node in nodes)
+        total_memory_allocated = sum(node.allocatedmem for node in self.nodes)
         memory_percent = total_memory_usage / total_memory * 100
 
         return {
@@ -137,8 +137,8 @@ class PVECluster:
 
     def disk_metrics(self):
         storages = self.get_resources_storages()
-        total_disk = sum([node["maxdisk"] for node in storages])
-        total_disk_usage = sum([node["disk"] for node in storages])
+        total_disk = sum(node["maxdisk"] for node in storages)
+        total_disk_usage = sum(node["disk"] for node in storages)
         disk_percent = total_disk_usage / total_disk * 100
 
         return {
