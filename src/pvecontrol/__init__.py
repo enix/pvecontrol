@@ -6,6 +6,7 @@ import logging
 import re
 import subprocess
 import urllib3
+import shtab
 
 from pvecontrol import actions, node, vm, task, storage
 from pvecontrol.cluster import PVECluster
@@ -146,6 +147,9 @@ def _parser():
     # _test parser, hidden from help
     parser_test = subparsers.add_parser("_test")
     parser_test.set_defaults(func=action_test)
+
+    # shell autocomplete generation
+    shtab.add_argument_to(parser, ["-s", "--print-completion"])
 
     return parser.parse_args()
 
