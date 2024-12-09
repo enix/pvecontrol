@@ -43,6 +43,10 @@ class PVECluster:
     def refresh(self):
         self._initstatus()
 
+    @property
+    def api(self):
+        self._api
+
     def __str__(self):
         output =  f"Proxmox VE Cluster {self.name}\n"
         output += f"  Status: {self.status}\n"
