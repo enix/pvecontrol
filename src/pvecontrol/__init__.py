@@ -37,8 +37,10 @@ def _make_filter_type_generator(columns):
 
 def add_table_related_arguments(parser, columns, default_sort):
     filter_type_generator = _make_filter_type_generator(columns)
+
     def filter_type(x):
         return next(filter_type_generator)(x)
+
     parser.add_argument(
         "--sort-by",
         action="store",
