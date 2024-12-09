@@ -1,32 +1,26 @@
 import logging
 import sys
-import time
 
-from pvecontrol.utils import (
-    print_task,
-    print_taskstatus,
-    print_tableoutput,
-    filter_keys,
-)
+from pvecontrol.utils import print_task, print_tableoutput
 
 
 def _get_vm(proxmox, vmid):
     for vm in proxmox.vms():
-        logging.debug("_get_vm: %s" % vm)
+        logging.debug("_get_vm: %s", vm)
         if vm.vmid == vmid:
             return vm
     return None
 
 
 def action_vmmigrate(proxmox, args):
-    logging.debug("ARGS: %s" % args)
+    logging.debug("ARGS: %s", args)
     # Migrate a vm to a node
     vmid = int(args.vmid)
     target = str(args.target)
 
     # Check that vmid exists
     vm = _get_vm(proxmox, vmid)
-    logging.debug("Source vm: %s" % vm)
+    logging.debug("Source vm: %s", vm)
     if not vm:
         print("Source vm not found")
         sys.exit(1)
@@ -35,7 +29,7 @@ def action_vmmigrate(proxmox, args):
     if not node:
         print("Source node does not exists")
         sys.exit(1)
-    logging.debug("Source node: %s" % node)
+    logging.debug("Source node: %s", node)
 
     # Check target node exists
     target = proxmox.find_node(target)
@@ -46,8 +40,9 @@ def action_vmmigrate(proxmox, args):
     # FIXME
 
     # Check que la migration est possible
-    check = proxmox._api.nodes(node.node).qemu(vmid).migrate.get(node=node.node, target=target.node)
-    logging.debug("Migration check: %s" % check)
+    check = proxmox.api.nodes(node.node).qemu(
+        vmid).migrate.get(node=node.node, target=target.node)
+    logging.debug("Migration check: %s", check)
     options = {}
     options["node"] = node.node
     options["target"] = target.node
@@ -57,10 +52,10 @@ def action_vmmigrate(proxmox, args):
 
     if not args.dry_run:
         # Lancer tache de migration
-        upid = proxmox._api.nodes(node.node).qemu(vmid).migrate.post(**options)
+        upid = proxmox.api.nodes(node.node).qemu(vmid).migrate.post(**options)
         # Suivre la task cree
         proxmox.refresh()
-        task = proxmox.find_task(upid)
+        _task = proxmox.find_task(upid)
         print_task(proxmox, upid, args.follow, args.wait)
     else:
         print("Dry run, skipping migration")
@@ -69,4 +64,5 @@ def action_vmmigrate(proxmox, args):
 def action_vmlist(proxmox, args):
     """List VMs in the Proxmox Cluster"""
     vms = proxmox.vms()
-    print_tableoutput(vms, columns=args.columns, sortby=args.sort_by, filters=args.filter)
+    print_tableoutput(vms, columns=args.columns,
+                      sortby=args.sort_by, filters=args.filter)
