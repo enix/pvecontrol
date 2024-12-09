@@ -23,3 +23,29 @@ jobs:
         pip install black
     - name: Run black
       run: python -m black . --check
+
+  # Run tests for lint
+  pylint:
+    runs-on: ubuntu-latest
+    concurrency: tests
+    environment: tests
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pylint
+    - name: Run pylint
+      run: python -m pylint src/
