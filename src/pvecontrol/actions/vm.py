@@ -54,6 +54,7 @@ def action_vmmigrate(proxmox, args):
         # Lancer tache de migration
         upid = proxmox.api.nodes(node.node).qemu(vmid).migrate.post(**options)
         # Suivre la task cree
+        # pylint: disable=duplicate-code
         proxmox.refresh()
         _task = proxmox.find_task(upid)
         print_task(proxmox, upid, args.follow, args.wait)
