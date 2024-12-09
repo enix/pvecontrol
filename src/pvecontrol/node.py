@@ -18,18 +18,21 @@ class PVENode:
 
     _api = None
 
-    def __init__(self, api, node, status, input={}):
+    def __init__(self, api, node, status, kwargs=None):
+        if not kwargs:
+            kwargs = {}
+
         self.node = node
         self.status = NodeStatus[status.upper()]
         self._api = api
-        self.cpu = input.get("cpu", 0)
+        self.cpu = kwargs.get("cpu", 0)
         self.allocatedcpu = 0
-        self.maxcpu = input.get("maxcpu", 0)
-        self.mem = input.get("mem", 0)
+        self.maxcpu = kwargs.get("maxcpu", 0)
+        self.mem = kwargs.get("mem", 0)
         self.allocatedmem = 0
-        self.maxmem = input.get("maxmem", 0)
-        self.disk = input.get("disk", 0)
-        self.maxdisk = input.get("maxdisk", 0)
+        self.maxmem = kwargs.get("maxmem", 0)
+        self.disk = kwargs.get("disk", 0)
+        self.maxdisk = kwargs.get("maxdisk", 0)
         self._init_vms()
         self._init_allocatedmem()
         self._init_allocatedcpu()
