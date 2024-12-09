@@ -40,8 +40,7 @@ def action_vmmigrate(proxmox, args):
     # FIXME
 
     # Check que la migration est possible
-    check = proxmox.api.nodes(node.node).qemu(
-        vmid).migrate.get(node=node.node, target=target.node)
+    check = proxmox.api.nodes(node.node).qemu(vmid).migrate.get(node=node.node, target=target.node)
     logging.debug("Migration check: %s", check)
     options = {}
     options["node"] = node.node
@@ -65,5 +64,4 @@ def action_vmmigrate(proxmox, args):
 def action_vmlist(proxmox, args):
     """List VMs in the Proxmox Cluster"""
     vms = proxmox.vms()
-    print_tableoutput(vms, columns=args.columns,
-                      sortby=args.sort_by, filters=args.filter)
+    print_tableoutput(vms, columns=args.columns, sortby=args.sort_by, filters=args.filter)

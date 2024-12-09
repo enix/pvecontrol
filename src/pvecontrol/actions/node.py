@@ -10,7 +10,7 @@ def action_nodelist(proxmox, args):
     print_tableoutput(proxmox.nodes, columns=args.columns, sortby=args.sort_by, filters=args.filter)
 
 
-#pylint: disable=too-many-branches,too-many-statements
+# pylint: disable=too-many-branches,too-many-statements
 def action_nodeevacuate(proxmox, args):
     """Evacuate a node by migrating all it's VM out"""
     # check node exists
@@ -56,7 +56,9 @@ def action_nodeevacuate(proxmox, args):
         for target in targets:
             logging.debug(
                 "Test target: %s, allocatedmem: %i, allocatedcpu: %i",
-                target.node, target.allocatedmem, target.allocatedcpu
+                target.node,
+                target.allocatedmem,
+                target.allocatedcpu,
             )
             if (vm.maxmem + target.allocatedmem) > (target.maxmem - proxmox.config["node"]["memoryminimum"]):
                 logging.debug("Discard target: %s, will overcommit ram", target.node)
@@ -75,7 +77,9 @@ def action_nodeevacuate(proxmox, args):
                 target.allocatedcpu += vm.cpus
                 logging.debug(
                     "Selected target %s: new allocatedmem %i, new allocatedcpu %i",
-                    target.node, target.allocatedmem, target.allocatedcpu
+                    target.node,
+                    target.allocatedmem,
+                    target.allocatedcpu,
                 )
                 break
         else:

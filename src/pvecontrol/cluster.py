@@ -44,7 +44,7 @@ class PVECluster:
         self._initstatus()
 
     def __str__(self):
-        output =  f"Proxmox VE Cluster {self.name}\n"
+        output = f"Proxmox VE Cluster {self.name}\n"
         output += f"  Status: {self.status}\n"
         output += f"  Resources: {self.resources}\n"
         output += "  Nodes:\n"

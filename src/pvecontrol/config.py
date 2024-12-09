@@ -25,6 +25,7 @@ configtemplate = {
 
 config = confuse.LazyConfig("pvecontrol", __name__)
 
+
 def set_config(cluster_name):
     validconfig = config.get(configtemplate)
     logging.debug("configuration is %s", validconfig)
