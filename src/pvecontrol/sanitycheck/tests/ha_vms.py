@@ -54,10 +54,10 @@ class HaVms(Check):
   def _check_cpu_ha_consistency(self, ha_vms):
     messages = []
     for vm in ha_vms:
-      if vm.config['cpu'] == 'host':
+      if vm.config.get('cpu', '') == 'host':
         msg = f"Node '{vm.node}' has VM '{vm.name}' with cpu type host"
         messages.append(CheckMessage(CheckCode.WARN, msg))
       else:
-        msg = f"Node '{vm.node}' has VM '{vm.name}' with cpu type {vm.config['cpu']}"
+        msg = f"Node '{vm.node}' has VM '{vm.name}' with cpu type {vm.config.get('cpu', 'Default')}"
         messages.append(CheckMessage(CheckCode.OK, msg))
     return messages
