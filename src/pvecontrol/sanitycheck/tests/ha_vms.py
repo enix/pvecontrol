@@ -11,12 +11,12 @@ class HaVms(Check):
   name = "Check VMs in a HA group"
 
   def run(self):
-    ha_resources = [r for r in self.proxmox.ha()['resources'] if r['type'] in ['vm']]
+    ha_resources = [r for r in self.proxmox.ha['resources'] if r['type'] in ['vm']]
     ha_vms = []
     for resource in ha_resources:
       id = resource['sid'].split(':')[1] # "sid = vm:100"
       if resource['type'] == 'vm':
-          ha_vms.append(self.proxmox.get_vm(id))
+        ha_vms.append(self.proxmox.get_vm(id))
 
     self.add_messages(self._check_disk_ha_consistency(ha_vms))
     self.add_messages(self._check_cpu_ha_consistency(ha_vms))
@@ -45,9 +45,9 @@ class HaVms(Check):
       if result['disks']:
           vms_not_consistent.append(result)
 
-      for vm in vms_not_consistent:
-        msg = f"Node '{vm['node']}' has VM '{vm['name']}' with disk(s) '{', '.join(vm['disks'])}' not on shared storage"
-        messages.append(CheckMessage(CheckCode.CRIT, msg))
+    for vm in vms_not_consistent:
+      msg = f"Node '{vm['node']}' has VM '{vm['name']}' with disk(s) '{', '.join(vm['disks'])}' not on shared storage"
+      messages.append(CheckMessage(CheckCode.CRIT, msg))
 
     return messages
 
