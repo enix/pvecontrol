@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
+from curses import has_colors as terminal_support_colors
 from enum import Enum
 
-from pvecontrol.utils import fonts, teminal_support_bold, teminal_support_utf_8, teminal_support_colors
+from pvecontrol.utils import fonts, teminal_support_utf_8
 
 class CheckType(Enum):
   HA = 'HIGH_AVAILABILITY'
@@ -37,7 +38,7 @@ ICONS_COLORED_ASCII = {
 def set_icons():
   if teminal_support_utf_8():
     return ICONS_UTF8
-  if teminal_support_colors():
+  if terminal_support_colors():
     return ICONS_COLORED_ASCII
   return ICONS_ASCII
 
@@ -99,7 +100,7 @@ class Check(ABC):
     self.code = code
 
   def display(self, padding_max_size):
-    if teminal_support_bold():
+    if terminal_support_colors():
       name = f"{fonts.BOLD}{self.name}{fonts.END}\n"
     else:
       name = f"{self.name}\n"

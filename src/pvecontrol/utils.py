@@ -18,21 +18,6 @@ class fonts:
    UNDERLINE = '\033[4m'
    END = '\033[0m'
 
-
-def teminal_support_colors():
-  try:
-    subprocess.run(["tput", "colors"], check=True, capture_output=True)
-  except subprocess.CalledProcessError:
-    return False
-  return True
-
-def teminal_support_bold():
-  try:
-    subprocess.run(["tput", "bold"], check=True, capture_output=True)
-  except subprocess.CalledProcessError:
-    return False
-  return True
-
 def teminal_support_utf_8():
   return sys.stdout.encoding.lower() == 'utf-8'
 
