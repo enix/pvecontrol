@@ -13,11 +13,11 @@ class Nodes(Check):
 
   def _check_mem_overcommit(self):
     for node in self.proxmox.nodes:
-      if self._mem_is_overcommited(node.allocatedmem, self.proxmox.config['node']['memoryminimum'], node.maxmem):
+      if self._mem_is_overcommited(node.maxmem, self.proxmox.config['node']['memoryminimum'], node.allocatedmem):
         msg = f"Node '{node.node}' is in mem overcommit status: {node.allocatedmem} allocated but {node.maxmem} available"
         self.add_messages(CheckMessage(CheckCode.CRIT, msg))
       else:
-        msg = f"Node '{node.node}' isn't in cpu overcommit"
+        msg = f"Node '{node.node}' isn't in mem overcommit"
         self.add_messages(CheckMessage(CheckCode.OK, msg))
 
   def _check_cpu_overcommit(self):

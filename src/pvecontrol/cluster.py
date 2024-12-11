@@ -35,6 +35,12 @@ class PVECluster:
       logging.debug("Get task informations: %s"%(str(task)))
       self.tasks.append(PVETask(self._api, task["upid"]))
 
+    self.ha = {
+      'groups': self._api.cluster.ha.groups.get(),
+      'manager_status': self._api.cluster.ha.status.manager_status.get(),
+      'resources': self._api.cluster.ha.resources.get()
+    }
+
   def refresh(self):
     self._initstatus()
 
@@ -132,8 +138,8 @@ class PVECluster:
 
   def disk_metrics(self):
     storages = self.get_resources_storages()
-    total_disk = sum([node['maxdisk'] for node in storages])
-    total_disk_usage = sum([node['disk'] for node in storages])
+    total_disk = sum([node.get('maxdisk', 0) for node in storages])
+    total_disk_usage = sum([node.get('disk', 0) for node in storages])
     disk_percent = total_disk_usage / total_disk *100
 
     return {
@@ -147,11 +153,4 @@ class PVECluster:
       "cpu": self.cpu_metrics(),
       "memory": self.memory_metrics(),
       "disk": self.disk_metrics()
-    }
-
-  def ha(self):
-    return {
-      'groups': self._api.cluster.ha.groups.get(),
-      'manager_status': self._api.cluster.ha.status.manager_status.get(),
-      'resources': self._api.cluster.ha.resources.get()
     }

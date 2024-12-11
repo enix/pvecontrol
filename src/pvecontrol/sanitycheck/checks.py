@@ -4,7 +4,7 @@ from enum import Enum
 from pvecontrol.utils import fonts, teminal_support_bold, teminal_support_utf_8, teminal_support_colors
 
 class CheckType(Enum):
-  HA = 'HIGHT_AVAILABILITY'
+  HA = 'HIGH_AVAILABILITY'
   Node = "NODE"
 
 class CheckCode(Enum):
