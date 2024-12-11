@@ -2,7 +2,7 @@ import logging
 import time
 import sys
 import re
-import subprocess
+import curses
 
 from prettytable import PrettyTable
 from collections import OrderedDict
@@ -17,6 +17,23 @@ class fonts:
    BOLD = '\033[1m'
    UNDERLINE = '\033[4m'
    END = '\033[0m'
+
+def terminal_support_colors():
+  try:
+      _stdscr = curses.initscr()
+      curses.start_color()
+      if curses.has_colors():
+          _num_colors = curses.color_pair(1)
+          if curses.COLORS > 0:
+              return True
+          else:
+              return False
+      else:
+          return False
+  except Exception as e:
+      return False
+  finally:
+      curses.endwin()
 
 def teminal_support_utf_8():
   return sys.stdout.encoding.lower() == 'utf-8'

@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
-from curses import has_colors as terminal_support_colors
 from enum import Enum
 
-from pvecontrol.utils import fonts, teminal_support_utf_8
+from pvecontrol.utils import fonts, teminal_support_utf_8, terminal_support_colors
 
 class CheckType(Enum):
   HA = 'HIGH_AVAILABILITY'
