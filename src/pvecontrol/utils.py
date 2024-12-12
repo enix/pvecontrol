@@ -10,7 +10,7 @@ from humanize import naturalsize
 from prettytable import PrettyTable
 
 
-class fonts:
+class Fonts:
     BLUE = "\033[94m"
     GREEN = "\033[92m"
     YELLOW = "\033[93m"
@@ -26,13 +26,9 @@ def terminal_support_colors():
         curses.start_color()
         if curses.has_colors():
             _num_colors = curses.color_pair(1)
-            if curses.COLORS > 0:
-                return True
-            else:
-                return False
-        else:
-            return False
-    except Exception as e:
+            return curses.COLORS > 0
+        return False
+    except Exception:  # pylint: disable=broad-exception-caught
         return False
     finally:
         curses.endwin()

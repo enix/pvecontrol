@@ -14,9 +14,9 @@ class HaVms(Check):
         ha_resources = [r for r in self.proxmox.ha["resources"] if r["type"] in ["vm"]]
         ha_vms = []
         for resource in ha_resources:
-            id = resource["sid"].split(":")[1]  # "sid = vm:100"
+            vmid = resource["sid"].split(":")[1]  # "sid = vm:100"
             if resource["type"] == "vm":
-                ha_vms.append(self.proxmox.get_vm(id))
+                ha_vms.append(self.proxmox.get_vm(vmid))
 
         self.add_messages(self._check_disk_ha_consistency(ha_vms))
         self.add_messages(self._check_cpu_ha_consistency(ha_vms))
@@ -37,7 +37,7 @@ class HaVms(Check):
                     continue
                 if regex_result := re.search(regex, v):
                     storage = self.proxmox.get_storage(regex_result.group(1))
-                    if storage != None and StorageShared[storage.shared] != StorageShared.shared:
+                    if storage is not None and StorageShared[storage.shared] != StorageShared.shared:
                         result["disks"].append(k)
             if result["disks"]:
                 vms_not_consistent.append(result)

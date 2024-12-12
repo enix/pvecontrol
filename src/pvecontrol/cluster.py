@@ -1,10 +1,9 @@
-import re
 import logging
 
 from proxmoxer import ProxmoxAPI
 
 from pvecontrol.node import PVENode
-from pvecontrol.storage import PVEStorage, StorageShared
+from pvecontrol.storage import PVEStorage
 from pvecontrol.task import PVETask
 
 
@@ -30,9 +29,9 @@ class PVECluster:
             self.storages.append(PVEStorage(storage.pop("node"), storage.pop("id"), storage.pop("shared"), **storage))
 
         self.ha = {
-            "groups": self._api.cluster.ha.groups.get(),
-            "manager_status": self._api.cluster.ha.status.manager_status.get(),
-            "resources": self._api.cluster.ha.resources.get(),
+            "groups": self.api.cluster.ha.groups.get(),
+            "manager_status": self.api.cluster.ha.status.manager_status.get(),
+            "resources": self.api.cluster.ha.resources.get(),
         }
 
         self.tasks = []

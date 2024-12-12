@@ -21,8 +21,8 @@ class SanityCheck:
                 )
                 return 1
 
-        for id in checks:
-            check = DEFAULT_CHECKS[id](self._proxmox)
+        for key in checks:
+            check = DEFAULT_CHECKS[key](self._proxmox)
             check.run()
             self._checks.append(check)
 
@@ -39,8 +39,7 @@ class SanityCheck:
         size = 0
         for check in self._checks:
             for msg in check.messages:
-                if len(msg) > size:
-                    size = len(msg)
+                size = max(size, len(msg))
         return size + 1
 
     def display(self):
