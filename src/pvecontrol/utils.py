@@ -9,34 +9,38 @@ from collections import OrderedDict
 from humanize import naturalsize
 from enum import Enum
 
+
 class fonts:
-   BLUE = '\033[94m'
-   GREEN = '\033[92m'
-   YELLOW = '\033[93m'
-   RED = '\033[91m'
-   BOLD = '\033[1m'
-   UNDERLINE = '\033[4m'
-   END = '\033[0m'
+    BLUE = "\033[94m"
+    GREEN = "\033[92m"
+    YELLOW = "\033[93m"
+    RED = "\033[91m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+    END = "\033[0m"
+
 
 def terminal_support_colors():
-  try:
-      _stdscr = curses.initscr()
-      curses.start_color()
-      if curses.has_colors():
-          _num_colors = curses.color_pair(1)
-          if curses.COLORS > 0:
-              return True
-          else:
-              return False
-      else:
-          return False
-  except Exception as e:
-      return False
-  finally:
-      curses.endwin()
+    try:
+        _stdscr = curses.initscr()
+        curses.start_color()
+        if curses.has_colors():
+            _num_colors = curses.color_pair(1)
+            if curses.COLORS > 0:
+                return True
+            else:
+                return False
+        else:
+            return False
+    except Exception as e:
+        return False
+    finally:
+        curses.endwin()
+
 
 def teminal_support_utf_8():
-  return sys.stdout.encoding.lower() == 'utf-8'
+    return sys.stdout.encoding.lower() == "utf-8"
+
 
 NATURALSIZE_KEYS = [
     "mem",
