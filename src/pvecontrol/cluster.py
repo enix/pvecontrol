@@ -27,21 +27,21 @@ class PVECluster:
 
         self.storages = []
         for storage in self.get_resources_storages():
-          self.storages.append(PVEStorage(storage.pop("node"), storage.pop("id"), storage.pop("shared"), **storage))
+            self.storages.append(PVEStorage(storage.pop("node"), storage.pop("id"), storage.pop("shared"), **storage))
 
         self.nodes = []
         for node in self._api.nodes.get():
-          self.nodes.append(PVENode(self._api, node["node"], node["status"], node))
+            self.nodes.append(PVENode(self._api, node["node"], node["status"], node))
 
         self.tasks = []
         for task in self._api.cluster.tasks.get():
-          logging.debug("Get task informations: %s"%(str(task)))
-          self.tasks.append(PVETask(self._api, task["upid"]))
+            logging.debug("Get task informations: %s" % (str(task)))
+            self.tasks.append(PVETask(self._api, task["upid"]))
 
         self.ha = {
-          'groups': self._api.cluster.ha.groups.get(),
-          'manager_status': self._api.cluster.ha.status.manager_status.get(),
-          'resources': self._api.cluster.ha.resources.get()
+            "groups": self._api.cluster.ha.groups.get(),
+            "manager_status": self._api.cluster.ha.status.manager_status.get(),
+            "resources": self._api.cluster.ha.resources.get(),
         }
 
     def refresh(self):
@@ -82,8 +82,8 @@ class PVECluster:
         result = None
         node_name = None
         for vm in self.get_resources_vms():
-            if vm['vmid'] == vm_id:
-                node_name = vm['node']
+            if vm["vmid"] == vm_id:
+                node_name = vm["node"]
                 break
 
         for node in self.nodes:
