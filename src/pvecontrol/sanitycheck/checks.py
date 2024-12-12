@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 
-from pvecontrol.utils import fonts, teminal_support_utf_8, terminal_support_colors
+from pvecontrol.utils import Fonts, teminal_support_utf_8, terminal_support_colors
 
 
 class CheckType(Enum):
     HA = "HIGH_AVAILABILITY"
-    Node = "NODE"
+    NODE = "NODE"
 
 
 class CheckCode(Enum):
@@ -31,10 +31,10 @@ ICONS_ASCII = {
 }
 
 ICONS_COLORED_ASCII = {
-    CheckCode.CRIT.value: f"{fonts.RED}[CRIT]{fonts.END}",
-    CheckCode.WARN.value: f"{fonts.YELLOW}[WARN]{fonts.END}",
-    CheckCode.INFO.value: f"{fonts.BLUE}[INFO]{fonts.END}",
-    CheckCode.OK.value: f"{fonts.GREEN}[OK]{fonts.END}",
+    CheckCode.CRIT.value: f"{Fonts.RED}[CRIT]{Fonts.END}",
+    CheckCode.WARN.value: f"{Fonts.YELLOW}[WARN]{Fonts.END}",
+    CheckCode.INFO.value: f"{Fonts.BLUE}[INFO]{Fonts.END}",
+    CheckCode.OK.value: f"{Fonts.GREEN}[OK]{Fonts.END}",
 }
 
 
@@ -73,6 +73,7 @@ class Check(ABC):
             messages = []
         self.proxmox = proxmox
         self.messages = messages
+        self.code = ""
 
     @abstractmethod
     def run(self):
@@ -107,7 +108,7 @@ class Check(ABC):
 
     def display(self, padding_max_size):
         if terminal_support_colors():
-            name = f"{fonts.BOLD}{self.name}{fonts.END}\n"
+            name = f"{Fonts.BOLD}{self.name}{Fonts.END}\n"
         else:
             name = f"{self.name}\n"
         print(name)

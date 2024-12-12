@@ -50,7 +50,7 @@ def action_clusterstatus(proxmox, _args):
     print(output)
 
 
-def action_sanitycheck(proxmox, _args):
+def action_sanitycheck(proxmox, args):
     """Check status of proxmox Cluster"""
     # More checks to implement
     # VM is started but 'startonboot' not set

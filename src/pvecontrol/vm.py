@@ -21,7 +21,7 @@ class PVEVm:
         self.vmid = vmid
         self.status = VmStatus[status.upper()]
         self.node = node
-        self.api = api
+        self._api = api
 
         self.name = kwargs.get("name", "")
         self.lock = kwargs.get("lock", "")
@@ -32,7 +32,7 @@ class PVEVm:
         self.tags = kwargs.get("tags", "")
         self.template = kwargs.get("template", 0)
 
-        self.config = self.api.nodes(self.node).qemu(vmid).config.get()
+        self.config = self._api.nodes(self.node).qemu(vmid).config.get()
 
     def __str__(self):
         str_keys = [
@@ -56,11 +56,11 @@ class PVEVm:
         options = {}
         options["node"] = self.node
         options["target"] = target
-        check = self.api.nodes(self.node).qemu(self.vmid).migrate.get(**options)
+        check = self._api.nodes(self.node).qemu(self.vmid).migrate.get(**options)
         #    logging.debug("Migration check: %s"%check)
         options["online"] = int(online)
         if len(check["local_disks"]) > 0:
             options["with-local-disks"] = int(True)
 
-        upid = self.api.nodes(self.node).qemu(self.vmid).migrate.post(**options)
+        upid = self._api.nodes(self.node).qemu(self.vmid).migrate.post(**options)
         return upid

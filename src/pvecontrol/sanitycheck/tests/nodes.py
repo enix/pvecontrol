@@ -4,7 +4,7 @@ from pvecontrol.sanitycheck.checks import Check, CheckCode, CheckType, CheckMess
 class Nodes(Check):
 
     id = "nodes"
-    type = CheckType.Node
+    type = CheckType.NODE
     name = "Check Node capacity"
 
     def run(self):
