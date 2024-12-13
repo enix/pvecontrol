@@ -69,6 +69,20 @@ exclude = '''
 )/
 '''
 
+[tool.pytest.ini_options]
+# this allows us to import pvecontrol directly from tests
+pythonpath = [
+    'src',
+]
+
+[tool.pylint.MAIN]
+# this hook allows us to import pvecontrol directly from tests
+init-hook = '''
+import sys
+import os
+sys.path.insert(0, str(os.getcwd() + "/src"))
+'''
+
 [tool.pylint.'MESSAGES CONTROL']
 max-line-length = 150
 disable = '''
