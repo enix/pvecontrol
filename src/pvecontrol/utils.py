@@ -129,7 +129,7 @@ def print_task(proxmox, upid, follow=False, wait=False):
                 log = task.log(limit=0, start=lastline)
                 logging.debug("Task Log: %s", log)
                 for line in log:
-                    print(str({line["t"]}))
+                    print(str(line["t"]))
                     if line["n"] > lastline:
                         lastline = line["n"]
                 time.sleep(1)
