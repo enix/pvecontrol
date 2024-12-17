@@ -27,18 +27,19 @@ def action_nodeevacuate(proxmox, args):
     targets = []
     # compute targets migration possible
     if args.target:
-        for t in list(set(args.target)):
-            if t == srcnode.node:
-                print(f"Target node {t} is the same as source node, skipping")
+        for pattern in list(set(args.target)):
+            nodes = proxmox.find_nodes(pattern)
+            if not nodes:
+                print(f"No node match the pattern {pattern}, skipping")
                 continue
-            tg = proxmox.find_node(t)
-            if not tg:
-                print(f"Target node {t} does not exist, skipping")
-                continue
-            if tg.status != NodeStatus.ONLINE:
-                print(f"Target node {t} is not online, skipping")
-                continue
-            targets.append(tg)
+            for node in nodes:
+                if node.node == srcnode.node:
+                    print(f"Target node {pattern} is the same as source node, skipping")
+                    continue
+                if node.status != NodeStatus.ONLINE:
+                    print(f"Target node {pattern} is not online, skipping")
+                    continue
+                targets.append(node)
     else:
         targets = [n for n in proxmox.nodes if n.status == NodeStatus.ONLINE and n.node != srcnode.node]
     if len(targets) == 0:

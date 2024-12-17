@@ -1,4 +1,5 @@
 import logging
+import fnmatch
 
 from proxmoxer import ProxmoxAPI
 
@@ -65,6 +66,14 @@ class PVECluster:
             if node.node == nodename:
                 return node
         return False
+
+    def find_nodes(self, pattern):
+        """Find a list of nodes running on this cluster based on a glob pattern"""
+        nodes = []
+        for node in self.nodes:
+            if fnmatch.fnmatchcase(node.node, pattern):
+                nodes.append(node)
+        return nodes
 
     def find_task(self, upid):
         """Return a task by upid"""
