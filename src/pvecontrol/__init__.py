@@ -149,18 +149,21 @@ def _parser():
 
     return parser.parse_args()
 
+
 def _execute_command(cmd):
-  return subprocess.run(cmd, shell=True, check=True, capture_output=True).stdout.rstrip()
+    return subprocess.run(cmd, shell=True, check=True, capture_output=True).stdout.rstrip()
+
 
 def run_auth_commands(clusterconfig):
-  regex = r"^\$\((.*)\)$"
-  result = re.match(regex, clusterconfig.user)
-  if result:
-    clusterconfig.user = _execute_command(result.group(1))
+    regex = r"^\$\((.*)\)$"
+    result = re.match(regex, clusterconfig.user)
+    if result:
+        clusterconfig.user = _execute_command(result.group(1))
 
-  result = re.match(regex, clusterconfig.password)
-  if result:
-    clusterconfig.password = _execute_command(result.group(1))
+    result = re.match(regex, clusterconfig.password)
+    if result:
+        clusterconfig.password = _execute_command(result.group(1))
+
 
 def main():
     # Disable urllib3 warnings about invalid certs
