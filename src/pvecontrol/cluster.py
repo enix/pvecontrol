@@ -36,7 +36,9 @@ class PVECluster:
 
         self.storages = []
         for storage in self.resources_storages:
-            self.storages.append(PVEStorage(storage.pop("node"), storage.pop("id"), storage.pop("shared"), **storage))
+            self.storages.append(
+                PVEStorage(self.api, storage.pop("node"), storage.pop("id"), storage.pop("shared"), **storage)
+            )
 
     @property
     def ha(self):
