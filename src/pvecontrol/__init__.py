@@ -240,7 +240,11 @@ def main():
     clusterconfig = set_config(args.cluster)
     auth = run_auth_commands(clusterconfig)
     proxmoxcluster = PVECluster(
-        clusterconfig.name, clusterconfig.host, config={"node": clusterconfig.node}, verify_ssl=False, **auth
+        clusterconfig.name,
+        clusterconfig.host,
+        config={"node": clusterconfig.node, "vm": clusterconfig.vm},
+        verify_ssl=False,
+        **auth,
     )
 
     args.func(proxmoxcluster, args)
