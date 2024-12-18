@@ -201,7 +201,7 @@ def main():
         clusterconfig.host,
         user=clusterconfig.user,
         password=clusterconfig.password,
-        config={"node": clusterconfig.node},
+        config={"node": clusterconfig.node, "sanitycheck": clusterconfig.sanitycheck},
         verify_ssl=False,
     )
 

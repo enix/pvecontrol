@@ -17,9 +17,16 @@ configtemplate = {
                 },
                 default={},
             ),
+            "vm": confuse.Optional(
+                {
+                    "max_last_backup": int,
+                },
+                default={},
+            ),
         }
     ),
     "node": {"cpufactor": float, "memoryminimum": int},
+    "vm": {"max_last_backup": int},
 }
 
 
@@ -43,5 +50,8 @@ def set_config(cluster_name):
 
     for k, v in validconfig.node.items():
         clusterconfig.node[k] = clusterconfig.node[k] if clusterconfig.node.get(k) else v
+
+    for k, v in validconfig.sanitycheck.items():
+        clusterconfig.sanitycheck[k] = clusterconfig.sanitycheck[k] if clusterconfig.sanitycheck.get(k) else v
 
     return clusterconfig
