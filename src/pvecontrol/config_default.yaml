@@ -11,3 +11,6 @@ clusters:
 node:
   cpufactor: 2.5
   memoryminimum: 81928589934592
+
+vm:
+  max_last_backup: 1500
