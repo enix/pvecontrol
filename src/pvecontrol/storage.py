@@ -48,6 +48,6 @@ class PVEStorage:
 
     def __str__(self):
         output = f"Node: {self.node}\n" + f"Id: {self.id}\n"
-        for key in self._acceptable_kwargs:
+        for key in self._default_kwargs:
             output += f"{key.capitalize()}: {self.__getattribute__(key)}\n"
         return output
