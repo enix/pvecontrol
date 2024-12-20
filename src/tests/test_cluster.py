@@ -18,7 +18,7 @@ def test_pvecluster_find_node(request, _proxmox_http_auth):
 
     request.side_effect = mock_api_requests(nodes, vms)
 
-    cluster = PVECluster("name", "host", "username", "password", None)
+    cluster = PVECluster("name", "host", "username", "password", None, timeout=1)
     cluster_vms = cluster.vms()
 
     assert len(cluster.nodes) == len(nodes)

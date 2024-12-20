@@ -5,6 +5,7 @@ clusters:
     host: 127.0.0.1
     user: pvecontrol@pve
     password: somerandomsecret
+    timeout: 5
 
 node:
   cpufactor: 2.5

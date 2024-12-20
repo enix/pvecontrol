@@ -203,6 +203,7 @@ def main():
         password=clusterconfig.password,
         config={"node": clusterconfig.node, "sanitycheck": clusterconfig.sanitycheck},
         verify_ssl=False,
+        timeout=clusterconfig.timeout,
     )
 
     args.func(proxmoxcluster, args)

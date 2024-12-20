@@ -10,6 +10,7 @@ configtemplate = {
             "host": str,
             "user": str,
             "password": str,
+            "timeout": confuse.Optional(int, default=0),
             "node": confuse.Optional(
                 {
                     "cpufactor": confuse.Optional(float, None),
