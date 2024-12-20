@@ -71,3 +71,17 @@ class PVEVm:
 
         upid = self._api.nodes(self.node).qemu(self.vmid).migrate.post(**options)
         return upid
+
+    def get_backup_jobs(self, proxmox):
+        vm_backups = []
+        for backup in proxmox.backup_jobs:
+            if str(self.vmid) in backup["vmid"].split(","):
+                vm_backups.append(backup)
+        return vm_backups
+
+    def get_backups(self, proxmox):
+        return [backup for backup in proxmox.backups if backup["vmid"] == self.vmid]
+
+    def get_last_backup(self, proxmox):
+        backups = sorted(self.get_backups(proxmox), key=lambda x: x["ctime"])
+        return backups[-1] if len(backups) > 0 else None
