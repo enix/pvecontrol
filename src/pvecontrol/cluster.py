@@ -14,6 +14,8 @@ class PVECluster:
         self.api = ProxmoxAPI(host, user=user, password=password, timeout=timeout, verify_ssl=verify_ssl)
         self.name = name
         self.config = config
+        self._backups = None
+        self._backup_jobs = None
         self._initstatus()
 
     def _initstatus(self):
@@ -154,3 +156,17 @@ class PVECluster:
             "memory": self.memory_metrics(),
             "disk": self.disk_metrics(),
         }
+
+    @property
+    def backups(self):
+        if self._backups is None:
+            self._backups = []
+            for item in PVEStorage.get_grouped_list(self):
+                self._backups.extend(item["storage"].get_content("backup"))
+        return self._backups
+
+    @property
+    def backup_jobs(self):
+        if self._backup_jobs is None:
+            self._backup_jobs = self.api.cluster.backup.get()
+        return self._backup_jobs
