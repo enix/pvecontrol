@@ -11,6 +11,7 @@ import shtab
 from pvecontrol import actions, node, vm, task, storage
 from pvecontrol.cluster import PVECluster
 from pvecontrol.config import set_config
+from pvecontrol.sanitycheck.tests import DEFAULT_CHECK_IDS
 
 
 def action_test(proxmox, _args):
@@ -141,7 +142,9 @@ def _parser():
 
     # sanitycheck parser
     parser_sanitycheck = subparsers.add_parser("sanitycheck", help="Run Sanity checks on the cluster")
-    parser_sanitycheck.add_argument("--check", action="append", required=False, help="Check to run", default=[])
+    parser_sanitycheck.add_argument(
+        "--check", action="append", required=False, help="Check to run", default=[], choices=DEFAULT_CHECK_IDS
+    )
     parser_sanitycheck.set_defaults(func=actions.cluster.action_sanitycheck)
 
     # _test parser, hidden from help
