@@ -16,7 +16,7 @@ class VmBackups(Check):
         backuped_vms = []
         for vm in self.proxmox.vms:
             vm_backup_jobs = vm.get_backup_jobs(self.proxmox)
-            vm_enabled_backup_ids = [backup["id"] for backup in vm_backup_jobs if backup["enabled"] == 1]
+            vm_enabled_backup_ids = [backup.id for backup in vm_backup_jobs if backup.enabled == 1]
             if len(vm_enabled_backup_ids) > 0:
                 msg = f"Vm {vm.vmid} ({vm.name}) is associated to {len(vm_enabled_backup_ids)} enabled backup job(s)"
                 self.add_messages(CheckMessage(CheckCode.OK, msg))
@@ -33,7 +33,7 @@ class VmBackups(Check):
 
         for vm in vms:
             last_backup = vm.get_last_backup(self.proxmox)
-            last_backup_time = datetime.fromtimestamp(last_backup["ctime"])
+            last_backup_time = datetime.fromtimestamp(last_backup.ctime)
             msg_template = f"Vm {vm.vmid} ({vm.name}) has been backed up {{}} than {time_ago} ({last_backup_time.strftime('%Y-%m-%d %H:%M:%S')})"
             if last_backup_time > datetime.now() - timedelta(minutes=minutes_ago):
                 msg = msg_template.format("less")
