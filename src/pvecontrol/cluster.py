@@ -6,6 +6,8 @@ from proxmoxer import ProxmoxAPI
 from pvecontrol.node import PVENode
 from pvecontrol.storage import PVEStorage
 from pvecontrol.task import PVETask
+from pvecontrol.backup_job import PVEBackupJob
+from pvecontrol.volume import PVEVolume
 
 
 class PVECluster:
@@ -209,11 +211,16 @@ class PVECluster:
         if self._backups is None:
             self._backups = []
             for item in PVEStorage.get_grouped_list(self):
-                self._backups.extend(item["storage"].get_content("backup"))
+                for backup in item["storage"].get_content("backup"):
+                    self._backups.append(
+                        PVEVolume(backup.pop("volid"), backup.pop("format"), backup.pop("size"), **backup)
+                    )
         return self._backups
 
     @property
     def backup_jobs(self):
         if self._backup_jobs is None:
-            self._backup_jobs = self.api.cluster.backup.get()
+            self._backup_jobs = []
+            for backup_job in self.api.cluster.backup.get():
+                self._backup_jobs.append(PVEBackupJob(backup_job.pop("id"), **backup_job))
         return self._backup_jobs
