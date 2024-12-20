@@ -11,8 +11,8 @@ from pvecontrol.task import PVETask
 class PVECluster:
     """Proxmox VE Cluster"""
 
-    def __init__(self, name, host, config, verify_ssl=False, **auth):
-        self.api = ProxmoxAPI(host, verify_ssl=verify_ssl, **auth)
+    def __init__(self, name, host, config, timeout, verify_ssl=False, **auth):
+        self.api = ProxmoxAPI(host, timeout=timeout, verify_ssl=verify_ssl, **auth)
         self.name = name
         self.config = config
         self._tasks = None
