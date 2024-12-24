@@ -33,6 +33,10 @@ class VmBackups(Check):
 
         for vm in vms:
             last_backup = vm.get_last_backup(self.proxmox)
+            if last_backup is None:
+                message = CheckMessage(CheckCode.WARN, f"Vm {vm.vmid} ({vm.name}) has never been backed up yet")
+                self.add_messages(message)
+                continue
             last_backup_time = datetime.fromtimestamp(last_backup.ctime)
             msg_template = f"Vm {vm.vmid} ({vm.name}) has been backed up {{}} than {time_ago} ({last_backup_time.strftime('%Y-%m-%d %H:%M:%S')})"
             if last_backup_time > datetime.now() - timedelta(minutes=minutes_ago):
