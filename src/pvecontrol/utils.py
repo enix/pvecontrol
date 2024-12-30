@@ -3,6 +3,7 @@ import time
 import sys
 import re
 import curses
+import os
 
 from collections import OrderedDict
 from enum import Enum
@@ -21,6 +22,9 @@ class Fonts:
 
 
 def terminal_support_colors():
+    if os.getenv("NO_COLOR"):
+        return False
+
     try:
         _stdscr = curses.initscr()
         curses.start_color()

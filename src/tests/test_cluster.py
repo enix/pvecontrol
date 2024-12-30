@@ -7,8 +7,8 @@ from tests.fixtures.api import mock_api_requests, fake_node, fake_vm
 @patch("proxmoxer.backends.https.ProxmoxHttpSession.request")
 def test_pvecluster_find_node(request, _proxmox_http_auth):
     nodes = [
-        fake_node(1, True),
-        fake_node(2, True),
+        fake_node(3, True),
+        fake_node(4, True),
     ]
     vms = [
         fake_vm(100, nodes[0]),
