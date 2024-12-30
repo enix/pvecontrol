@@ -1,19 +1,19 @@
 from unittest.mock import patch
 from pvecontrol.cluster import PVECluster
-from tests.fixtures.api import mock_api_requests, node, vm
+from tests.fixtures.api import mock_api_requests, fake_node, fake_vm
 
 
 @patch("proxmoxer.backends.https.ProxmoxHTTPAuth")
 @patch("proxmoxer.backends.https.ProxmoxHttpSession.request")
 def test_pvecluster_find_node(request, _proxmox_http_auth):
     nodes = [
-        node(1, True),
-        node(2, True),
+        fake_node(1, True),
+        fake_node(2, True),
     ]
     vms = [
-        vm(100, nodes[0]),
-        vm(101, nodes[0]),
-        vm(102, nodes[1]),
+        fake_vm(100, nodes[0]),
+        fake_vm(101, nodes[0]),
+        fake_vm(102, nodes[1]),
     ]
 
     request.side_effect = mock_api_requests(nodes, vms)

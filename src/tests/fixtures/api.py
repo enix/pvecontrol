@@ -5,7 +5,7 @@ import requests
 def mock_api_requests(nodes, vms):
     routes = generate_routes(nodes, vms)
 
-    def side_effect(method, url, *args, **kwargs):
+    def side_effect(method, url, *_args, **_kwargs):
         print(f"{method} {url}")
         path = url.replace("https://host:8006", "")
         assert path in routes
@@ -15,7 +15,7 @@ def mock_api_requests(nodes, vms):
 
         res = requests.Response()
         res.status_code = 200
-        res._content = content.encode("utf-8")
+        res._content = content.encode("utf-8")  # pylint: disable=protected-access
         return res
 
     return side_effect
@@ -58,8 +58,8 @@ def generate_vm_routes(nodes, vms):
 
     for vm in vms:
         node_name = vm["node"]
-        id = vm["vmid"]
-        routes[f"/api2/json/nodes/{node_name}/qemu/{id}/config"] = {
+        vm_id = vm["vmid"]
+        routes[f"/api2/json/nodes/{node_name}/qemu/{vm_id}/config"] = {
             "memory": "1024",
             "vmgenid": "00000000-0000-0000-0000-000000000000",
             "template": 1,
@@ -107,15 +107,15 @@ def generate_vm_routes(nodes, vms):
     return routes
 
 
-def node(id, local=False):
-    resource_id = f"node/pve-devel-{id}"
-    name = f"pve-devel-{id}"
+def fake_node(node_id, local=False):
+    resource_id = f"node/pve-devel-{node_id}"
+    name = f"pve-devel-{node_id}"
     return {
         "status": {
             "id": resource_id,
-            "nodeid": id,
+            "nodeid": node_id,
             "name": name,
-            "ip": f"10.42.24.{id}",
+            "ip": f"10.42.24.{node_id}",
             "local": 1 if local else 0,
             "type": "node",
             "online": 1,
@@ -143,11 +143,11 @@ def node(id, local=False):
     }
 
 
-def vm(id, node, status="running"):
+def fake_vm(vm_id, node, status="running"):
     return {
-        "id": f"qemu/{id}",
-        "vmid": id,
-        "name": f"vm-{id}",
+        "id": f"qemu/{vm_id}",
+        "vmid": vm_id,
+        "name": f"vm-{vm_id}",
         "node": node["status"]["name"],
         "status": status,
         "diskread": 0,
