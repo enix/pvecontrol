@@ -37,7 +37,7 @@ class HaVms(Check):
                     continue
                 if regex_result := re.search(regex, v):
                     storage = self.proxmox.get_storage(regex_result.group(1))
-                    if storage is not None and StorageShared[storage.shared] != StorageShared.shared:
+                    if storage is not None and StorageShared[storage.shared.upper()] != StorageShared.SHARED:
                         result["disks"].append(k)
             if result["disks"]:
                 vms_not_consistent.append(result)

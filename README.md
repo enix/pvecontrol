@@ -32,7 +32,11 @@ It is highly recommended to setup a dedicated user for the tool usage. You shoul
 If you plan to use `pvecontrol` in read only mode to fetch cluster informations you can limit user with only `PVEAuditor` on Path `/` Permissions. This is the minimum permissions needed by `pvecontrol` to work.
 For other operations on VMs it is recommended to grant `PVEVMAdmin` on Path `/`. This allows start, stop, migrate, ...
 
-Once you have setup your management user for `pvecontrol` you can generate your configuration file. Default configuration template with all options is available [here](https://github.com/enix/pvecontrol/blob/dev/src/pvecontrol/config_default.yaml). Use this file to build your own configuration file or the above exemple:
+Once you have setup your management user for `pvecontrol` you can generate your configuration file. Default configuration template with all options is available [here](https://github.com/enix/pvecontrol/blob/dev/src/pvecontrol/config_default.yaml).
+
+You can use shell commands on cluster fields user and password like `user: $(<command>)` this allow you to user external software to get your secrets.
+
+Use this file to build your own configuration file or the above exemple:
 
 ```yaml
 ---
@@ -49,6 +53,10 @@ clusters:
     host: 10.10.10.10
     user: pvecontrol@pve
     password: Supers3cUre
+- name: prod-cluster-2
+    host: 10.10.10.10
+    user: $(command to get -user)
+    password: $(command to get -password)
 node:
   # Overcommit cpu factor. can be 1 for not overcommit
   cpufactor: 2.5
