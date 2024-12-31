@@ -128,7 +128,7 @@ INFO:root:Proxmox cluster: my-test-cluster
 
 If this works, you're ready to go
 
-Auto Completion
+Shell Auto Completion
 ---
 
 `pvecontrol` provide an auto completion helper to automatically generate configuration for your prefered shell. It support curently `bash`,`zsh` and `tcsh`. The following exemple must be adapted to your own environment:
