@@ -32,11 +32,12 @@ It is highly recommended to setup a dedicated user for the tool usage. You shoul
 If you plan to use `pvecontrol` in read only mode to fetch cluster informations you can limit user with only `PVEAuditor` on Path `/` Permissions. This is the minimum permissions needed by `pvecontrol` to work.
 For other operations on VMs it is recommended to grant `PVEVMAdmin` on Path `/`. This allows start, stop, migrate, ...
 
-Once you have setup your management user for `pvecontrol` you can generate your configuration file. Default configuration template with all options is available (here)[https://github.com/enix/pvecontrol/blob/dev/src/pvecontrol/config_default.yaml].
+Once you have setup your management user for `pvecontrol` you can generate your configuration file. Default configuration template with all options is available [here](https://github.com/enix/pvecontrol/blob/dev/src/pvecontrol/config_default.yaml).
 
 You can use shell commands on cluster fields user and password like `user: $(<command>)` this allow you to user external software to get your secrets.
 
 Use this file to build your own configuration file or the above exemple:
+
 ```yaml
 ---
 
@@ -127,6 +128,18 @@ INFO:root:Proxmox cluster: my-test-cluster
 ```
 
 If this works, you're ready to go
+
+Shell Auto Completion
+---
+
+`pvecontrol` provide an auto completion helper to automatically generate configuration for your prefered shell. It support curently `bash`,`zsh` and `tcsh`. The following exemple must be adapted to your own environment:
+
+```shell
+# bash
+$ pvecontrol --print-completion bash > "${BASH_COMPLETION_USER_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion}/completions/pvecontrol"
+# zsh
+$ pvecontrol --print-completion zsh > "${HOME}/.zsh/completions/_pvecontrol"
+```
 
 Development
 ---
