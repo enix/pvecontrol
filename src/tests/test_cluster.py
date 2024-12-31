@@ -59,3 +59,23 @@ def test_pvecluster_find_nodes(request, _proxmox_http_auth):
 
     node_objects = cluster.find_nodes("*prod*")
     assert len(node_objects) == 0
+
+
+@patch("proxmoxer.backends.https.ProxmoxHTTPAuth")
+@patch("proxmoxer.backends.https.ProxmoxHttpSession.request")
+def test_pvecluster_http_call_made_on_initstatus(request, _proxmox_http_auth):
+    nodes = [
+        fake_node(1, True),
+        fake_node(2, True),
+    ]
+    vms = [
+        fake_vm(100, nodes[0]),
+        fake_vm(101, nodes[0]),
+        fake_vm(102, nodes[1]),
+    ]
+
+    request.side_effect = mock_api_requests(nodes, vms)
+
+    _cluster = PVECluster("name", "host", "username", "password", None)
+
+    assert request.call_count == 2  # status and ressources

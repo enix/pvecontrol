@@ -25,14 +25,21 @@ class PVEVm:
 
         self.name = kwargs.get("name", "")
         self.lock = kwargs.get("lock", "")
-        self.cpus = kwargs.get("cpus", 0)
+        self.cpus = kwargs.get("maxcpu", 0)
         self.maxdisk = kwargs.get("maxdisk", 0)
         self.maxmem = kwargs.get("maxmem", 0)
         self.uptime = kwargs.get("uptime", 0)
         self.tags = kwargs.get("tags", "")
         self.template = kwargs.get("template", 0)
 
-        self.config = self._api.nodes(self.node).qemu(vmid).config.get()
+        self._config = None
+
+    @property
+    def config(self):
+        if not self._config:
+            self._config = self._api.nodes(self.node).qemu(self.vmid).config.get()
+
+        return self._config
 
     def __str__(self):
         str_keys = [
