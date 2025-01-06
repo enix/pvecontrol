@@ -6,7 +6,6 @@ jobs:
   # Run tests for code formating
   black:
     runs-on: ubuntu-latest
-    concurrency: tests
 
     steps:
     - uses: actions/checkout@v3
@@ -27,7 +26,6 @@ jobs:
   # Run tests for lint
   pylint:
     runs-on: ubuntu-latest
-    concurrency: tests
 
     steps:
     - uses: actions/checkout@v3
@@ -49,7 +47,6 @@ jobs:
   # Run tests
   code:
     runs-on: ubuntu-latest
-    concurrency: tests
 
     steps:
     - uses: actions/checkout@v3
