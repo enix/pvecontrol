@@ -34,10 +34,10 @@ def action_nodeevacuate(proxmox, args):
                 continue
             for node in nodes:
                 if node.node == srcnode.node:
-                    print(f"Target node {pattern} is the same as source node, skipping")
+                    print(f"Target node {node.node} is the same as source node, skipping")
                     continue
                 if node.status != NodeStatus.ONLINE:
-                    print(f"Target node {pattern} is not online, skipping")
+                    print(f"Target node {node.node} is not online, skipping")
                     continue
                 targets.append(node)
     else:
