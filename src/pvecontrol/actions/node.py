@@ -45,6 +45,8 @@ def action_nodeevacuate(proxmox, args):
     if len(targets) == 0:
         print("No target node available")
         return
+    # Make sure there is no duplicate in targets
+    targets = list(set(targets))
     logging.debug("Migration targets: %s", ([t.node for t in targets]))
 
     plan = []
