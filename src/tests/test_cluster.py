@@ -29,3 +29,33 @@ def test_pvecluster_find_node(request, _proxmox_http_auth):
     for n in nodes:
         node_object = cluster.find_node(n["status"]["name"])
         assert node_object.node == n["status"]["name"]
+
+
+@patch("proxmoxer.backends.https.ProxmoxHTTPAuth")
+@patch("proxmoxer.backends.https.ProxmoxHttpSession.request")
+def test_pvecluster_find_nodes(request, _proxmox_http_auth):
+    nodes = [
+        fake_node(1, True),
+        fake_node(2, True),
+        fake_node(3, True),
+    ]
+    vms = []
+
+    request.side_effect = mock_api_requests(nodes, vms)
+
+    cluster = PVECluster("name", "host", "username", "password", None)
+
+    node_objects = cluster.find_nodes("*devel-1")
+    assert len(node_objects) == 1
+    assert node_objects[0].node == "pve-devel-1"
+
+    node_objects = cluster.find_nodes("pve-devel-*")
+    assert len(node_objects) == len(nodes)
+
+    node_objects = cluster.find_nodes("*pve-devel-[13]")
+    assert len(node_objects) == 2
+    assert node_objects[0].node == "pve-devel-1"
+    assert node_objects[1].node == "pve-devel-3"
+
+    node_objects = cluster.find_nodes("*prod*")
+    assert len(node_objects) == 0
