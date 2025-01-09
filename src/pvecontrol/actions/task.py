@@ -1,13 +1,12 @@
-from pvecontrol.utils import print_task, print_output
+from pvecontrol.utils import print_task, print_tableoutput
 
 
 def action_tasklist(proxmox, args):
-    print_output(
+    print_tableoutput(
         proxmox.tasks,
         columns=args.columns,
         sortby=args.sort_by,
         filters=args.filter,
-        output=args.output,
     )
 
 

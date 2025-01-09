@@ -3,13 +3,9 @@ import time
 import sys
 import re
 import curses
-import json
 
 from collections import OrderedDict
 from enum import Enum
-
-import yaml
-
 from humanize import naturalsize
 from prettytable import PrettyTable
 
@@ -22,16 +18,6 @@ class Fonts:
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
     END = "\033[0m"
-
-
-class OutputFormats(Enum):
-    TEXT = "text"
-    JSON = "json"
-    CSV = "csv"
-    YAML = "yaml"
-
-    def __str__(self):
-        return self.value
 
 
 def terminal_support_colors():
@@ -62,7 +48,9 @@ NATURALSIZE_KEYS = [
 ]
 
 
-def render_output(table, columns=None, sortby=None, filters=None, output=OutputFormats.TEXT):
+# Pretty output a table from a table of dicts
+# We assume all dicts have the same keys and are sorted by key
+def print_tableoutput(table, columns=None, sortby=None, filters=None):
     if not columns:
         columns = []
     if not filters:
@@ -73,38 +61,17 @@ def render_output(table, columns=None, sortby=None, filters=None, output=OutputF
     else:
         table = [filter_keys(n.__dict__ if hasattr(n, "__dict__") else n, columns) for n in table]
 
-    x = prepare_prettytable(table, sortby, filters)
-
-    if sortby is not None:
-        sortby = "sortby"
-
-    if output == OutputFormats.TEXT:
-        return x.get_string(sortby=sortby, fields=columns)
-    if output == OutputFormats.CSV:
-        return x.get_csv_string(sortby=sortby, fields=columns)
-    if output in (OutputFormats.JSON, OutputFormats.YAML):
-        json_string = x.get_json_string(sortby=sortby, fields=columns)
-        data = json.loads(json_string)[1:]
-        if output == OutputFormats.JSON:
-            return json.dumps(data)
-        return yaml.dump(data)
-
-    return None
-
-
-def prepare_prettytable(table, sortby, filters):
-    do_sort = sortby is not None
+    do_sort = not sortby is None
 
     x = PrettyTable()
     x.align = "l"
     x.field_names = [*table[0].keys(), "sortby"] if do_sort else table[0].keys()
 
     for line in table:
-        for key in line:
-            if isinstance(line[key], Enum):
-                line[key] = str(line[key])
         if do_sort:
             line["sortby"] = line[sortby]
+            if isinstance(line[sortby], Enum):
+                line["sortby"] = str(line[sortby])
         for key in NATURALSIZE_KEYS:
             if key in line:
                 line[key] = naturalsize(line[key], binary=True)
@@ -116,11 +83,7 @@ def prepare_prettytable(table, sortby, filters):
     for line in table:
         x.add_row(line.values())
 
-    return x
-
-
-def print_output(table, columns=None, sortby=None, filters=None, output=OutputFormats.TEXT):
-    print(render_output(table, columns, sortby, filters, output))
+    print(x.get_string(sortby="sortby" if do_sort else None, fields=columns))
 
 
 def filter_keys(input_d, keys):
@@ -141,7 +104,7 @@ def print_taskstatus(task):
         "user",
         "starttime",
     ]
-    print_output([task], columns)
+    print_tableoutput([task], columns)
 
 
 def print_task(proxmox, upid, follow=False, wait=False):
@@ -179,6 +142,6 @@ def print_task(proxmox, upid, follow=False, wait=False):
                 time.sleep(1)
             print("")
     elif not wait:
-        print_output([{"log output": task.decode_log()}])
+        print_tableoutput([{"log output": task.decode_log()}])
 
     print_taskstatus(task)

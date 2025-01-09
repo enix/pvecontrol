@@ -1,5 +1,5 @@
 from pvecontrol.storage import StorageShared, COLUMNS
-from pvecontrol.utils import print_output
+from pvecontrol.utils import print_tableoutput
 
 
 def action_storagelist(proxmox, args):
@@ -19,4 +19,4 @@ def action_storagelist(proxmox, args):
     for _id, storage in storages.items():
         storage["nodes"] = ", ".join(storage["nodes"])
 
-    print_output(storages.values(), COLUMNS, sortby=args.sort_by, filters=args.filter, output=args.output)
+    print_tableoutput(storages.values(), COLUMNS, sortby=args.sort_by, filters=args.filter)

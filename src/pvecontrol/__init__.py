@@ -11,7 +11,6 @@ import shtab
 from pvecontrol import actions, node, vm, task, storage
 from pvecontrol.cluster import PVECluster
 from pvecontrol.config import set_config
-from pvecontrol.utils import OutputFormats
 
 
 def action_test(proxmox, _args):
@@ -77,14 +76,6 @@ def _parser():
     parser = argparse.ArgumentParser(description="Proxmox VE control cli.", epilog="Made with love by Enix.io")
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")
-    parser.add_argument(
-        "-o",
-        "--output",
-        action="store",
-        type=OutputFormats,
-        default=OutputFormats.TEXT,
-        choices=list(OutputFormats),
-    )
     parser.add_argument(
         "-c", "--cluster", action="store", required=True, help="Proxmox cluster name as defined in configuration"
     )
