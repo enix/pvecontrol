@@ -2,12 +2,12 @@ import logging
 
 from pvecontrol.node import NodeStatus
 from pvecontrol.vm import VmStatus
-from pvecontrol.utils import print_tableoutput, print_task
+from pvecontrol.utils import print_output, print_task
 
 
 def action_nodelist(proxmox, args):
     """List proxmox nodes in the cluster using proxmoxer api"""
-    print_tableoutput(proxmox.nodes, columns=args.columns, sortby=args.sort_by, filters=args.filter)
+    print_output(proxmox.nodes, columns=args.columns, sortby=args.sort_by, filters=args.filter, output=args.output)
 
 
 # pylint: disable=too-many-branches,too-many-statements
