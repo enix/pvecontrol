@@ -78,7 +78,12 @@ def _parser():
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument(
-        "-o", "--output", action="store", default=OutputFormats.TEXT, choices=[o.value for o in OutputFormats]
+        "-o",
+        "--output",
+        action="store",
+        type=OutputFormats,
+        default=OutputFormats.TEXT,
+        choices=list(OutputFormats),
     )
     parser.add_argument(
         "-c", "--cluster", action="store", required=True, help="Proxmox cluster name as defined in configuration"
