@@ -6,7 +6,7 @@ import curses
 import json
 
 from collections import OrderedDict
-from enum import Enum, StrEnum, auto
+from enum import Enum
 
 import yaml
 
@@ -24,11 +24,14 @@ class Fonts:
     END = "\033[0m"
 
 
-class OutputFormats(StrEnum):
-    TEXT = auto()
-    JSON = auto()
-    CSV = auto()
-    YAML = auto()
+class OutputFormats(Enum):
+    TEXT = "text"
+    JSON = "json"
+    CSV = "csv"
+    YAML = "yaml"
+
+    def __str__(self):
+        return self.value
 
 
 def terminal_support_colors():
