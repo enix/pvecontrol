@@ -37,6 +37,7 @@ Once you have setup your management user for `pvecontrol` you can generate your 
 You can use shell commands on cluster fields user and password like `user: $(<command>)` this allow you to user external software to get your secrets.
 
 Use this file to build your own configuration file or the above exemple:
+
 ```yaml
 ---
 
