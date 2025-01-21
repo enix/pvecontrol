@@ -59,6 +59,25 @@ If you plan to use `pvecontrol` to move VMs around, you should grant it `PVEVMAd
 pveum acl modify / --roles PVEVMAdmin --users pvecontrol@pve
 ```
 
+### API Tokens
+
+If you prefer to use API Tokens to authenticate, `pvecontrol` also support it. To create a new API Tokens linked to your dedicated `pvecontrol@pve` user and inherit of all it's persmissions, you can proceed the following commands:
+
+```shell
+pveum user token add pvecontrol@pve mytoken --privsep 0
+```
+
+Then modify your configuration file to use it:
+
+```yaml
+clusters:
+  - name: fr-par-1
+    host: localhost
+    user: pvecontrol@pve
+    token_name: mytoken
+    token_value: randomtokenvalue
+```
+
 ### Better security
 
 Instead of specifying users and passwords in plain text in the configuration file, you can use the shell command substitution syntax `$(...)` inside the `user` and `password` fields; for instance:
@@ -77,13 +96,13 @@ You _can_ use `@pam` users (and even `root@pam`) and passwords in the `pvecontro
 
 ### Advanced configuration options
 
-The configuration file can include a `node:` section to specify CPU and memory policies. These will be used when when scheduling a VM (i.e. determine on which node it should run), specifically when draining a node for maintenance.
+The configuration file can include a `node:` section to specify CPU and memory policies. These will be used when scheduling a VM (i.e. determine on which node it should run), specifically when draining a node for maintenance.
 
 There are currently two parameters: `cpufactor` and `memoryminimum`.
 
 `cpufactor` indicates the level of overcommit allowed on an hypervisor. `1` means no overcommit at all; `5` means "an hypervisor with 8 cores can run VMs with up to 5x8 = 40 cores in total".
 
-`memoryminimum` is the amount of memory that should always be available on a node, in bytes.
+`memoryminimum` is the amount of memory that should always be available on a node, in bytes. This is needed as non reserved memory for the OS itself to run. If you allocate all the host memory to VMs without taking this into account, your node will not be able to run it's own operating system and management daemons.
 
 These options can be specified in a global `node:` section, and then overriden per cluster.
 
