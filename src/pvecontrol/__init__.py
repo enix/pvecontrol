@@ -179,6 +179,15 @@ def run_auth_commands(clusterconfig):
                 value = _execute_command(result.group(1))
             auth[key] = value
 
+    logging.debug("Auth: %s", auth)
+    # check for "incompatible" auth options
+    if "password" in auth and ("token_name" in auth or "token_value" in auth):
+        logging.error("Auth: cannot use both password and token options together.")
+        sys.exit(1)
+    if "token_name" in auth and "token_value" not in auth:
+        logging.error("Auth: token-name requires token-value option.")
+        sys.exit(1)
+ 
     return auth
 
 
