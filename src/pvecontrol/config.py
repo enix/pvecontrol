@@ -9,7 +9,9 @@ configtemplate = {
             "name": str,
             "host": str,
             "user": str,
-            "password": str,
+            "password": confuse.Optional(str, None),
+            "token_name": confuse.Optional(str, None),
+            "token_value": confuse.Optional(str, None),
             "node": confuse.Optional(
                 {
                     "cpufactor": confuse.Optional(float, None),

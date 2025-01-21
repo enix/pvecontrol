@@ -4,7 +4,9 @@ clusters:
   - name: cluster1
     host: 127.0.0.1
     user: pvecontrol@pve
-    password: somerandomsecret
+    # password: somerandomsecret
+    # token_name: mytokenname
+    # token_value: somemorerandomsecret
 
 node:
   cpufactor: 2.5
