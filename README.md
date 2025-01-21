@@ -59,15 +59,17 @@ If you plan to use `pvecontrol` to move VMs around, you should grant it `PVEVMAd
 pveum acl modify / --roles PVEVMAdmin --users pvecontrol@pve
 ```
 
-### API Tokens
+### API tokens
 
-If you prefer to use API Tokens to authenticate, `pvecontrol` also support it. To create a new API Tokens linked to your dedicated `pvecontrol@pve` user and inherit of all it's persmissions, you can proceed the following commands:
+`pvecontrol` also supports authentication with API tokens. A Proxmox API token is associated to an individual user, and can be given separate permissions and expiration dates. You can learn more about Proxmox tokens in [this section of the Proxmox documentation](https://pve.proxmox.com/pve-docs/pveum-plain.html#pveum_tokens).
+
+As an example, to create a new API token associated to the `pvecontrol@pve` user and inherit all its permissions, you can use the following command:
 
 ```shell
 pveum user token add pvecontrol@pve mytoken --privsep 0
 ```
 
-Then modify your configuration file to use it:
+Then, retrieve the token value, and add it to the configuration file to use it to authenticate:
 
 ```yaml
 clusters:
@@ -102,7 +104,7 @@ There are currently two parameters: `cpufactor` and `memoryminimum`.
 
 `cpufactor` indicates the level of overcommit allowed on an hypervisor. `1` means no overcommit at all; `5` means "an hypervisor with 8 cores can run VMs with up to 5x8 = 40 cores in total".
 
-`memoryminimum` is the amount of memory that should always be available on a node, in bytes. This is needed as non reserved memory for the OS itself to run. If you allocate all the host memory to VMs without taking this into account, your node will not be able to run it's own operating system and management daemons.
+`memoryminimum` is the amount of memory that should always be available on a node, in bytes. When scheduling a VM (for instance, when automatically moving VMs around), `pvecontrol` will make sure that this amount of memory remains available for the hypervisor OS itself. Caution: if that amount is set to zero, it will be possible to allocate the entire host memory to virtual machines, leaving no memory for the hypervisor operating system and management daemons!
 
 These options can be specified in a global `node:` section, and then overriden per cluster.
 
