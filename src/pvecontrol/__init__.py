@@ -187,7 +187,7 @@ def run_auth_commands(clusterconfig):
     if "token_name" in auth and "token_value" not in auth:
         logging.error("Auth: token-name requires token-value option.")
         sys.exit(1)
- 
+
     return auth
 
 
@@ -219,11 +219,7 @@ def main():
     clusterconfig = set_config(args.cluster)
     auth = run_auth_commands(clusterconfig)
     proxmoxcluster = PVECluster(
-        clusterconfig.name,
-        clusterconfig.host,
-        config={"node": clusterconfig.node},
-        verify_ssl=False,
-        **auth
+        clusterconfig.name, clusterconfig.host, config={"node": clusterconfig.node}, verify_ssl=False, **auth
     )
 
     args.func(proxmoxcluster, args)
