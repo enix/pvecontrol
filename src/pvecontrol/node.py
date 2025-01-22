@@ -18,11 +18,12 @@ class PVENode:
 
     _api = None
 
-    def __init__(self, api, node, status, kwargs=None):
+    def __init__(self, api, node, status, node_resources, kwargs=None):
         if not kwargs:
             kwargs = {}
 
         self.node = node
+        self.resources = node_resources
         self.status = NodeStatus[status.upper()]
         self._api = api
         self.cpu = kwargs.get("cpu", 0)
@@ -51,10 +52,7 @@ class PVENode:
     def _init_vms(self):
         self.vms = []
         if self.status == NodeStatus.ONLINE:
-            self.vms = [
-                PVEVm(self._api, self.node, vm["vmid"], vm["status"], vm)
-                for vm in self._api.nodes(self.node).qemu.get()
-            ]
+            self.vms = [PVEVm(self._api, self.node, vm["vmid"], vm["status"], vm) for vm in self.resources_vms]
 
     def _init_allocatedmem(self):
         """Compute the amount of memory allocated to running VMs"""
@@ -62,8 +60,7 @@ class PVENode:
         for vm in self.vms:
             if vm.status != VmStatus.RUNNING:
                 continue
-            # This is in MB in configuration
-            self.allocatedmem += int(vm.config["memory"]) * 1024 * 1024
+            self.allocatedmem += vm.maxmem
 
     def _init_allocatedcpu(self):
         """Compute the amount of cpu allocated to running VMs"""
@@ -71,10 +68,11 @@ class PVENode:
         for vm in self.vms:
             if vm.status != VmStatus.RUNNING:
                 continue
-            if "sockets" in vm.config:
-                self.allocatedcpu += vm.config["sockets"] * vm.config["cores"]
-            else:
-                self.allocatedcpu += vm.config["cores"]
+            self.allocatedcpu += vm.cpus
+
+    @property
+    def resources_vms(self):
+        return [resource for resource in self.resources if resource["type"] == "qemu"]
 
     # def __contains__(self, item):
     #   """Check if a VM is running on this node"""

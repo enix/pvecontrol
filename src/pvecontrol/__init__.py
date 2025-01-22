@@ -168,14 +168,27 @@ def _execute_command(cmd):
 
 
 def run_auth_commands(clusterconfig):
+    auth = {}
     regex = r"^\$\((.*)\)$"
-    result = re.match(regex, clusterconfig.user)
-    if result:
-        clusterconfig.user = _execute_command(result.group(1))
 
-    result = re.match(regex, clusterconfig.password)
-    if result:
-        clusterconfig.password = _execute_command(result.group(1))
+    for key in ("user", "password", "token_name", "token_value"):
+        value = clusterconfig.get(key)
+        if value is not None:
+            result = re.match(regex, value)
+            if result:
+                value = _execute_command(result.group(1))
+            auth[key] = value
+
+    logging.debug("Auth: %s", auth)
+    # check for "incompatible" auth options
+    if "password" in auth and ("token_name" in auth or "token_value" in auth):
+        logging.error("Auth: cannot use both password and token options together.")
+        sys.exit(1)
+    if "token_name" in auth and "token_value" not in auth:
+        logging.error("Auth: token-name requires token-value option.")
+        sys.exit(1)
+
+    return auth
 
 
 def main():
@@ -204,14 +217,9 @@ def main():
     logging.info("Proxmox cluster: %s", args.cluster)
 
     clusterconfig = set_config(args.cluster)
-    run_auth_commands(clusterconfig)
+    auth = run_auth_commands(clusterconfig)
     proxmoxcluster = PVECluster(
-        clusterconfig.name,
-        clusterconfig.host,
-        user=clusterconfig.user,
-        password=clusterconfig.password,
-        config={"node": clusterconfig.node},
-        verify_ssl=False,
+        clusterconfig.name, clusterconfig.host, config={"node": clusterconfig.node}, verify_ssl=False, **auth
     )
 
     args.func(proxmoxcluster, args)

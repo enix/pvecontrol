@@ -134,6 +134,12 @@ clusters:
     host: 10.10.10.10
     user: $(command to get -user)
     password: $(command to get -password)
+- name: prod-cluster-3
+    host: 10.10.10.10
+    user: morticia@pve
+    token_name: pvecontrol
+    token_value: 12345678-abcd-abcd-abcd-1234567890ab
+
 ```
 
 ## Usage

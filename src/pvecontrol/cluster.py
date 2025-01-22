@@ -11,10 +11,12 @@ from pvecontrol.task import PVETask
 class PVECluster:
     """Proxmox VE Cluster"""
 
-    def __init__(self, name, host, user, password, config, verify_ssl=False):
-        self.api = ProxmoxAPI(host, user=user, password=password, verify_ssl=verify_ssl)
+    def __init__(self, name, host, config, verify_ssl=False, **auth):
+        self.api = ProxmoxAPI(host, verify_ssl=verify_ssl, **auth)
         self.name = name
         self.config = config
+        self._tasks = None
+        self._ha = None
         self._initstatus()
 
     def _initstatus(self):
@@ -22,26 +24,54 @@ class PVECluster:
         self.resources = self.api.cluster.resources.get()
 
         self.nodes = []
-        for node in self.api.nodes.get():
-            self.nodes.append(PVENode(self.api, node["node"], node["status"], node))
+        for node in self.get_resources_nodes():
+            self.nodes.append(
+                PVENode(
+                    self.api,
+                    node["node"],
+                    node["status"],
+                    node_resources=self.get_node_resources(node["node"]),
+                    kwargs=node,
+                )
+            )
 
         self.storages = []
         for storage in self.get_resources_storages():
             self.storages.append(PVEStorage(storage.pop("node"), storage.pop("id"), storage.pop("shared"), **storage))
 
-        self.ha = {
+    @property
+    def ha(self):
+        if self._ha is not None:
+            return self._ha
+
+        self._ha = {
             "groups": self.api.cluster.ha.groups.get(),
             "manager_status": self.api.cluster.ha.status.manager_status.get(),
             "resources": self.api.cluster.ha.resources.get(),
         }
+        return self._ha
 
-        self.tasks = []
+    @property
+    def tasks(self):
+        if self._tasks is not None:
+            return self._tasks
+
+        self._tasks = []
         for task in self.api.cluster.tasks.get():
             logging.debug("Get task informations: %s", (str(task)))
-            self.tasks.append(PVETask(self.api, task["upid"]))
+            self._tasks.append(PVETask(self.api, task["upid"]))
+        return self._tasks
 
     def refresh(self):
         self._initstatus()
+
+        # force tasks refesh
+        self._tasks = None
+        _ = self.tasks
+
+        # force ha information refesh
+        self._ha = None
+        _ = self.ha
 
     def __str__(self):
         output = f"Proxmox VE Cluster {self.name}\n"
@@ -87,6 +117,9 @@ class PVECluster:
 
     def get_resources_nodes(self):
         return [resource for resource in self.resources if resource["type"] == "node"]
+
+    def get_node_resources(self, node_name):
+        return [resource for resource in self.resources if resource.get("node") == node_name]
 
     def get_vm(self, vm_id):
         if isinstance(vm_id, str):
@@ -145,8 +178,8 @@ class PVECluster:
 
     def disk_metrics(self):
         storages = self.get_resources_storages()
-        total_disk = sum(node["maxdisk"] for node in storages)
-        total_disk_usage = sum(node["disk"] for node in storages)
+        total_disk = sum(node.get("maxdisk", 0) for node in storages)
+        total_disk_usage = sum(node.get("disk", 0) for node in storages)
         disk_percent = total_disk_usage / total_disk * 100
 
         return {
