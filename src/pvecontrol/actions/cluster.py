@@ -7,11 +7,11 @@ from pvecontrol.sanitycheck import SanityCheck
 
 
 def action_clusterstatus(proxmox, _args):
-    status = "healthy" if proxmox.is_healthy() else "not healthy"
+    status = "healthy" if proxmox.is_healthy else "not healthy"
 
-    templates = sum(len(node.templates()) for node in proxmox.nodes)
+    templates = sum(len(node.templates) for node in proxmox.nodes)
     vms = sum(len(node.vms) for node in proxmox.nodes)
-    metrics = proxmox.metrics()
+    metrics = proxmox.metrics
 
     def _get_cpu_output():
         c_usage = metrics["cpu"]["usage"]
