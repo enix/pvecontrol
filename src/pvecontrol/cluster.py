@@ -27,10 +27,9 @@ class PVECluster:
         for node in self.get_resources_nodes():
             self.nodes.append(
                 PVENode(
-                    self.api,
+                    self,
                     node["node"],
                     node["status"],
-                    node_resources=self.get_node_resources(node["node"]),
                     kwargs=node,
                 )
             )
@@ -117,9 +116,6 @@ class PVECluster:
 
     def get_resources_nodes(self):
         return [resource for resource in self.resources if resource["type"] == "node"]
-
-    def get_node_resources(self, node_name):
-        return [resource for resource in self.resources if resource.get("node") == node_name]
 
     def get_vm(self, vm_id):
         if isinstance(vm_id, str):

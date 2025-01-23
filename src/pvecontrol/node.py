@@ -16,16 +16,13 @@ class NodeStatus(Enum):
 class PVENode:
     """A proxmox VE Node"""
 
-    _api = None
-
-    def __init__(self, api, node, status, node_resources, kwargs=None):
+    def __init__(self, cluster, node, status, kwargs=None):
         if not kwargs:
             kwargs = {}
 
         self.node = node
-        self.resources = node_resources
         self.status = NodeStatus[status.upper()]
-        self._api = api
+        self.cluster = cluster
         self.cpu = kwargs.get("cpu", 0)
         self.allocatedcpu = 0
         self.maxcpu = kwargs.get("maxcpu", 0)
@@ -52,7 +49,7 @@ class PVENode:
     def _init_vms(self):
         self.vms = []
         if self.status == NodeStatus.ONLINE:
-            self.vms = [PVEVm(self._api, self.node, vm["vmid"], vm["status"], vm) for vm in self.resources_vms]
+            self.vms = [PVEVm(self.api, self.node, vm["vmid"], vm["status"], vm) for vm in self.resources_vms]
 
     def _init_allocatedmem(self):
         """Compute the amount of memory allocated to running VMs"""
@@ -69,6 +66,14 @@ class PVENode:
             if vm.status != VmStatus.RUNNING:
                 continue
             self.allocatedcpu += vm.cpus
+
+    @property
+    def api(self):
+        return self.cluster.api
+
+    @property
+    def resources(self):
+        return [resource for resource in self.cluster.resources if resource.get("node") == self.node]
 
     @property
     def resources_vms(self):
