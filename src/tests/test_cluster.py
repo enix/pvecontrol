@@ -21,7 +21,7 @@ def test_pvecluster_find_node(request, _proxmox_http_auth):
     cluster = PVECluster(
         "name", "host", config={"node": "node"}, verify_ssl=False, **{"user": "user", "password": "password"}
     )
-    cluster_vms = cluster.vms()
+    cluster_vms = cluster.vms
 
     assert len(cluster.nodes) == len(nodes)
     assert len(cluster_vms) == len(vms)

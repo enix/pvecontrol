@@ -24,7 +24,7 @@ class PVECluster:
         self.resources = self.api.cluster.resources.get()
 
         self.nodes = []
-        for node in self.get_resources_nodes():
+        for node in self.resources_nodes:
             self.nodes.append(
                 PVENode(
                     self,
@@ -35,7 +35,7 @@ class PVECluster:
             )
 
         self.storages = []
-        for storage in self.get_resources_storages():
+        for storage in self.resources_storages:
             self.storages.append(PVEStorage(storage.pop("node"), storage.pop("id"), storage.pop("shared"), **storage))
 
     @property
@@ -81,6 +81,7 @@ class PVECluster:
             output += f"{node}\n"
         return output
 
+    @property
     def vms(self):
         """Return all vms on this cluster"""
         vms = []
@@ -111,11 +112,9 @@ class PVECluster:
                 return task
         return False
 
+    @property
     def is_healthy(self):
         return bool([item for item in self.status if item.get("type") == "cluster"][0]["quorate"])
-
-    def get_resources_nodes(self):
-        return [resource for resource in self.resources if resource["type"] == "node"]
 
     def get_vm(self, vm_id):
         if isinstance(vm_id, str):
@@ -123,7 +122,7 @@ class PVECluster:
 
         result = None
         node_name = None
-        for vm in self.get_resources_vms():
+        for vm in self.resources_vms:
             if vm["vmid"] == vm_id:
                 node_name = vm["node"]
                 break
@@ -135,17 +134,24 @@ class PVECluster:
 
         return result
 
-    def get_resources_vms(self):
+    @property
+    def resources_nodes(self):
+        return [resource for resource in self.resources if resource["type"] == "node"]
+
+    @property
+    def resources_vms(self):
         return [resource for resource in self.resources if resource["type"] == "qemu"]
 
-    def get_resources_storages(self):
+    @property
+    def resources_storages(self):
         return [resource for resource in self.resources if resource["type"] == "storage"]
 
     def get_storage(self, storage_name):
         return next(filter(lambda s: s.storage == storage_name, self.storages), None)
 
+    @property
     def cpu_metrics(self):
-        nodes = self.get_resources_nodes()
+        nodes = self.resources_nodes
         total_cpu = sum(node["maxcpu"] for node in nodes)
         total_cpu_usage = sum(node["cpu"] for node in nodes)
         total_cpu_allocated = sum(node.allocatedcpu for node in self.nodes)
@@ -158,8 +164,9 @@ class PVECluster:
             "percent": cpu_percent,
         }
 
+    @property
     def memory_metrics(self):
-        nodes = self.get_resources_nodes()
+        nodes = self.resources_nodes
         total_memory = sum(node["maxmem"] for node in nodes)
         total_memory_usage = sum(node["mem"] for node in nodes)
         total_memory_allocated = sum(node.allocatedmem for node in self.nodes)
@@ -172,8 +179,9 @@ class PVECluster:
             "percent": memory_percent,
         }
 
+    @property
     def disk_metrics(self):
-        storages = self.get_resources_storages()
+        storages = self.resources_storages
         total_disk = sum(node.get("maxdisk", 0) for node in storages)
         total_disk_usage = sum(node.get("disk", 0) for node in storages)
         disk_percent = total_disk_usage / total_disk * 100
@@ -184,9 +192,10 @@ class PVECluster:
             "percent": disk_percent,
         }
 
+    @property
     def metrics(self):
         return {
-            "cpu": self.cpu_metrics(),
-            "memory": self.memory_metrics(),
-            "disk": self.disk_metrics(),
+            "cpu": self.cpu_metrics,
+            "memory": self.memory_metrics,
+            "disk": self.disk_metrics,
         }

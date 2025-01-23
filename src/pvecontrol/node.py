@@ -86,5 +86,6 @@ class PVENode:
     #       return True
     #   return False
 
+    @property
     def templates(self):
         return [vm for vm in self.vms if vm.template]

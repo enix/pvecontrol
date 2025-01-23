@@ -5,7 +5,7 @@ from pvecontrol.utils import print_task, print_output
 
 
 def _get_vm(proxmox, vmid):
-    for vm in proxmox.vms():
+    for vm in proxmox.vms:
         logging.debug("_get_vm: %s", vm)
         if vm.vmid == vmid:
             return vm
@@ -63,5 +63,5 @@ def action_vmmigrate(proxmox, args):
 
 def action_vmlist(proxmox, args):
     """List VMs in the Proxmox Cluster"""
-    vms = proxmox.vms()
+    vms = proxmox.vms
     print_output(vms, columns=args.columns, sortby=args.sort_by, filters=args.filter, output=args.output)
