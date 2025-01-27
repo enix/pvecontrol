@@ -7,7 +7,7 @@ import re
 import subprocess
 import urllib3
 import shtab
-from importlib_metadata import version
+from importlib.metadata import version
 
 from pvecontrol import actions, node, vm, task, storage
 from pvecontrol.cluster import PVECluster
