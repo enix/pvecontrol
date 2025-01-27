@@ -7,6 +7,7 @@ import re
 import subprocess
 import urllib3
 import shtab
+from importlib_metadata import version
 
 from pvecontrol import actions, node, vm, task, storage
 from pvecontrol.cluster import PVECluster
@@ -70,11 +71,9 @@ def add_table_related_arguments(parser, columns, default_sort):
 
 
 def _parser():
-    ## FIXME
-    ## Add version in help output
-
-    # Parser configuration
-    parser = argparse.ArgumentParser(description="Proxmox VE control cli.", epilog="Made with love by Enix.io")
+    parser = argparse.ArgumentParser(
+        description=f"Proxmox VE control CLI, version: {version(__name__)}",
+        epilog="Made with love by Enix.io")
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument(
