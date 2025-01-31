@@ -55,18 +55,9 @@ def generate_routes(nodes, vms, backup_jobs, storage_resources=None, storage_con
     storage_resources = storage_resources or []
 
     routes = {
-        "/api2/json/cluster/status": [
-            {"type": "cluster", "version": 2, "quorate": 1, "nodes": len(nodes), "id": "cluster", "name": "devel"},
-            *[n["status"] for n in nodes],
-        ],
-        "/api2/json/cluster/resources": [
-            *[n["resource"] for n in nodes],
-            *storage_resources,
-            *vms,
-        ],
-        "/api2/json/nodes": [
-            *[n["resource"] for n in nodes],
-        ],
+        "/api2/json/cluster/status": get_status(nodes),
+        "/api2/json/cluster/resources": get_resources(nodes, vms, storage_resources),
+        "/api2/json/nodes": get_node_resources(nodes),
         "/api2/json/cluster/tasks": [],
         "/api2/json/cluster/ha/groups": [],
         "/api2/json/cluster/ha/status/manager_status": [],
@@ -84,6 +75,46 @@ def generate_routes(nodes, vms, backup_jobs, storage_resources=None, storage_con
     return routes
 
 
+def get_status(nodes):
+    return [
+        {"type": "cluster", "version": 2, "quorate": 1, "nodes": len(nodes), "id": "cluster", "name": "devel"},
+        *[n["status"] for n in nodes],
+    ]
+
+
+def get_resources(nodes, vms, storage_resources):
+    return [
+        *[n["resource"] for n in nodes],
+        *storage_resources,
+        *vms,
+    ]
+
+
+def get_node_resources(nodes):
+    return [n["resource"] for n in nodes]
+
+
+def get_node_qemu_for_vm(vm):
+    return {
+        "name": vm["name"],
+        "maxmem": vm["maxmem"],
+        "uptime": vm["uptime"],
+        "vmid": vm["vmid"],
+        "mem": vm["mem"],
+        "disk": vm["disk"],
+        "cpu": vm["cpu"],
+        "maxdisk": vm["maxdisk"],
+        "diskread": vm["diskread"],
+        "netout": vm["netout"],
+        "netin": vm["netin"],
+        "diskwrite": vm["diskwrite"],
+        "status": vm["status"],
+        "serial": 1,
+        "pid": 454971,
+        "cpus": 1,
+    }
+
+
 def generate_vm_routes(nodes, vms):
     routes = {}
 
@@ -95,26 +126,7 @@ def generate_vm_routes(nodes, vms):
         node_name = vm["node"]
         vm_id = vm["vmid"]
         routes[f"/api2/json/nodes/{node_name}/qemu/{vm_id}/config"] = generate_vm_config_route(vm)
-        routes[f"/api2/json/nodes/{node_name}/qemu"].append(
-            {
-                "name": vm["name"],
-                "maxmem": vm["maxmem"],
-                "uptime": vm["uptime"],
-                "vmid": vm["vmid"],
-                "mem": vm["mem"],
-                "disk": vm["disk"],
-                "cpu": vm["cpu"],
-                "maxdisk": vm["maxdisk"],
-                "diskread": vm["diskread"],
-                "netout": vm["netout"],
-                "netin": vm["netin"],
-                "diskwrite": vm["diskwrite"],
-                "status": vm["status"],
-                "serial": 1,
-                "pid": 454971,
-                "cpus": 1,
-            }
-        )
+        routes[f"/api2/json/nodes/{node_name}/qemu"].append(get_node_qemu_for_vm(vm))
 
     return routes
 

@@ -1,11 +1,14 @@
 from unittest.mock import patch
+import responses
+
 from pvecontrol.models.cluster import PVECluster
-from tests.fixtures.api import mock_api_requests, fake_node, fake_vm
+from tests.fixtures.api import fake_node, fake_vm, fake_storage_resource
+from tests.fixtures.api import mock_api_requests, get_status, get_resources
 
 
 @patch("proxmoxer.backends.https.ProxmoxHTTPAuth")
-@patch("proxmoxer.backends.https.ProxmoxHttpSession.request")
-def test_pvecluster_find_node(request, _proxmox_http_auth):
+@responses.activate
+def test_pvecluster_find_node(_proxmox_http_auth):
     nodes = [
         fake_node(1, True),
         fake_node(2, True),
@@ -15,8 +18,12 @@ def test_pvecluster_find_node(request, _proxmox_http_auth):
         fake_vm(101, nodes[0]),
         fake_vm(102, nodes[1]),
     ]
+    storage_resources = [fake_storage_resource("s3", n["status"]["name"]) for n in nodes]
 
-    request.side_effect = mock_api_requests(nodes, vms)
+    responses.get("https://host:8006/api2/json/cluster/status", json={"data": get_status(nodes)})
+    responses.get(
+        "https://host:8006/api2/json/cluster/resources", json={"data": get_resources(nodes, vms, storage_resources)}
+    )
 
     cluster = PVECluster(
         "name", "host", config={"node": "node"}, verify_ssl=False, **{"user": "user", "password": "password"}, timeout=1
