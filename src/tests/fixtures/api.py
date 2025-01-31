@@ -26,27 +26,17 @@ def mock_api_requests(nodes, vms, backup_jobs=None, storage_content=None):
 
 
 def generate_routes(nodes, vms, backup_jobs, storages_contents):
-    storage_resources = [fake_storage_resource("s3", n["status"]["name"]) for n in nodes]
     routes = {
-        "/api2/json/cluster/status": [
-            {"type": "cluster", "version": 2, "quorate": 1, "nodes": len(nodes), "id": "cluster", "name": "devel"},
-            *[n["status"] for n in nodes],
-        ],
-        "/api2/json/cluster/resources": [
-            *[n["resource"] for n in nodes],
-            *storage_resources,
-            *vms,
-        ],
-        "/api2/json/nodes": [
-            *[n["resource"] for n in nodes],
-        ],
+        "/api2/json/cluster/status": get_status(nodes),
+        "/api2/json/cluster/resources": get_resources(nodes, vms),
+        "/api2/json/nodes": get_node_resources(nodes),
         "/api2/json/cluster/tasks": [],
         "/api2/json/cluster/ha/groups": [],
         "/api2/json/cluster/ha/status/manager_status": [],
         "/api2/json/cluster/ha/resources": [],
         "/api2/json/cluster/backup": backup_jobs,
         **generate_vm_routes(nodes, vms),
-        **generate_storages_contents_routes(nodes, storage_resources, storages_contents),
+        **generate_storages_contents_routes(nodes, get_storage_resources(nodes), storages_contents),
     }
 
     print("ROUTES:")
@@ -55,6 +45,77 @@ def generate_routes(nodes, vms, backup_jobs, storages_contents):
     print("")
 
     return routes
+
+
+def get_status(nodes):
+    return [
+        {"type": "cluster", "version": 2, "quorate": 1, "nodes": len(nodes), "id": "cluster", "name": "devel"},
+        *[n["status"] for n in nodes],
+    ]
+
+
+def get_resources(nodes, vms):
+    return [
+        *[n["resource"] for n in nodes],
+        *get_storage_resources(nodes),
+        *vms,
+    ]
+
+
+def get_storage_resources(nodes):
+    return [fake_storage_resource("s3", n["status"]["name"]) for n in nodes]
+
+
+def get_node_resources(nodes):
+    return [n["resource"] for n in nodes]
+
+
+def get_qemu_config():
+    return {
+        "memory": "1024",
+        "vmgenid": "00000000-0000-0000-0000-000000000000",
+        "template": 1,
+        "scsihw": "virtio-scsi-single",
+        "serial0": "socket",
+        "balloon": 0,
+        "onboot": 1,
+        "ide2": "local:9012/vm-9012-cloudinit.qcow2,media=cdrom",
+        "agent": "1",
+        "cores": 1,
+        "numa": 1,
+        "digest": "0000000000000000000000000000000000000000",
+        "smbios1": "uuid=00000000-0000-0000-0000-000000000000",
+        "boot": "order=scsi0;net0",
+        "ostype": "l26",
+        "sockets": 1,
+        "machine": "q35",
+        "net0": "virtio=00:00:00:00:00:00,bridge=vmbr0",
+        "cpu": "x86-64-v2-AES",
+        "rng0": "source=/dev/urandom",
+        "scsi0": "local:9012/base-9012-disk-0.qcow2,size=2G,ssd=1",
+        "name": "template.debian-12-bookworm-amd64",
+    }
+
+
+def get_node_qemu_for_vm(vm):
+    return {
+        "name": vm["name"],
+        "maxmem": vm["maxmem"],
+        "uptime": vm["uptime"],
+        "vmid": vm["vmid"],
+        "mem": vm["mem"],
+        "disk": vm["disk"],
+        "cpu": vm["cpu"],
+        "maxdisk": vm["maxdisk"],
+        "diskread": vm["diskread"],
+        "netout": vm["netout"],
+        "netin": vm["netin"],
+        "diskwrite": vm["diskwrite"],
+        "status": vm["status"],
+        "serial": 1,
+        "pid": 454971,
+        "cpus": 1,
+    }
 
 
 def generate_vm_routes(nodes, vms):
@@ -67,50 +128,8 @@ def generate_vm_routes(nodes, vms):
     for vm in vms:
         node_name = vm["node"]
         vm_id = vm["vmid"]
-        routes[f"/api2/json/nodes/{node_name}/qemu/{vm_id}/config"] = {
-            "memory": "1024",
-            "vmgenid": "00000000-0000-0000-0000-000000000000",
-            "template": 1,
-            "scsihw": "virtio-scsi-single",
-            "serial0": "socket",
-            "balloon": 0,
-            "onboot": 1,
-            "ide2": "local:9012/vm-9012-cloudinit.qcow2,media=cdrom",
-            "agent": "1",
-            "cores": 1,
-            "numa": 1,
-            "digest": "0000000000000000000000000000000000000000",
-            "smbios1": "uuid=00000000-0000-0000-0000-000000000000",
-            "boot": "order=scsi0;net0",
-            "ostype": "l26",
-            "sockets": 1,
-            "machine": "q35",
-            "net0": "virtio=00:00:00:00:00:00,bridge=vmbr0",
-            "cpu": "x86-64-v2-AES",
-            "rng0": "source=/dev/urandom",
-            "scsi0": "local:9012/base-9012-disk-0.qcow2,size=2G,ssd=1",
-            "name": "template.debian-12-bookworm-amd64",
-        }
-        routes[f"/api2/json/nodes/{node_name}/qemu"].append(
-            {
-                "name": vm["name"],
-                "maxmem": vm["maxmem"],
-                "uptime": vm["uptime"],
-                "vmid": vm["vmid"],
-                "mem": vm["mem"],
-                "disk": vm["disk"],
-                "cpu": vm["cpu"],
-                "maxdisk": vm["maxdisk"],
-                "diskread": vm["diskread"],
-                "netout": vm["netout"],
-                "netin": vm["netin"],
-                "diskwrite": vm["diskwrite"],
-                "status": vm["status"],
-                "serial": 1,
-                "pid": 454971,
-                "cpus": 1,
-            }
-        )
+        routes[f"/api2/json/nodes/{node_name}/qemu/{vm_id}/config"] = get_qemu_config()
+        routes[f"/api2/json/nodes/{node_name}/qemu"].append(get_node_qemu_for_vm(vm))
 
     return routes
 
