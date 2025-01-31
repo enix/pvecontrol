@@ -4,7 +4,7 @@ import responses
 
 from pvecontrol.cluster import PVECluster
 from tests.fixtures.api import fake_node, fake_vm
-from tests.fixtures.api import get_status, get_resources, get_node_resources, get_node_qemu_for_vm, get_qemu_config
+from tests.fixtures.api import create_response_wrapper
 
 
 @patch("proxmoxer.backends.https.ProxmoxHTTPAuth")
@@ -20,33 +20,20 @@ def test_pvecluster_find_node(_proxmox_http_auth):
         fake_vm(102, nodes[1]),
     ]
 
-    responses.get("https://host:8006/api2/json/cluster/status", json={"data": get_status(nodes)})
-    responses.get("https://host:8006/api2/json/cluster/resources", json={"data": get_resources(nodes, vms)})
-    responses.get("https://host:8006/api2/json/nodes", json={"data": get_node_resources(nodes)})
-    responses.get(
-        "https://host:8006/api2/json/nodes/pve-devel-3/qemu",
-        json={
-            "data": [
-                get_node_qemu_for_vm(vms[0]),
-                get_node_qemu_for_vm(vms[1]),
-            ]
-        },
-    )
-    responses.get("https://host:8006/api2/json/nodes/pve-devel-3/qemu/100/config", json={"data": get_qemu_config()})
-    responses.get("https://host:8006/api2/json/nodes/pve-devel-3/qemu/101/config", json={"data": get_qemu_config()})
-    responses.get(
-        "https://host:8006/api2/json/nodes/pve-devel-4/qemu",
-        json={
-            "data": [
-                get_node_qemu_for_vm(vms[2]),
-            ]
-        },
-    )
-    responses.get("https://host:8006/api2/json/nodes/pve-devel-4/qemu/102/config", json={"data": get_qemu_config()})
-    responses.get("https://host:8006/api2/json/cluster/ha/groups", json={"data": []})
-    responses.get("https://host:8006/api2/json/cluster/ha/status/manager_status", json={"data": []})
-    responses.get("https://host:8006/api2/json/cluster/ha/resources", json={"data": []})
-    responses.get("https://host:8006/api2/json/cluster/tasks", json={"data": []})
+    responses_get = create_response_wrapper(nodes, vms)
+
+    responses_get("https://host:8006/api2/json/cluster/status")
+    responses_get("https://host:8006/api2/json/cluster/resources")
+    responses_get("https://host:8006/api2/json/nodes")
+    responses_get("https://host:8006/api2/json/nodes/pve-devel-3/qemu")
+    responses_get("https://host:8006/api2/json/nodes/pve-devel-3/qemu/100/config")
+    responses_get("https://host:8006/api2/json/nodes/pve-devel-3/qemu/101/config")
+    responses_get("https://host:8006/api2/json/nodes/pve-devel-4/qemu")
+    responses_get("https://host:8006/api2/json/nodes/pve-devel-4/qemu/102/config")
+    responses_get("https://host:8006/api2/json/cluster/ha/groups")
+    responses_get("https://host:8006/api2/json/cluster/ha/status/manager_status")
+    responses_get("https://host:8006/api2/json/cluster/ha/resources")
+    responses_get("https://host:8006/api2/json/cluster/tasks")
 
     cluster = PVECluster("name", "host", "username", "password", None, timeout=1)
     cluster_vms = cluster.vms()
