@@ -8,8 +8,8 @@ from tests.sanitycheck.utils import assert_message
 from tests.fixtures.api import (
     mock_api_requests,
     fake_node,
-    fake_storage_resource,
     fake_vm,
+    fake_storage_resource,
     fake_backup_job,
     fake_backup,
 )
