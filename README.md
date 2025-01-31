@@ -4,13 +4,14 @@
 ![pypi release](https://img.shields.io/pypi/v/pvecontrol.svg)
 ![pypi downloads](https://img.shields.io/pypi/dm/pvecontrol.svg)
 
-`pvecontrol` (https://pypi.org/project/pvecontrol/) is a CLI tool to manage Proxmox VE clusters and perform intermediate and advanced tasks that aren't available (or aren't straightforward) in the Proxmox web UI or default CLI tools.
+`pvecontrol` (<https://pypi.org/project/pvecontrol/>) is a CLI tool to manage Proxmox VE clusters and perform intermediate and advanced tasks that aren't available (or aren't straightforward) in the Proxmox web UI or default CLI tools.
 
 It was written by (and for) teams managing multiple Proxmox clusters, sometimes with many hypervisors. Conversely, if your Proxmox install consists of a single cluster with a single node, the features of `pvecontrol` might not be very interesting for you!
 
 Here are a few examples of things you can do with `pvecontrol`:
-- list all VMs across all hypervisors, along with their state and size;
-- evacuate (=drain) an hypervisor, i.e. migrate all VMs that are running on that hypervisor, automatically picking nodes with enough capacity to host these VMs.
+
+- List all VMs across all hypervisors, along with their state and size;
+- Evacuate (=drain) a hypervisor, i.e. migrate all VMs that are running on that hypervisor, automatically picking nodes with enough capacity to host these VMs.
 
 To communicate with Proxmox VE, `pvecontrol` uses [proxmoxer](https://pypi.org/project/proxmoxer/), a wonderful library that enables communication with various Proxmox APIs.
 
@@ -18,7 +19,7 @@ To communicate with Proxmox VE, `pvecontrol` uses [proxmoxer](https://pypi.org/p
 
 `pvecontrol` requires Python version 3.7 or above.
 
-The easiest way to install it is simply using pip. New versions are automatically published to [pypi](https://pypi.org/project/pvecontrol/) repository. It is recommended to use `pipx` in order to automatically create a dedicated python virtualenv:
+The easiest way to install it is simply using pip. New versions are automatically published to [pypi](https://pypi.org/project/pvecontrol/) repository. It is recommended to use `pipx` in order to automatically create a dedicated python virtual environment:
 
 ```shell
 pipx install pvecontrol
@@ -30,7 +31,7 @@ To use `pvecontrol`, you must create a YAML configuration in `$HOME/.config/pvec
 
 `pvecontrol` only uses the Proxmox HTTP API, which means that you can use most Proxmox authentication mechanisms, including `@pve` realm users and tokens.
 
-As an example, here's how to setup a dedicated user for `pvecontrol`, with read-only access to the Proxmox API:
+As an example, here's how to set up a dedicated user for `pvecontrol`, with read-only access to the Proxmox API:
 
 ```shell
 pveum user add pvecontrol@pve --password my.password.is.weak
@@ -102,11 +103,11 @@ The configuration file can include a `node:` section to specify CPU and memory p
 
 There are currently two parameters: `cpufactor` and `memoryminimum`.
 
-`cpufactor` indicates the level of overcommit allowed on an hypervisor. `1` means no overcommit at all; `5` means "an hypervisor with 8 cores can run VMs with up to 5x8 = 40 cores in total".
+`cpufactor` indicates the level of overcommit allowed on a hypervisor. `1` means no overcommit at all; `5` means "a hypervisor with 8 cores can run VMs with up to 5x8 = 40 cores in total".
 
 `memoryminimum` is the amount of memory that should always be available on a node, in bytes. When scheduling a VM (for instance, when automatically moving VMs around), `pvecontrol` will make sure that this amount of memory remains available for the hypervisor OS itself. Caution: if that amount is set to zero, it will be possible to allocate the entire host memory to virtual machines, leaving no memory for the hypervisor operating system and management daemons!
 
-These options can be specified in a global `node:` section, and then overriden per cluster.
+These options can be specified in a global `node:` section, and then overridden per cluster.
 
 Here is a configuration file showing this in action:
 
@@ -191,7 +192,7 @@ options:
 
 Commands that communicate with Proxmox (such as `nodelist` or `vmlist`) require that we specify the `-c` or `--cluster` flag to indicate on which cluster we want to work.
 
-The simplest operation we can do to check that `pvecontrol` works correctly and that authentication has been configured properly is `clusterstatus`:
+The simplest operation we can do to check that `pvecontrol` works correctly, and that authentication has been configured properly is `clusterstatus`:
 
 ```shell
 $ pvecontrol --cluster my-test-cluster clusterstatus
@@ -241,8 +242,8 @@ python3 src/main.py -h
 
 ## Contributing
 
-This project use *semantic versioning* with the [python-semantic-release](https://python-semantic-release.readthedocs.io/en/latest/) toolkit to automate the release process. All commits must follow the [Angular Commit Message Conventions](https://github.com/angular/angular/blob/master/CONTRIBUTING.md#-commit-message-format). Repository `main` branch is also protected to prevent accidental releases. All updates must go thru a PR with a review.
+This project use _semantic versioning_ with the [python-semantic-release](https://python-semantic-release.readthedocs.io/en/latest/) toolkit to automate the release process. All commits must follow the [Angular Commit Message Conventions](https://github.com/angular/angular/blob/master/CONTRIBUTING.md#-commit-message-format). Repository `main` branch is also protected to prevent accidental releases. All updates must go through a PR with a review.
 
 ---
 
-Made with :heart: by Enix (http://enix.io) :monkey: from Paris :fr:.
+Made with :heart: by Enix (<http://enix.io>) :monkey: from Paris :fr:.
