@@ -1,14 +1,13 @@
 name: Release New version
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   # Push new release using semantic-release
   release:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     concurrency: release
     environment: release
     permissions:

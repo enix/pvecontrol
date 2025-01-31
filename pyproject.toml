@@ -37,7 +37,7 @@ autoescape = true
 
 [tool.semantic_release.commit_author]
 env = "GIT_COMMIT_AUTHOR"
-default = "semantic-release <semantic-release>"
+default = "Monkeynator <monkeynator@enix.io>"
 
 [tool.semantic_release.commit_parser_options]
 allowed_tags = ["build", "chore", "ci", "docs", "feat", "fix", "perf", "style", "refactor", "test"]
