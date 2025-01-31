@@ -68,7 +68,7 @@ def test_sanitycheck_local_storage_vm_deleted(request, _proxmox_http_auth):
         fake_storage_resource("local", nodes[1]["status"]["name"], shared=0, plugin_type="lvm"),
     ]
 
-    storage_content = {
+    storage_contents = {
         nodes[0]["status"]["name"]: {
             "local": [fake_storage_content("local", "vm-100-disk-1.qcow2", 100, "image", 1738461900, "qcow2", {})],
         },
@@ -78,7 +78,7 @@ def test_sanitycheck_local_storage_vm_deleted(request, _proxmox_http_auth):
     }
 
     request.side_effect = mock_api_requests(
-        nodes, vms, storage_resources=storage_resources, storage_content=storage_content
+        nodes, vms, storage_resources=storage_resources, storage_contents=storage_contents
     )
 
     proxmox = PVECluster(
@@ -130,7 +130,7 @@ def test_sanitycheck_shared_storage_vm_deleted(request, _proxmox_http_auth):
         fake_storage_content("shared", "vm-101-disk-1.qcow2", 101, "image", 1738461900, "qcow2", {}),
     ]
 
-    storage_content = {
+    storage_contents = {
         nodes[0]["status"]["name"]: {
             "shared": contents,
         },
@@ -140,7 +140,7 @@ def test_sanitycheck_shared_storage_vm_deleted(request, _proxmox_http_auth):
     }
 
     request.side_effect = mock_api_requests(
-        nodes, vms, storage_resources=storage_resources, storage_content=storage_content
+        nodes, vms, storage_resources=storage_resources, storage_contents=storage_contents
     )
 
     proxmox = PVECluster(

@@ -1,5 +1,21 @@
 import json
 import requests
+import responses
+
+
+def execute_route(routes, method, url, **kwargs):
+    print(f"{method} {url}")
+    print(f"params: {kwargs['params']}")
+    path = url.replace("https://host:8006", "")
+    assert path in routes
+
+    route = routes[path]
+    data = route(method, **kwargs) if callable(route) else route
+
+    content = json.dumps({"data": data})
+    print(content + "\n")
+
+    return content
 
 
 DEFAULT_VM_CONFIG = {
@@ -28,20 +44,11 @@ DEFAULT_VM_CONFIG = {
 }
 
 
-def mock_api_requests(nodes, vms, backup_jobs=None, storage_resources=None, storage_content=None):
-    routes = generate_routes(nodes, vms, backup_jobs, storage_resources, storage_content)
+def mock_api_requests(nodes, vms, backup_jobs=None, storage_resources=None, storage_contents=None):
+    routes = generate_routes(nodes, vms, backup_jobs, storage_resources, storage_contents)
 
     def side_effect(method, url, **kwargs):
-        print(f"{method} {url}")
-        print(f"params: {kwargs['params']}")
-        path = url.replace("https://host:8006", "")
-        assert path in routes
-
-        route = routes[path]
-        data = route(method, **kwargs) if callable(route) else route
-
-        content = json.dumps({"data": data})
-        print(content + "\n")
+        content = execute_route(routes, method, url, **kwargs)
 
         res = requests.Response()
         res.status_code = 200
@@ -51,9 +58,20 @@ def mock_api_requests(nodes, vms, backup_jobs=None, storage_resources=None, stor
     return side_effect
 
 
+def create_response_wrapper(nodes, vms, backup_jobs=None, storage_resources=None, storage_contents=None):
+    routes = generate_routes(nodes, vms, backup_jobs, storage_resources, storage_contents)
+
+    def wrapper(path, **kwargs):
+        kwargs["params"] = kwargs.get("params", {})
+        url = "https://host:8006" + path
+        content = execute_route(routes, "GET", url, **kwargs)
+        responses.get(url, body=content)
+
+    return wrapper
+
+
 def generate_routes(nodes, vms, backup_jobs, storage_resources=None, storage_contents=None):
     storage_resources = storage_resources or []
-
     routes = {
         "/api2/json/cluster/status": get_status(nodes),
         "/api2/json/cluster/resources": get_resources(nodes, vms, storage_resources),
