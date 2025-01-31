@@ -4,7 +4,7 @@ import responses
 
 from pvecontrol.cluster import PVECluster
 from tests.fixtures.api import fake_node, fake_vm
-from tests.fixtures.api import mock_api_requests, get_status, get_resources
+from tests.fixtures.api import create_response_wrapper, mock_api_requests
 
 
 @patch("proxmoxer.backends.https.ProxmoxHTTPAuth")
@@ -20,8 +20,10 @@ def test_pvecluster_find_node(_proxmox_http_auth):
         fake_vm(102, nodes[1]),
     ]
 
-    responses.get("https://host:8006/api2/json/cluster/status", json={"data": get_status(nodes)})
-    responses.get("https://host:8006/api2/json/cluster/resources", json={"data": get_resources(nodes, vms)})
+    responses_get = create_response_wrapper(nodes, vms)
+
+    responses_get("/api2/json/cluster/status")
+    responses_get("/api2/json/cluster/resources")
 
     cluster = PVECluster(
         "name", "host", config={"node": "node"}, verify_ssl=False, **{"user": "user", "password": "password"}, timeout=1

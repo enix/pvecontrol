@@ -1,21 +1,28 @@
 import json
 import requests
+import responses
+
+
+def execute_route(routes, method, url, **kwargs):
+    print(f"{method} {url}")
+    print(f"params: {kwargs['params']}")
+    path = url.replace("https://host:8006", "")
+    assert path in routes
+
+    route = routes[path]
+    data = route(method, **kwargs) if callable(route) else route
+
+    content = json.dumps({"data": data})
+    print(content + "\n")
+
+    return content
 
 
 def mock_api_requests(nodes, vms, backup_jobs=None, storage_content=None):
     routes = generate_routes(nodes, vms, backup_jobs, storage_content)
 
     def side_effect(method, url, **kwargs):
-        print(f"{method} {url}")
-        print(f"params: {kwargs['params']}")
-        path = url.replace("https://host:8006", "")
-        assert path in routes
-
-        route = routes[path]
-        data = route(method, **kwargs) if callable(route) else route
-
-        content = json.dumps({"data": data})
-        print(content + "\n")
+        content = execute_route(routes, method, url, **kwargs)
 
         res = requests.Response()
         res.status_code = 200
@@ -23,6 +30,18 @@ def mock_api_requests(nodes, vms, backup_jobs=None, storage_content=None):
         return res
 
     return side_effect
+
+
+def create_response_wrapper(nodes, vms, backup_jobs=None, storage_content=None):
+    routes = generate_routes(nodes, vms, backup_jobs, storage_content)
+
+    def wrapper(path, **kwargs):
+        kwargs["params"] = kwargs.get("params", {})
+        url = "https://host:8006" + path
+        content = execute_route(routes, "GET", url, **kwargs)
+        responses.get(url, body=content)
+
+    return wrapper
 
 
 def generate_routes(nodes, vms, backup_jobs, storages_contents):
