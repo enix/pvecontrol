@@ -6,17 +6,21 @@ from proxmoxer import ProxmoxAPI
 from pvecontrol.node import PVENode
 from pvecontrol.storage import PVEStorage
 from pvecontrol.task import PVETask
+from pvecontrol.backup_job import PVEBackupJob
+from pvecontrol.volume import PVEVolume
 
 
 class PVECluster:
     """Proxmox VE Cluster"""
 
-    def __init__(self, name, host, config, verify_ssl=False, **auth):
-        self.api = ProxmoxAPI(host, verify_ssl=verify_ssl, **auth)
+    def __init__(self, name, host, config, timeout, verify_ssl=False, **auth):
+        self.api = ProxmoxAPI(host, timeout=timeout, verify_ssl=verify_ssl, **auth)
         self.name = name
         self.config = config
         self._tasks = None
         self._ha = None
+        self._backups = None
+        self._backup_jobs = None
         self._initstatus()
 
     def _initstatus(self):
@@ -36,7 +40,9 @@ class PVECluster:
 
         self.storages = []
         for storage in self.resources_storages:
-            self.storages.append(PVEStorage(storage.pop("node"), storage.pop("id"), storage.pop("shared"), **storage))
+            self.storages.append(
+                PVEStorage(self.api, storage.pop("node"), storage.pop("id"), storage.pop("shared"), **storage)
+            )
 
     @property
     def ha(self):
@@ -199,3 +205,22 @@ class PVECluster:
             "memory": self.memory_metrics,
             "disk": self.disk_metrics,
         }
+
+    @property
+    def backups(self):
+        if self._backups is None:
+            self._backups = []
+            for item in PVEStorage.get_grouped_list(self):
+                for backup in item["storage"].get_content("backup"):
+                    self._backups.append(
+                        PVEVolume(backup.pop("volid"), backup.pop("format"), backup.pop("size"), **backup)
+                    )
+        return self._backups
+
+    @property
+    def backup_jobs(self):
+        if self._backup_jobs is None:
+            self._backup_jobs = []
+            for backup_job in self.api.cluster.backup.get():
+                self._backup_jobs.append(PVEBackupJob(backup_job.pop("id"), **backup_job))
+        return self._backup_jobs

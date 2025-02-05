@@ -4,6 +4,7 @@ import sys
 import re
 import curses
 import json
+import os
 
 from collections import OrderedDict
 from enum import Enum
@@ -35,6 +36,9 @@ class OutputFormats(Enum):
 
 
 def terminal_support_colors():
+    if os.getenv("NO_COLOR"):
+        return False
+
     try:
         _stdscr = curses.initscr()
         curses.start_color()

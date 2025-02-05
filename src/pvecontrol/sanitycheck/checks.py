@@ -7,6 +7,7 @@ from pvecontrol.utils import Fonts, teminal_support_utf_8, terminal_support_colo
 class CheckType(Enum):
     HA = "HIGH_AVAILABILITY"
     NODE = "NODE"
+    VM = "VM"
 
 
 class CheckCode(Enum):
@@ -73,7 +74,6 @@ class Check(ABC):
             messages = []
         self.proxmox = proxmox
         self.messages = messages
-        self.code = ""
 
     @abstractmethod
     def run(self):
@@ -102,9 +102,6 @@ class Check(ABC):
             self.messages.append(messages)
         elif isinstance(messages, list):
             self.messages += messages
-
-    def set_code(self, code: CheckCode):
-        self.code = code
 
     def display(self, padding_max_size):
         if terminal_support_colors():
