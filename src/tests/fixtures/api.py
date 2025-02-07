@@ -61,11 +61,16 @@ def mock_api_requests(nodes, vms, backup_jobs=None, storage_resources=None, stor
 def create_response_wrapper(nodes, vms, backup_jobs=None, storage_resources=None, storage_contents=None):
     routes = generate_routes(nodes, vms, backup_jobs, storage_resources, storage_contents)
 
-    def wrapper(path, **kwargs):
+    def wrapper(path, data=None, **kwargs):
         kwargs["params"] = kwargs.get("params", {})
         url = "https://host:8006" + path
-        content = execute_route(routes, "GET", url, **kwargs)
-        responses.get(url, body=content)
+
+        if data is None:
+            body = execute_route(routes, "GET", url, **kwargs)
+        else:
+            body = json.dumps({"data": data})
+
+        responses.get(url, body=body)
 
     return wrapper
 
