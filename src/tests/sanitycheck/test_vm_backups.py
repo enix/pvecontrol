@@ -1,90 +1,40 @@
 from unittest.mock import patch
-from datetime import datetime, timedelta
-from pvecontrol.models.cluster import PVECluster
+
+import responses
+
 from pvecontrol.sanitycheck.tests.vm_backups import VmBackups
 from pvecontrol.sanitycheck import SanityCheck
 from pvecontrol.sanitycheck.checks import CheckCode
 from tests.sanitycheck.utils import assert_message
-from tests.fixtures.api import (
-    mock_api_requests,
-    fake_node,
-    fake_vm,
-    fake_storage_resource,
-    fake_backup_job,
-    fake_backup,
-)
+from tests.testcase import PVEControlTestcase
 
 
-@patch("proxmoxer.backends.https.ProxmoxHTTPAuth")
-@patch("proxmoxer.backends.https.ProxmoxHttpSession.request")
-def test_sanitycheck_vm_backups(request, _proxmox_http_auth):
-    nodes = [
-        fake_node(3, True),
-        fake_node(4, True),
-    ]
-    vms = [
-        fake_vm(100, nodes[0]),
-        fake_vm(101, nodes[0]),
-        fake_vm(102, nodes[1]),
-        fake_vm(103, nodes[1]),
-    ]
-    backup_jobs = [
-        fake_backup_job(1, "100"),
-        fake_backup_job(2, "101"),
-        fake_backup_job(3, "102"),
-    ]
+class PVEClusterTestcase(PVEControlTestcase):
 
-    storage_resources = [fake_storage_resource("s3", n["status"]["name"]) for n in nodes]
+    @responses.activate
+    def test_check(self):
+        self.responses_get("/api2/json/cluster/backup")
+        self.responses_get("/api2/json/nodes/pve-devel-1/storage/s3/content", params={"content": "backup"})
 
-    backups = [
-        fake_backup("s3", 100, datetime.now() - timedelta(minutes=110)),
-        fake_backup("s3", 101, datetime.now() - timedelta(minutes=90)),
-    ]
-    storages_contents = {
-        nodes[0]["status"]["name"]: {
-            "s3": backups,
-        },
-        nodes[1]["status"]["name"]: {
-            "s3": backups,
-        },
-    }
+        vm_backups_check = VmBackups(self.cluster)
+        vm_backups_check.run()
 
-    request.side_effect = mock_api_requests(nodes, vms, backup_jobs, storage_resources, storages_contents)
+        sc = SanityCheck(self.cluster)
+        with patch.object(sc, "_checks", new=[vm_backups_check]):
+            exitcode = sc.get_exit_code()
+            sc.display()
 
-    proxmox = PVECluster(
-        "name",
-        "host",
-        config={
-            "node": {
-                "cpufactor": 2.5,
-                "memoryminimum": 81928589934592,
-            },
-            "vm": {
-                "max_last_backup": 100,
-            },
-        },
-        **{"user": "user", "password": "password"},
-        timeout=1,
-    )
+            assert exitcode == 1
+            assert len(vm_backups_check.messages) == 8
 
-    vm_backups_check = VmBackups(proxmox)
-    vm_backups_check.run()
+            # check for associated backup jobs
+            assert_message(vm_backups_check.messages[0], CheckCode.OK, "vm-100", "is associated")
+            assert_message(vm_backups_check.messages[1], CheckCode.OK, "vm-101", "is associated")
+            assert_message(vm_backups_check.messages[2], CheckCode.OK, "vm-102", "is associated")
+            assert_message(vm_backups_check.messages[3], CheckCode.WARN, "vm-103", "not associated")
+            assert_message(vm_backups_check.messages[4], CheckCode.WARN, "vm-104", "not associated")
 
-    sc = SanityCheck(proxmox)
-    with patch.object(sc, "_checks", new=[vm_backups_check]):
-        exitcode = sc.get_exit_code()
-        sc.display()
-
-        assert exitcode == 1
-        assert len(vm_backups_check.messages) == 7
-
-        # check for associated backup jobs
-        assert_message(vm_backups_check.messages[0], CheckCode.OK, "vm-100", "is associated")
-        assert_message(vm_backups_check.messages[1], CheckCode.OK, "vm-101", "is associated")
-        assert_message(vm_backups_check.messages[2], CheckCode.OK, "vm-102", "is associated")
-        assert_message(vm_backups_check.messages[3], CheckCode.WARN, "vm-103", "not associated")
-
-        # check for recent backups
-        assert_message(vm_backups_check.messages[4], CheckCode.CRIT, "vm-100", "is too old")
-        assert_message(vm_backups_check.messages[5], CheckCode.OK, "vm-101", "is recent enough")
-        assert_message(vm_backups_check.messages[6], CheckCode.WARN, "vm-102", "never")
+            # check for recent backups
+            assert_message(vm_backups_check.messages[5], CheckCode.CRIT, "vm-100", "is too old")
+            assert_message(vm_backups_check.messages[6], CheckCode.OK, "vm-101", "is recent enough")
+            assert_message(vm_backups_check.messages[7], CheckCode.WARN, "vm-102", "never")
