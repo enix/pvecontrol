@@ -1,6 +1,4 @@
 import json
-import requests
-import responses
 
 
 def execute_route(routes, method, url, **kwargs):
@@ -16,58 +14,6 @@ def execute_route(routes, method, url, **kwargs):
     print(content + "\n")
 
     return content
-
-
-def mock_api_requests(nodes, vms, backup_jobs=None):
-    routes = generate_routes(nodes, vms, backup_jobs)
-
-    def side_effect(method, url, **kwargs):
-        content = execute_route(routes, method, url, **kwargs)
-
-        res = requests.Response()
-        res.status_code = 200
-        res._content = content.encode("utf-8")  # pylint: disable=protected-access
-        return res
-
-    return side_effect
-
-
-def create_response_wrapper(nodes, vms, backup_jobs):
-    routes = generate_routes(nodes, vms, backup_jobs)
-
-    def wrapper(path, data=None, **kwargs):
-        kwargs["params"] = kwargs.get("params", {})
-        url = "https://host:8006" + path
-
-        if data is None:
-            body = execute_route(routes, "GET", url, **kwargs)
-        else:
-            body = json.dumps({"data": data})
-
-        responses.get(url, body=body)
-
-    return wrapper
-
-
-def generate_routes(nodes, vms, backup_jobs):
-    routes = {
-        "/api2/json/cluster/status": get_status(nodes),
-        "/api2/json/cluster/resources": get_resources(nodes, vms),
-        "/api2/json/nodes": get_node_resources(nodes),
-        "/api2/json/cluster/tasks": [],
-        "/api2/json/cluster/ha/groups": [],
-        "/api2/json/cluster/ha/status/manager_status": [],
-        "/api2/json/cluster/ha/resources": [],
-        "/api2/json/cluster/backup": backup_jobs,
-        **generate_vm_routes(nodes, vms),
-    }
-
-    print("ROUTES:")
-    for route_path in routes.keys():
-        print(route_path)
-    print("")
-
-    return routes
 
 
 def get_status(nodes):

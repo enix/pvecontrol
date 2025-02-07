@@ -1,10 +1,20 @@
 import unittest
+import json
 
 from unittest.mock import patch
 
 import responses
 
-from tests.fixtures.api import create_response_wrapper, fake_node, fake_vm, fake_backup_job
+from tests.fixtures.api import (
+    execute_route,
+    fake_node,
+    fake_vm,
+    fake_backup_job,
+    get_status,
+    get_resources,
+    get_node_resources,
+    generate_vm_routes,
+)
 from pvecontrol.cluster import PVECluster
 
 
@@ -31,7 +41,8 @@ class PVEControlTestcase(unittest.TestCase):
             fake_backup_job(3, "102"),
         ]
 
-        self.responses_get = create_response_wrapper(self.nodes, self.vms, self.backup_jobs)
+        self.generate_routes()
+        self.responses_get = self.create_response_wrapper()
 
         self.responses_get("/api2/json/cluster/status")
         self.responses_get("/api2/json/cluster/resources")
@@ -56,3 +67,36 @@ class PVEControlTestcase(unittest.TestCase):
                 **{"user": "user", "password": "password"},
                 timeout=mock_auth_instance.timeout,
             )
+
+    def create_response_wrapper(self):
+
+        def wrapper(path, data=None, **kwargs):
+            kwargs["params"] = kwargs.get("params", {})
+            url = "https://host:8006" + path
+
+            if data is None:
+                body = execute_route(self.routes, "GET", url, **kwargs)
+            else:
+                body = json.dumps({"data": data})
+
+            responses.get(url, body=body)
+
+        return wrapper
+
+    def generate_routes(self):
+        self.routes = {
+            "/api2/json/cluster/status": get_status(self.nodes),
+            "/api2/json/cluster/resources": get_resources(self.nodes, self.vms),
+            "/api2/json/nodes": get_node_resources(self.nodes),
+            "/api2/json/cluster/tasks": [],
+            "/api2/json/cluster/ha/groups": [],
+            "/api2/json/cluster/ha/status/manager_status": [],
+            "/api2/json/cluster/ha/resources": [],
+            "/api2/json/cluster/backup": self.backup_jobs,
+            **generate_vm_routes(self.nodes, self.vms),
+        }
+
+        print("ROUTES:")
+        for route_path in self.routes.keys():
+            print(route_path)
+        print("")
