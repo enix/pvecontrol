@@ -1,4 +1,5 @@
 from unittest.mock import patch
+from datetime import datetime, timedelta
 
 import responses
 
@@ -6,6 +7,7 @@ from pvecontrol.sanitycheck.tests.vm_backups import VmBackups
 from pvecontrol.sanitycheck import SanityCheck
 from pvecontrol.sanitycheck.checks import CheckCode
 from tests.testcase import PVEControlTestcase
+from tests.fixtures.api import fake_backup
 
 
 class PVEClusterTestcase(PVEControlTestcase):
@@ -13,7 +15,11 @@ class PVEClusterTestcase(PVEControlTestcase):
     @responses.activate
     def test_check(self):
         self.responses_get("/api2/json/cluster/backup")
-        self.responses_get("/api2/json/nodes/pve-devel-1/storage/s3/content", params={"content": "backup"})
+        data = [
+            fake_backup("s3", 100, datetime.now() - timedelta(minutes=110)),
+            fake_backup("s3", 101, datetime.now() - timedelta(minutes=90)),
+        ]
+        self.responses_get("/api2/json/nodes/pve-devel-1/storage/s3/content", data=data)
 
         vm_backups_check = VmBackups(self.cluster)
         vm_backups_check.run()

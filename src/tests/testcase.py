@@ -1,11 +1,10 @@
 import unittest
 
 from unittest.mock import patch
-from datetime import datetime, timedelta
 
 import responses
 
-from tests.fixtures.api import create_response_wrapper, fake_node, fake_vm, fake_backup, fake_backup_job
+from tests.fixtures.api import create_response_wrapper, fake_node, fake_vm, fake_backup_job
 from pvecontrol.cluster import PVECluster
 
 
@@ -31,12 +30,8 @@ class PVEControlTestcase(unittest.TestCase):
             fake_backup_job(2, "101"),
             fake_backup_job(3, "102"),
         ]
-        self.storages_contents = [
-            fake_backup("s3", 100, datetime.now() - timedelta(minutes=110)),
-            fake_backup("s3", 101, datetime.now() - timedelta(minutes=90)),
-        ]
 
-        self.responses_get = create_response_wrapper(self.nodes, self.vms, self.backup_jobs, self.storages_contents)
+        self.responses_get = create_response_wrapper(self.nodes, self.vms, self.backup_jobs)
 
         self.responses_get("/api2/json/cluster/status")
         self.responses_get("/api2/json/cluster/resources")

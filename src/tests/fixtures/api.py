@@ -18,8 +18,8 @@ def execute_route(routes, method, url, **kwargs):
     return content
 
 
-def mock_api_requests(nodes, vms, backup_jobs=None, storage_content=None):
-    routes = generate_routes(nodes, vms, backup_jobs, storage_content)
+def mock_api_requests(nodes, vms, backup_jobs=None):
+    routes = generate_routes(nodes, vms, backup_jobs)
 
     def side_effect(method, url, **kwargs):
         content = execute_route(routes, method, url, **kwargs)
@@ -32,8 +32,8 @@ def mock_api_requests(nodes, vms, backup_jobs=None, storage_content=None):
     return side_effect
 
 
-def create_response_wrapper(nodes, vms, backup_jobs, storage_content):
-    routes = generate_routes(nodes, vms, backup_jobs, storage_content)
+def create_response_wrapper(nodes, vms, backup_jobs):
+    routes = generate_routes(nodes, vms, backup_jobs)
 
     def wrapper(path, data=None, **kwargs):
         kwargs["params"] = kwargs.get("params", {})
@@ -49,7 +49,7 @@ def create_response_wrapper(nodes, vms, backup_jobs, storage_content):
     return wrapper
 
 
-def generate_routes(nodes, vms, backup_jobs, storages_contents):
+def generate_routes(nodes, vms, backup_jobs):
     routes = {
         "/api2/json/cluster/status": get_status(nodes),
         "/api2/json/cluster/resources": get_resources(nodes, vms),
@@ -60,7 +60,6 @@ def generate_routes(nodes, vms, backup_jobs, storages_contents):
         "/api2/json/cluster/ha/resources": [],
         "/api2/json/cluster/backup": backup_jobs,
         **generate_vm_routes(nodes, vms),
-        **generate_storages_contents_routes(nodes, get_storage_resources(nodes), storages_contents),
     }
 
     print("ROUTES:")
@@ -155,32 +154,6 @@ def generate_vm_routes(nodes, vms):
         routes[f"/api2/json/nodes/{node_name}/qemu/{vm_id}/config"] = get_qemu_config()
         routes[f"/api2/json/nodes/{node_name}/qemu"].append(get_node_qemu_for_vm(vm))
 
-    return routes
-
-
-def generate_storage_content_route(storage, storages_contents):
-    def storage_content_route(_method, params=None, **_kwargs):
-        items = []
-        for item in storages_contents:
-            storage_filter = item["volid"].split(":")[0] == storage["storage"]
-            content_filter = "content" not in params or item["content"] == params["content"]
-            if storage_filter and content_filter:
-                items.append(item)
-        return items
-
-    return storage_content_route
-
-
-def generate_storages_contents_routes(nodes, storage_resources, storages_contents):
-    routes = {}
-
-    for node in nodes:
-        node_name = node["status"]["name"]
-        for storage in storage_resources:
-
-            storage_name = storage["storage"]
-            route = generate_storage_content_route(storage, storages_contents)
-            routes[f"/api2/json/nodes/{node_name}/storage/{storage_name}/content"] = route
     return routes
 
 
