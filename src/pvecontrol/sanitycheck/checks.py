@@ -7,6 +7,7 @@ from pvecontrol.utils import Fonts, teminal_support_utf_8, terminal_support_colo
 class CheckType(Enum):
     HA = "HIGH_AVAILABILITY"
     NODE = "NODE"
+    VM = "VIRTUAL_MACHINE"
 
 
 class CheckCode(Enum):

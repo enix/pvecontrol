@@ -269,6 +269,7 @@ If you want to tinker with the code, all the required dependencies are listed in
 
 ```shell
 pip3 install -r requirements.txt
+pip3 install -e .
 ```
 
 Then you can run the script directly like so:
