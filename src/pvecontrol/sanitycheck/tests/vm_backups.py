@@ -23,13 +23,13 @@ class VmBackups(Check):
                 backuped_vms.append(vm)
             else:
                 msg = f"Vm {vm.vmid} ({vm.name}) is not associated to any backup job"
-                self.add_messages(CheckMessage(CheckCode.CRIT, msg))
+                self.add_messages(CheckMessage(CheckCode.WARN, msg))
         return backuped_vms
 
     def _check_backup_ran_recently(self, vms):
         minutes_ago = self.proxmox.config["vm"]["max_last_backup"]
         hm_ago = divmod(minutes_ago, 60)
-        time_ago = f"{hm_ago[0]:02d} hour(s) and {hm_ago[1]:02d} minute(s) ago"
+        time_ago = f"{hm_ago[0]:02d} hour(s) and {hm_ago[1]:02d} minute(s)"
 
         for vm in vms:
             last_backup = vm.get_last_backup(self.proxmox)
@@ -38,10 +38,11 @@ class VmBackups(Check):
                 self.add_messages(message)
                 continue
             last_backup_time = datetime.fromtimestamp(last_backup.ctime)
-            msg_template = f"Vm {vm.vmid} ({vm.name}) has been backed up {{}} than {time_ago} ({last_backup_time.strftime('%Y-%m-%d %H:%M:%S')})"
+            last_backup_time_str = last_backup_time.strftime("%Y-%m-%d %H:%M:%S")
             if last_backup_time > datetime.now() - timedelta(minutes=minutes_ago):
-                msg = msg_template.format("less")
-                self.add_messages(CheckMessage(CheckCode.OK, msg))
+                message = f"Vm {vm.vmid} ({vm.name}) has not been backed up in the last {time_ago}, last backup: {last_backup_time_str}"
+                self.add_messages(CheckMessage(CheckCode.OK, message))
+
             else:
-                msg = msg_template.format("more")
-                self.add_messages(CheckMessage(CheckCode.WARN, msg))
+                message = f"Vm {vm.vmid} ({vm.name}) last backup: {last_backup_time_str}"
+                self.add_messages(CheckMessage(CheckCode.CRIT, message))
