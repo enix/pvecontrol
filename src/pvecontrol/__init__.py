@@ -5,9 +5,11 @@ import argparse
 import logging
 import re
 import subprocess
+
+from importlib.metadata import version
+
 import urllib3
 import shtab
-from importlib.metadata import version
 
 from pvecontrol import actions, node, vm, task, storage
 from pvecontrol.cluster import PVECluster
@@ -72,8 +74,8 @@ def add_table_related_arguments(parser, columns, default_sort):
 
 def _parser():
     parser = argparse.ArgumentParser(
-        description=f"Proxmox VE control CLI, version: {version(__name__)}",
-        epilog="Made with love by Enix.io")
+        description=f"Proxmox VE control CLI, version: {version(__name__)}", epilog="Made with love by Enix.io"
+    )
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument(
@@ -170,13 +172,30 @@ def run_auth_commands(clusterconfig):
     auth = {}
     regex = r"^\$\((.*)\)$"
 
-    for key in ("user", "password", "token_name", "token_value"):
+    for key in (
+        "user",
+        "password",
+        "token_name",
+        "token_value",
+        "proxy_certificate_path",
+        "proxy_certificate_key_path",
+    ):
         value = clusterconfig.get(key)
         if value is not None:
             result = re.match(regex, value)
             if result:
                 value = _execute_command(result.group(1))
             auth[key] = value
+
+    proxy_certificate = auth.get("proxy_certificate_path")
+    proxy_certificate_key = auth.get("proxy_certificate_key_path")
+    if proxy_certificate != "" and proxy_certificate_key != "":
+        auth["cert"] = (proxy_certificate, proxy_certificate_key)
+
+    if "proxy_certificate_path" in auth:
+        del auth["proxy_certificate_path"]
+    if "proxy_certificate_key_path" in auth:
+        del auth["proxy_certificate_key_path"]
 
     logging.debug("Auth: %s", auth)
     # check for "incompatible" auth options

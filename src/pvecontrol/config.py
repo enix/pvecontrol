@@ -10,6 +10,8 @@ configtemplate = {
             "host": str,
             "user": str,
             "password": confuse.Optional(str, None),
+            "proxy_certificate_path": confuse.Optional(str, None),
+            "proxy_certificate_key_path": confuse.Optional(str, None),
             "token_name": confuse.Optional(str, None),
             "token_value": confuse.Optional(str, None),
             "node": confuse.Optional(
