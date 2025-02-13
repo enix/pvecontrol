@@ -5,14 +5,17 @@ import argparse
 import logging
 import re
 import subprocess
+
+from importlib.metadata import version
+
 import urllib3
 import shtab
-from importlib.metadata import version
 
 from pvecontrol import actions, node, vm, task, storage
 from pvecontrol.cluster import PVECluster
 from pvecontrol.config import set_config
 from pvecontrol.utils import OutputFormats
+from pvecontrol.sanitycheck.tests import DEFAULT_CHECK_IDS
 
 
 def action_test(proxmox, _args):
@@ -72,8 +75,8 @@ def add_table_related_arguments(parser, columns, default_sort):
 
 def _parser():
     parser = argparse.ArgumentParser(
-        description=f"Proxmox VE control CLI, version: {version(__name__)}",
-        epilog="Made with love by Enix.io")
+        description=f"Proxmox VE control CLI, version: {version(__name__)}", epilog="Made with love by Enix.io"
+    )
     parser.add_argument("-v", "--verbose", action="store_true")
     parser.add_argument("--debug", action="store_true")
     parser.add_argument(
@@ -149,7 +152,9 @@ def _parser():
 
     # sanitycheck parser
     parser_sanitycheck = subparsers.add_parser("sanitycheck", help="Run Sanity checks on the cluster")
-    parser_sanitycheck.add_argument("--check", action="append", required=False, help="Check to run", default=[])
+    parser_sanitycheck.add_argument(
+        "--check", action="append", required=False, help="Check to run", default=[], choices=DEFAULT_CHECK_IDS
+    )
     parser_sanitycheck.set_defaults(func=actions.cluster.action_sanitycheck)
 
     # _test parser, hidden from help
@@ -218,7 +223,12 @@ def main():
     clusterconfig = set_config(args.cluster)
     auth = run_auth_commands(clusterconfig)
     proxmoxcluster = PVECluster(
-        clusterconfig.name, clusterconfig.host, config={"node": clusterconfig.node}, verify_ssl=False, **auth
+        clusterconfig.name,
+        clusterconfig.host,
+        config={"node": clusterconfig.node, "vm": clusterconfig.vm},
+        verify_ssl=False,
+        timeout=clusterconfig.timeout,
+        **auth,
     )
 
     args.func(proxmoxcluster, args)

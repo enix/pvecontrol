@@ -2,15 +2,19 @@ import json
 import requests
 
 
-def mock_api_requests(nodes, vms):
-    routes = generate_routes(nodes, vms)
+def mock_api_requests(nodes, vms, backup_jobs=None, storage_content=None):
+    routes = generate_routes(nodes, vms, backup_jobs, storage_content)
 
-    def side_effect(method, url, *_args, **_kwargs):
+    def side_effect(method, url, **kwargs):
         print(f"{method} {url}")
+        print(f"params: {kwargs['params']}")
         path = url.replace("https://host:8006", "")
         assert path in routes
 
-        content = json.dumps({"data": routes[path]})
+        route = routes[path]
+        data = route(method, **kwargs) if callable(route) else route
+
+        content = json.dumps({"data": data})
         print(content + "\n")
 
         res = requests.Response()
@@ -21,7 +25,8 @@ def mock_api_requests(nodes, vms):
     return side_effect
 
 
-def generate_routes(nodes, vms):
+def generate_routes(nodes, vms, backup_jobs, storages_contents):
+    storage_resources = [fake_storage_resource("s3", n["status"]["name"]) for n in nodes]
     routes = {
         "/api2/json/cluster/status": [
             {"type": "cluster", "version": 2, "quorate": 1, "nodes": len(nodes), "id": "cluster", "name": "devel"},
@@ -29,6 +34,7 @@ def generate_routes(nodes, vms):
         ],
         "/api2/json/cluster/resources": [
             *[n["resource"] for n in nodes],
+            *storage_resources,
             *vms,
         ],
         "/api2/json/nodes": [
@@ -38,7 +44,9 @@ def generate_routes(nodes, vms):
         "/api2/json/cluster/ha/groups": [],
         "/api2/json/cluster/ha/status/manager_status": [],
         "/api2/json/cluster/ha/resources": [],
+        "/api2/json/cluster/backup": backup_jobs,
         **generate_vm_routes(nodes, vms),
+        **generate_storages_contents_routes(nodes, storage_resources, storages_contents),
     }
 
     print("ROUTES:")
@@ -107,6 +115,32 @@ def generate_vm_routes(nodes, vms):
     return routes
 
 
+def generate_storage_content_route(storage, storages_contents):
+    def storage_content_route(_method, params=None, **_kwargs):
+        items = []
+        for item in storages_contents:
+            storage_filter = item["volid"].split(":")[0] == storage["storage"]
+            content_filter = "content" not in params or item["content"] == params["content"]
+            if storage_filter and content_filter:
+                items.append(item)
+        return items
+
+    return storage_content_route
+
+
+def generate_storages_contents_routes(nodes, storage_resources, storages_contents):
+    routes = {}
+
+    for node in nodes:
+        node_name = node["status"]["name"]
+        for storage in storage_resources:
+
+            storage_name = storage["storage"]
+            route = generate_storage_content_route(storage, storages_contents)
+            routes[f"/api2/json/nodes/{node_name}/storage/{storage_name}/content"] = route
+    return routes
+
+
 def fake_node(node_id, local=False):
     resource_id = f"node/pve-devel-{node_id}"
     name = f"pve-devel-{node_id}"
@@ -165,3 +199,57 @@ def fake_vm(vm_id, node, status="running"):
         "maxcpu": 1,
         "type": "qemu",
     }
+
+
+def fake_backup_job(job_id, vmid):
+    return {
+        "id": f"backup-d71917f0-{job_id:04x}",
+        "prune-backups": {"keep-last": "3"},
+        "storage": "local",
+        "notes-template": "{{guestname}}",
+        "schedule": "sun 01:00",
+        "fleecing": {"enabled": "0"},
+        "enabled": 1,
+        "type": "vzdump",
+        "next-run": 1735430400,
+        "mode": "snapshot",
+        "vmid": vmid,
+        "compress": "zstd",
+    }
+
+
+def fake_storage_resource(name, node_name):
+    return {
+        "content": "snippets,images,iso,backup,rootdir,vztmpl",
+        "id": f"storage/{node_name}/{name}",
+        "disk": 0,
+        "storage": name,
+        "shared": 1,
+        "status": "available",
+        "maxdisk": 33601372160,
+        "type": "storage",
+        "node": node_name,
+        "plugintype": "s3",
+    }
+
+
+def fake_storage_content(storage, volid, content, ctime, storage_format, options):
+    return {
+        "volid": f"{storage}:{content}/{volid}",
+        "content": content,
+        "ctime": ctime,
+        "format": storage_format,
+        "size": 1124800,
+        **options,
+    }
+
+
+def fake_backup(storage, vmid, created_at):
+    created_at_str = created_at.strftime("%Y_%m_%d-%H_%M_%S")
+    volid = f"vz-dump-qemu-{vmid}-{created_at_str}.vma.zst"
+    options = {
+        "vmid": vmid,
+        "notes": f"VM {vmid}",
+        "subtype": "qemu",
+    }
+    return fake_storage_content(storage, volid, "backup", int(created_at.timestamp()), "vma.zst", options)
