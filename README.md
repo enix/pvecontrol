@@ -81,9 +81,25 @@ clusters:
     token_value: randomtokenvalue
 ```
 
+### Reverse proxies
+
+`pvecontrol` supports certificate-based authentication to a reverse proxy. Which makes it suitable for use with tools like [teleport](https://goteleport.com/docs/enroll-resources/application-access/guides/connecting-apps/) using teleport apps.
+
+```yaml
+clusters:
+  - name: fr-par-1
+    host: localhost
+    user: pvecontrol@pve
+    password: my.password.is.weak
+    proxy_certificate_path: /tmp/proxmox-reverse-proxy.pem
+    proxy_certificate_key_path: /tmp/proxmox-reverse-proxy
+```
+
+CAUTION: environment variable and `~` expansion and are not supported.
+
 ### Better security
 
-Instead of specifying users and passwords in plain text in the configuration file, you can use the shell command substitution syntax `$(...)` inside the `user` and `password` fields; for instance:
+Instead of specifying users, passwords and certificates paths in plain text in the configuration file, you can use the shell command substitution syntax `$(...)` inside the `user`, `password`, `proxy_certificate_path` and `proxy_certificate_path_key` fields; for instance:
 
 ```yaml
 clusters:
