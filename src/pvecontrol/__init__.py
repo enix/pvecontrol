@@ -5,6 +5,7 @@ import argparse
 import logging
 import re
 import subprocess
+import json
 
 from importlib.metadata import version
 
@@ -172,14 +173,15 @@ def run_auth_commands(clusterconfig):
     auth = {}
     regex = r"^\$\((.*)\)$"
 
-    for key in (
-        "user",
-        "password",
-        "token_name",
-        "token_value",
-        "proxy_certificate_path",
-        "proxy_certificate_key_path",
-    ):
+    keys = ["user", "password", "token_name", "token_value"]
+
+    if clusterconfig["proxy_certificate"] is not None:
+        if isinstance(clusterconfig.get("proxy_certificate"), str):
+            keys.append("proxy_certificate")
+        else:
+            auth["proxy_certificate"] = clusterconfig["proxy_certificate"]
+
+    for key in keys:
         value = clusterconfig.get(key)
         if value is not None:
             result = re.match(regex, value)
@@ -187,15 +189,16 @@ def run_auth_commands(clusterconfig):
                 value = _execute_command(result.group(1))
             auth[key] = value
 
-    proxy_certificate = auth.get("proxy_certificate_path")
-    proxy_certificate_key = auth.get("proxy_certificate_key_path")
-    if proxy_certificate != "" and proxy_certificate_key != "":
-        auth["cert"] = (proxy_certificate, proxy_certificate_key)
+    if "proxy_certificate" in auth and isinstance(auth["proxy_certificate"], bytes):
+        proxy_certificate = json.loads(auth["proxy_certificate"])
+        auth["proxy_certificate"] = {
+            "cert": proxy_certificate.get("cert"),
+            "key": proxy_certificate.get("key"),
+        }
 
-    if "proxy_certificate_path" in auth:
-        del auth["proxy_certificate_path"]
-    if "proxy_certificate_key_path" in auth:
-        del auth["proxy_certificate_key_path"]
+    if "proxy_certificate" in auth:
+        auth["cert"] = (auth["proxy_certificate"]["cert"], auth["proxy_certificate"]["key"])
+        del auth["proxy_certificate"]
 
     logging.debug("Auth: %s", auth)
     # check for "incompatible" auth options
