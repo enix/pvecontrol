@@ -95,11 +95,32 @@ clusters:
     proxy_certificate_key_path: /tmp/proxmox-reverse-proxy
 ```
 
+You can also use command substitution syntax and the key `proxy_certificate` to execute a command that will output a json containing the certficate and key paths.
+
+```yaml
+clusters:
+  - name: fr-par-1
+    host: localhost
+    user: pvecontrol@pve
+    password: my.password.is.weak
+    proxy_certificate: $(my_custom_command login proxmox-fr-par-1)
+```
+
+It should output something like this:
+
+```json
+{
+  "cert": "/tmp/proxmox-reverse-proxy.pem",
+  "key": "/tmp/proxmox-reverse-proxy",
+  "anything_else": "it is ok to have other fields, they will be ignored. this is to support existing commands"
+}
+```
+
 CAUTION: environment variable and `~` expansion and are not supported.
 
 ### Better security
 
-Instead of specifying users, passwords and certificates paths in plain text in the configuration file, you can use the shell command substitution syntax `$(...)` inside the `user`, `password`, `proxy_certificate_path` and `proxy_certificate_path_key` fields; for instance:
+Instead of specifying users, passwords and certificates paths in plain text in the configuration file, you can use the shell command substitution syntax `$(...)` inside the `user`, `password`, `proxy_certificate` fields; for instance:
 
 ```yaml
 clusters:
