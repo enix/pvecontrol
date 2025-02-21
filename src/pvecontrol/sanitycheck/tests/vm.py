@@ -11,16 +11,29 @@ class VmsStartOnBoot(Check):
     def run(self):
         vms = [vm for vm in self.proxmox.vms if vm.template == 0]
         for vm in vms:
-            if vm.config.get("onboot") == 1 and vm.status == VmStatus.STOPPED:
-                msg = f"VM '{vm.vmid}/{vm.name}' is stopped but 'startonboot' is set to true"
-                self.add_messages(CheckMessage(CheckCode.CRIT, msg))
-            elif vm.config.get("onboot") == 1 and vm.status == VmStatus.RUNNING:
-                msg = f"VM '{vm.vmid}/{vm.name}' as the good 'startonboot' option"
-                self.add_messages(CheckMessage(CheckCode.OK, msg))
+            self._check_vm_statonboot_option(vm)
 
-            if (vm.config.get("onboot") is None or vm.config.get("onboot") == 0) and vm.status == VmStatus.RUNNING:
-                msg = f"VM '{vm.vmid}/{vm.name}' is running but 'startonboot' is set to false"
-                self.add_messages(CheckMessage(CheckCode.CRIT, msg))
-            elif (vm.config.get("onboot") is None or vm.config.get("onboot") == 0) and vm.status == VmStatus.STOPPED:
-                msg = f"VM '{vm.vmid}/{vm.name}' as the good 'startonboot' option"
-                self.add_messages(CheckMessage(CheckCode.OK, msg))
+    def _check_vm_statonboot_option(self, vm):
+        if self._vm_has_startonboot_enabled(vm):
+            self._check_vm_statonboot_enabled(vm)
+        else:
+            self._check_vm_statonboot_disabled(vm)
+
+    def _vm_has_startonboot_enabled(self, vm):
+        return vm.config.get("onboot") == 1
+
+    def _check_vm_statonboot_enabled(self, vm):
+        if vm.status == VmStatus.RUNNING:
+            msg = f"VM '{vm.vmid}/{vm.name}' is running but 'startonboot' is set to false"
+            self.add_messages(CheckMessage(CheckCode.CRIT, msg))
+        elif vm.status == VmStatus.STOPPED:
+            msg = f"VM '{vm.vmid}/{vm.name}' has the good 'startonboot' option"
+            self.add_messages(CheckMessage(CheckCode.OK, msg))
+
+    def _check_vm_statonboot_disabled(self, vm):
+        if vm.status == VmStatus.STOPPED:
+            msg = f"VM '{vm.vmid}/{vm.name}' is stopped but 'startonboot' is set to true"
+            self.add_messages(CheckMessage(CheckCode.CRIT, msg))
+        elif vm.status == VmStatus.RUNNING:
+            msg = f"VM '{vm.vmid}/{vm.name}' has the good 'startonboot' option"
+            self.add_messages(CheckMessage(CheckCode.OK, msg))
