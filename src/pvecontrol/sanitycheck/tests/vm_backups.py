@@ -28,8 +28,6 @@ class VmBackups(Check):
 
     def _check_backup_ran_recently(self, vms):
         minutes_ago = self.proxmox.config["vm"]["max_last_backup"]
-        hm_ago = divmod(minutes_ago, 60)
-        time_ago = f"{hm_ago[0]:02d} hour(s) and {hm_ago[1]:02d} minute(s)"
 
         for vm in vms:
             last_backup = vm.get_last_backup(self.proxmox)
@@ -40,9 +38,8 @@ class VmBackups(Check):
             last_backup_time = datetime.fromtimestamp(last_backup.ctime)
             last_backup_time_str = last_backup_time.strftime("%Y-%m-%d %H:%M:%S")
             if last_backup_time > datetime.now() - timedelta(minutes=minutes_ago):
-                message = f"Vm {vm.vmid} ({vm.name}) has been backed up in the last {time_ago}, last backup: {last_backup_time_str}"
+                message = f"Vm {vm.vmid} ({vm.name}) last backup is recent enough ({last_backup_time_str})"
                 self.add_messages(CheckMessage(CheckCode.OK, message))
-
             else:
-                message = f"Vm {vm.vmid} ({vm.name}) last backup: {last_backup_time_str}"
+                message = f"Vm {vm.vmid} ({vm.name}) last backup is too old ({last_backup_time_str})"
                 self.add_messages(CheckMessage(CheckCode.CRIT, message))
