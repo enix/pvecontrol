@@ -24,7 +24,7 @@ configtemplate = {
             ),
             "token_name": confuse.Optional(str, None),
             "token_value": confuse.Optional(str, None),
-            "timeout": confuse.Optional(int, default=0),
+            "timeout": confuse.Optional(int, default=60),
             "node": confuse.Optional(
                 {
                     "cpufactor": confuse.Optional(float, None),
