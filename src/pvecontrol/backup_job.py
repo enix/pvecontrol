@@ -11,6 +11,7 @@ class PVEBackupJob:
         "next-run": None,
         "node": None,
         "notes-template": None,
+        "pool": None,
         "prune-backups": None,
         "schedule": None,
         "storage": None,
@@ -37,6 +38,8 @@ class PVEBackupJob:
     def is_selection_matching(self, vm):
         if self.node is not None and self.node != vm.node:
             return False
+        if self.pool is not None:
+            return self.pool == vm.pool
         if self.all:
             return str(vm.vmid) not in self.exclude
         return str(vm.vmid) in self.vmid
