@@ -31,6 +31,7 @@ class PVEVm:
         self.uptime = kwargs.get("uptime", 0)
         self.tags = kwargs.get("tags", "")
         self.template = kwargs.get("template", 0)
+        self.pool = kwargs.get("pool", "")
 
         self._config = None
 
