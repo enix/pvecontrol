@@ -40,7 +40,7 @@ class VmBackups(Check):
             last_backup_time = datetime.fromtimestamp(last_backup.ctime)
             last_backup_time_str = last_backup_time.strftime("%Y-%m-%d %H:%M:%S")
             if last_backup_time > datetime.now() - timedelta(minutes=minutes_ago):
-                message = f"Vm {vm.vmid} ({vm.name}) has not been backed up in the last {time_ago}, last backup: {last_backup_time_str}"
+                message = f"Vm {vm.vmid} ({vm.name}) has been backed up in the last {time_ago}, last backup: {last_backup_time_str}"
                 self.add_messages(CheckMessage(CheckCode.OK, message))
 
             else:
