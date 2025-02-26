@@ -73,11 +73,11 @@ class PVEVm:
         return upid
 
     def get_backup_jobs(self, proxmox):
-        vm_backups = []
-        for backup in proxmox.backup_jobs:
-            if str(self.vmid) in backup.vmid.split(","):
-                vm_backups.append(backup)
-        return vm_backups
+        vm_backup_jobs = []
+        for backup_job in proxmox.backup_jobs:
+            if backup_job.is_selection_matching(self):
+                vm_backup_jobs.append(backup_job)
+        return vm_backup_jobs
 
     def get_backups(self, proxmox):
         return [backup for backup in proxmox.backups if backup.vmid == self.vmid]
