@@ -211,7 +211,9 @@ class PVECluster:
         if self._backups is None:
             self._backups = []
             for item in PVEStorage.get_grouped_list(self):
+                logging.debug("Find storage: %s", (str(item)))
                 for backup in item["storage"].get_content("backup"):
+                    logging.debug("New vm backup: %s", (str(backup)))
                     self._backups.append(
                         PVEVolume(backup.pop("volid"), backup.pop("format"), backup.pop("size"), **backup)
                     )
@@ -222,5 +224,6 @@ class PVECluster:
         if self._backup_jobs is None:
             self._backup_jobs = []
             for backup_job in self.api.cluster.backup.get():
+                logging.debug("New backup job: %s", (str(backup_job)))
                 self._backup_jobs.append(PVEBackupJob(backup_job.pop("id"), **backup_job))
         return self._backup_jobs
