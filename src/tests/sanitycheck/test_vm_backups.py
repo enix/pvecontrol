@@ -63,10 +63,14 @@ def test_sanitycheck_vm_backups(request, _proxmox_http_auth):
 
         assert exitcode == 1
         assert len(vm_backups_check.messages) == 7
+
+        # check for associated backup jobs
         assert_message(vm_backups_check.messages[0], CheckCode.OK, "vm-100", "is associated")
         assert_message(vm_backups_check.messages[1], CheckCode.OK, "vm-101", "is associated")
         assert_message(vm_backups_check.messages[2], CheckCode.OK, "vm-102", "is associated")
         assert_message(vm_backups_check.messages[3], CheckCode.WARN, "vm-103", "not associated")
-        assert_message(vm_backups_check.messages[4], CheckCode.CRIT, "vm-100", "(vm-100) last backup")
-        assert_message(vm_backups_check.messages[5], CheckCode.OK, "vm-101", "not been backed up in the last")
+
+        # check for recent backups
+        assert_message(vm_backups_check.messages[4], CheckCode.CRIT, "vm-100", "is too old")
+        assert_message(vm_backups_check.messages[5], CheckCode.OK, "vm-101", "is recent enough")
         assert_message(vm_backups_check.messages[6], CheckCode.WARN, "vm-102", "never")
