@@ -3,11 +3,11 @@ import fnmatch
 
 from proxmoxer import ProxmoxAPI
 
-from pvecontrol.node import PVENode
-from pvecontrol.storage import PVEStorage
-from pvecontrol.task import PVETask
-from pvecontrol.backup_job import PVEBackupJob
-from pvecontrol.volume import PVEVolume
+from pvecontrol.models.node import PVENode
+from pvecontrol.models.storage import PVEStorage
+from pvecontrol.models.task import PVETask
+from pvecontrol.models.backup_job import PVEBackupJob
+from pvecontrol.models.volume import PVEVolume
 
 
 class PVECluster:

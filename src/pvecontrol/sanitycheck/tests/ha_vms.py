@@ -1,6 +1,6 @@
 import re
 
-from pvecontrol.storage import StorageShared
+from pvecontrol.models.storage import StorageShared
 from pvecontrol.sanitycheck.checks import Check, CheckType, CheckMessage, CheckCode
 
 

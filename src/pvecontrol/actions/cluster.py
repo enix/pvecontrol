@@ -2,7 +2,7 @@ import sys
 
 from humanize import naturalsize
 
-from pvecontrol.node import NodeStatus
+from pvecontrol.models.node import NodeStatus
 from pvecontrol.sanitycheck import SanityCheck
 
 

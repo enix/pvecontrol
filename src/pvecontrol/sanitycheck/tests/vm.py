@@ -1,4 +1,4 @@
-from pvecontrol.vm import VmStatus
+from pvecontrol.models.vm import VmStatus
 from pvecontrol.sanitycheck.checks import Check, CheckCode, CheckType, CheckMessage
 
 

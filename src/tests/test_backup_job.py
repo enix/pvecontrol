@@ -1,5 +1,5 @@
-from pvecontrol.backup_job import PVEBackupJob
-from pvecontrol.vm import PVEVm
+from pvecontrol.models.backup_job import PVEBackupJob
+from pvecontrol.models.vm import PVEVm
 
 
 def test_is_selection_matching():

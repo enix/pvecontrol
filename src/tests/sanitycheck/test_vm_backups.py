@@ -1,6 +1,6 @@
 from unittest.mock import patch
 from datetime import datetime, timedelta
-from pvecontrol.cluster import PVECluster
+from pvecontrol.models.cluster import PVECluster
 from pvecontrol.sanitycheck.tests.vm_backups import VmBackups
 from pvecontrol.sanitycheck import SanityCheck
 from pvecontrol.sanitycheck.checks import CheckCode

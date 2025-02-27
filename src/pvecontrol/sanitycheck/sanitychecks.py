@@ -1,4 +1,4 @@
-from pvecontrol.cluster import PVECluster
+from pvecontrol.models.cluster import PVECluster
 from pvecontrol.sanitycheck.checks import CheckCode
 from pvecontrol.sanitycheck.tests import DEFAULT_CHECKS, DEFAULT_CHECK_IDS
 

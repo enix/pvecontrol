@@ -1,5 +1,5 @@
 from unittest.mock import patch
-from pvecontrol.cluster import PVECluster
+from pvecontrol.models.cluster import PVECluster
 from tests.fixtures.api import mock_api_requests, fake_node, fake_vm
 
 
