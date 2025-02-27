@@ -1,7 +1,6 @@
 from enum import Enum
 
-from pvecontrol.vm import PVEVm
-from pvecontrol.vm import VmStatus
+from pvecontrol.models.vm import PVEVm, VmStatus
 
 
 COLUMNS = ["node", "status", "allocatedcpu", "maxcpu", "mem", "allocatedmem", "maxmem"]

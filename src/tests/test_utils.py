@@ -6,7 +6,7 @@ from unittest.mock import Mock
 
 import yaml
 
-from pvecontrol.vm import PVEVm, COLUMNS
+from pvecontrol.models.vm import PVEVm, COLUMNS
 from pvecontrol.utils import render_output, OutputFormats
 
 

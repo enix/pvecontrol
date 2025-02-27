@@ -1,7 +1,7 @@
 import logging
 
-from pvecontrol.node import NodeStatus
-from pvecontrol.vm import VmStatus
+from pvecontrol.models.node import NodeStatus
+from pvecontrol.models.vm import VmStatus
 from pvecontrol.utils import print_output, print_task
 
 

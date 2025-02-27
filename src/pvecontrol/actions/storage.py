@@ -1,4 +1,4 @@
-from pvecontrol.storage import PVEStorage, COLUMNS
+from pvecontrol.models.storage import PVEStorage, COLUMNS
 from pvecontrol.utils import print_output
 
 

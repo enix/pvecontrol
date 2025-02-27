@@ -12,11 +12,12 @@ from importlib.metadata import version
 import urllib3
 import shtab
 
-from pvecontrol import actions, node, vm, task, storage
-from pvecontrol.cluster import PVECluster
+from pvecontrol import actions
 from pvecontrol.config import set_config
-from pvecontrol.utils import OutputFormats
+from pvecontrol.models import node, vm, task, storage
+from pvecontrol.models.cluster import PVECluster
 from pvecontrol.sanitycheck.tests import DEFAULT_CHECK_IDS
+from pvecontrol.utils import OutputFormats
 
 
 def action_test(proxmox, _args):
