@@ -22,3 +22,9 @@ class PVEVolume:
 
         for k, v in self._default_kwargs.items():
             self.__setattr__(k, kwargs.get(k, v))
+
+    def __str__(self):
+        output = f"Id: {self.volid}\n"
+        for key in self._default_kwargs:
+            output += f"{key.capitalize()}: {self.__getattribute__(key)}\n"
+        return output
