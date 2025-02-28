@@ -3,6 +3,7 @@ from .ha_groups import HaGroups
 from .ha_vms import HaVms
 from .vm import VmsStartOnBoot
 from .vm_backups import VmBackups
+from .storage import DiskUnused
 
 DEFAULT_CHECKS = {
     Nodes.id: Nodes,
@@ -10,6 +11,7 @@ DEFAULT_CHECKS = {
     HaVms.id: HaVms,
     VmsStartOnBoot.id: VmsStartOnBoot,
     VmBackups.id: VmBackups,
+    DiskUnused.id: DiskUnused,
 }
 
 DEFAULT_CHECK_IDS = DEFAULT_CHECKS.keys()

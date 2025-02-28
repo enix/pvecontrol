@@ -8,6 +8,7 @@ class CheckType(Enum):
     HA = "HIGH_AVAILABILITY"
     NODE = "NODE"
     VM = "VIRTUAL_MACHINE"
+    STORAGE = "STORAGE"
 
 
 class CheckCode(Enum):
