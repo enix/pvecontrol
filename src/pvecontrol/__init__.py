@@ -98,6 +98,12 @@ def _parser():
     parser_clusterstatus = subparsers.add_parser("clusterstatus", help="Show cluster status")
     parser_clusterstatus.set_defaults(func=actions.cluster.action_clusterstatus)
 
+    # clusterbalance parser
+    parser_clusterbalance = subparsers.add_parser("clusterbalance", help="Balance node loads")
+    parser_clusterbalance.set_defaults(func=actions.cluster.action_clusterbalance)
+    parser_clusterbalance.add_argument("--ram", action="store_true", help="use RAM allocations when balancing")
+    parser_clusterbalance.add_argument("--cpu", action="store_true", help="use CPU allocations when balancing")
+
     # storagelist parser
     parser_storagelist = subparsers.add_parser("storagelist", help="Show cluster status")
     add_table_related_arguments(parser_storagelist, storage.COLUMNS, "storage")

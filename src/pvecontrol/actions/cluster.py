@@ -3,8 +3,25 @@ import sys
 from humanize import naturalsize
 
 from pvecontrol.models.node import NodeStatus
+from pvecontrol.models.vm import VmStatus
 from pvecontrol.sanitycheck import SanityCheck
+from pvecontrol.models.cluster import PVECluster, PVEVm
+from argparse import ArgumentParser
+from typing import List
+from pvecontrol.actions.cluster_balance import rebalance
 
+def action_clusterbalance(proxmox: PVECluster, args: ArgumentParser):
+    # leave early if both weighters are ignored
+    if not any([args.cpu, args.ram]):
+        print("specify --ram or --cpu (or both) in order to balance VM across cluster")
+        sys.exit(1)
+
+    vms: List[PVEVm] = []
+    for node in proxmox.nodes:
+        for vm in filter(lambda x: x.template == 0 and x.status == VmStatus.RUNNING, node.vms):
+            vms.append(vm)
+
+    print(rebalance(nodes=proxmox.nodes, vms=vms, cpu=args.cpu, ram=args.ram))
 
 def action_clusterstatus(proxmox, _args):
     status = "healthy" if proxmox.is_healthy else "not healthy"
