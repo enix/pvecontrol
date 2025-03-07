@@ -5,6 +5,7 @@ clusters:
     host: 127.0.0.1
     user: pvecontrol@pve
     timeout: 60
+    ssl_verify: false
     # password: somerandomsecret
     # token_name: mytokenname
     # token_value: somemorerandomsecret

@@ -25,6 +25,7 @@ configtemplate = {
             "token_name": confuse.Optional(str, None),
             "token_value": confuse.Optional(str, None),
             "timeout": confuse.Optional(int, default=60),
+            "ssl_verify": confuse.Optional(bool, False),
             "node": confuse.Optional(
                 {
                     "cpufactor": confuse.Optional(float, None),
