@@ -247,7 +247,7 @@ def main():
         clusterconfig.name,
         clusterconfig.host,
         config={"node": clusterconfig.node, "vm": clusterconfig.vm},
-        verify_ssl=False,
+        verify_ssl=clusterconfig.ssl_verify,
         timeout=clusterconfig.timeout,
         **auth,
     )

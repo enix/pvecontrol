@@ -1,7 +1,9 @@
 import logging
 import fnmatch
+import sys
 
 from proxmoxer import ProxmoxAPI
+from requests.exceptions import SSLError
 
 from pvecontrol.models.node import PVENode
 from pvecontrol.models.storage import PVEStorage
@@ -14,7 +16,11 @@ class PVECluster:
     """Proxmox VE Cluster"""
 
     def __init__(self, name, host, config, timeout, verify_ssl=False, **auth):
-        self.api = ProxmoxAPI(host, timeout=timeout, verify_ssl=verify_ssl, **auth)
+        try:
+            self.api = ProxmoxAPI(host, timeout=timeout, verify_ssl=verify_ssl, **auth)
+        except SSLError as e:
+            print(e)
+            sys.exit(1)
         self.name = name
         self.config = config
         self._tasks = None

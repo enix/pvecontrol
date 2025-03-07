@@ -1,8 +1,8 @@
 # Proxmox VE Control
 
 ![release workflow](https://github.com/enix/pvecontrol/actions/workflows/release.yml/badge.svg?branch=main)
-![pypi release](https://img.shields.io/pypi/v/pvecontrol.svg)
-![pypi downloads](https://img.shields.io/pypi/dm/pvecontrol.svg)
+![PyPI release](https://img.shields.io/pypi/v/pvecontrol.svg)
+![PyPI downloads](https://img.shields.io/pypi/dm/pvecontrol.svg)
 
 `pvecontrol` (<https://pypi.org/project/pvecontrol/>) is a CLI tool to manage Proxmox VE clusters and perform intermediate and advanced tasks that aren't available (or aren't straightforward) in the Proxmox web UI or default CLI tools.
 
@@ -31,6 +31,8 @@ To use `pvecontrol`, you must create a YAML configuration in `$HOME/.config/pvec
 
 `pvecontrol` only uses the Proxmox HTTP API, which means that you can use most Proxmox authentication mechanisms, including `@pve` realm users and tokens.
 
+HTTPS certificate verification is disabled by default, but can be enabled using the `ssl_verify` boolean.
+
 As an example, here's how to set up a dedicated user for `pvecontrol`, with read-only access to the Proxmox API:
 
 ```shell
@@ -46,6 +48,7 @@ clusters:
     host: localhost
     user: pvecontrol@pve
     password: my.password.is.weak
+    ssl_verify: true
 ```
 
 And see `pvecontrol` in action right away:
@@ -95,7 +98,7 @@ clusters:
     proxy_certificate_key_path: /tmp/proxmox-reverse-proxy
 ```
 
-You can also use command substitution syntax and the key `proxy_certificate` to execute a command that will output a json containing the certficate and key paths.
+You can also use command substitution syntax and the key `proxy_certificate` to execute a command that will output a JSON document containing the certificate and key paths.
 
 ```yaml
 clusters:
@@ -127,6 +130,7 @@ clusters:
   - name: prod-cluster-1
     host: 10.10.10.10
     user: pvecontrol@pve
+    ssl_verify: true
     password: $(command to get -password)
 ```
 
@@ -275,7 +279,7 @@ pip3 install -e .
 Then you can run the script directly like so:
 
 ```shell
-python3 src/main.py -h
+pvecontrol -h
 ```
 
 ## Contributing
