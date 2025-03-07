@@ -6,6 +6,7 @@ import logging
 import re
 import subprocess
 import json
+import signal
 
 from importlib.metadata import version
 
@@ -217,6 +218,8 @@ def run_auth_commands(clusterconfig):
 
 
 def main():
+    signal.signal(signal.SIGINT, lambda _signal, _frame: sys.exit(130))
+
     # Disable urllib3 warnings about invalid certs
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
