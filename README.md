@@ -17,7 +17,7 @@ To communicate with Proxmox VE, `pvecontrol` uses [proxmoxer](https://pypi.org/p
 
 ## Installation
 
-`pvecontrol` requires Python version 3.7 or above.
+`pvecontrol` requires Python version 3.9 or above.
 
 The easiest way to install it is simply using pip. New versions are automatically published to [pypi](https://pypi.org/project/pvecontrol/) repository. It is recommended to use `pipx` in order to automatically create a dedicated python virtual environment:
 
