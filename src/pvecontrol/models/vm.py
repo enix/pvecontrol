@@ -7,6 +7,10 @@ COLUMNS = ["vmid", "name", "status", "node", "cpus", "maxmem", "maxdisk"]
 class VmStatus(Enum):
     STOPPED = 0
     RUNNING = 1
+    PAUSED = 2
+    SUSPENDED = 3
+    POSTMIGRATE = 4
+    PRELAUNCH = 5
 
 
 class PVEVm:
