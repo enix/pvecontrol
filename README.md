@@ -275,7 +275,7 @@ pip3 install -e .
 Then you can run the script directly like so:
 
 ```shell
-python3 src/main.py -h
+pvecontrol -h
 ```
 
 ## Contributing
