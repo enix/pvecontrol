@@ -12,7 +12,7 @@ from enum import Enum
 import yaml
 
 from humanize import naturalsize
-from prettytable import PrettyTable, TableStyle
+from prettytable import PrettyTable
 
 
 class Fonts:
@@ -85,7 +85,13 @@ def render_output(table, columns=None, sortby=None, filters=None, output=OutputF
 
     if output in (OutputFormats.TEXT, OutputFormats.MARKDOWN):
         if output == OutputFormats.MARKDOWN:
-            x.set_style(TableStyle.MARKDOWN)
+            # hack-ish, but py38 requires a non-refactored prettytable module
+            try:
+                from prettytable import TableStyle
+                x.set_style(TableStyle.MARKDOWN)
+            except ImportError:
+                from prettytable import MARKDOWN
+                x.set_style(MARKDOWN)
         return x.get_string(sortby=sortby, fields=columns)
     if output == OutputFormats.CSV:
         return x.get_csv_string(sortby=sortby, fields=columns)
