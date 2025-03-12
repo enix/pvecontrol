@@ -3,11 +3,13 @@ import fnmatch
 
 from proxmoxer import ProxmoxAPI
 
+from pvecontrol.models.vm import PVEVm
 from pvecontrol.models.node import PVENode
 from pvecontrol.models.storage import PVEStorage
 from pvecontrol.models.task import PVETask
 from pvecontrol.models.backup_job import PVEBackupJob
 from pvecontrol.models.volume import PVEVolume
+from typing import List
 
 
 class PVECluster:
@@ -27,7 +29,7 @@ class PVECluster:
         self.status = self.api.cluster.status.get()
         self.resources = self.api.cluster.resources.get()
 
-        self.nodes = []
+        self.nodes: List[PVENode] = []
         for node in self.resources_nodes:
             self.nodes.append(
                 PVENode(
@@ -90,7 +92,7 @@ class PVECluster:
     @property
     def vms(self):
         """Return all vms on this cluster"""
-        vms = []
+        vms: List[PVEVm] = []
         for node in self.nodes:
             for vm in node.vms:
                 vms.append(vm)
