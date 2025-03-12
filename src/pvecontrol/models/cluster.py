@@ -164,8 +164,8 @@ class PVECluster:
     @property
     def cpu_metrics(self):
         nodes = self.resources_nodes
-        total_cpu = sum(node["maxcpu"] for node in nodes)
-        total_cpu_usage = sum(node["cpu"] for node in nodes)
+        total_cpu = sum(node.get('maxcpu', 0) for node in nodes)
+        total_cpu_usage = sum(node.get('cpu', 0) for node in nodes)
         total_cpu_allocated = sum(node.allocatedcpu for node in self.nodes)
         cpu_percent = total_cpu_usage / total_cpu * 100
 
@@ -179,8 +179,8 @@ class PVECluster:
     @property
     def memory_metrics(self):
         nodes = self.resources_nodes
-        total_memory = sum(node["maxmem"] for node in nodes)
-        total_memory_usage = sum(node["mem"] for node in nodes)
+        total_memory = sum(node.get('maxmem', 0) for node in nodes)
+        total_memory_usage = sum(node.get('mem', 0) for node in nodes)
         total_memory_allocated = sum(node.allocatedmem for node in self.nodes)
         memory_percent = total_memory_usage / total_memory * 100
 
