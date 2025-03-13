@@ -9,6 +9,7 @@ from importlib.metadata import version
 
 import click
 
+from pvecontrol import actions
 from pvecontrol.utils import OutputFormats
 
 
@@ -62,6 +63,14 @@ def main(ctx, debug, output, cluster):
 
         ctx.ensure_object(dict)
         ctx.obj["args"] = args
+
+
+main.add_command(cmd=actions.cluster.status, name="status")
+main.add_command(cmd=actions.cluster.sanitycheck, name="sanitycheck")
+main.add_command(cmd=actions.node.root, name="node")
+main.add_command(cmd=actions.storage.root, name="storage")
+main.add_command(cmd=actions.task.root, name="task")
+main.add_command(cmd=actions.vm.root, name="vm")
 
 
 if __name__ == "__main__":

@@ -1,15 +1,28 @@
-from pvecontrol.utils import print_task, print_output
+import click
+
+from pvecontrol.utils import init_cluster, print_task, print_output, with_table_options, task_related_command
+from pvecontrol.models.task import COLUMNS
 
 
-def action_tasklist(proxmox, args):
-    print_output(
-        proxmox.tasks,
-        columns=args.columns,
-        sortby=args.sort_by,
-        filters=args.filter,
-        output=args.output,
-    )
+@click.group()
+def root():
+    """Task related commands"""
+    pass
 
 
-def action_taskget(proxmox, args):
-    print_task(proxmox, args.upid, args.follow, args.wait)
+@root.command("list")
+@with_table_options(COLUMNS, "starttime")
+@click.pass_context
+def task_list(ctx, sort_by, columns, filter):
+    proxmox = init_cluster(ctx.obj["args"].cluster)
+    output = ctx.obj["args"].output
+    print_output(proxmox.tasks, columns=columns, sortby=sort_by, filters=filter, output=output)
+
+
+@root.command()
+@click.argument("upid")
+@task_related_command
+@click.pass_context
+def get(ctx, upid, follow, wait):
+    proxmox = init_cluster(ctx.obj["args"].cluster)
+    print_task(proxmox, upid, follow, wait)
