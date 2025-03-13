@@ -5,14 +5,20 @@ import re
 import curses
 import json
 import os
+import subprocess
+import urllib3
 
 from collections import OrderedDict
 from enum import Enum
+import click
 
 import yaml
 
 from humanize import naturalsize
 from prettytable import PrettyTable
+from argparse import ArgumentTypeError
+from pvecontrol.config import set_config
+from pvecontrol.models.cluster import PVECluster
 
 
 class Fonts:
@@ -33,6 +39,68 @@ class OutputFormats(Enum):
 
     def __str__(self):
         return self.value
+
+
+def _make_filter_type_generator(columns):
+    def _regexp_type(value):
+        try:
+            return re.compile(value)
+        except re.error as e:
+            raise ArgumentTypeError(f"invalid regular expression: '{value}'", e)
+
+    def _column_type(value):
+        if not value in columns:
+            choices = ", ".join([f"'{c}'" for c in columns])
+            raise ArgumentTypeError(f"invalid choice: '{value}' (choose from {choices})")
+        return value
+
+    while True:
+        yield _column_type
+        yield _regexp_type
+
+
+def with_table_options(columns, default_sort):
+    filter_type_generator = _make_filter_type_generator(columns)
+
+    def filter_type(x):
+        return next(filter_type_generator)(x)
+
+    def check_cols(cols):
+        res = []
+        for col in cols.split(","):
+            if col in columns:
+                res.append(col)
+            else:
+                logging.warning(f"Column ({col}) doesn't exist, will be ignored...")
+        return res
+
+    def _add_options(func):
+        func = click.option(
+            "--columns",
+            type=str,
+            metavar="COLUMNS",
+            default=",".join(columns),
+            help="Comma-separated list of columns",
+            callback=lambda *v: check_cols(v[2]),
+        )(func)
+        func = click.option(
+            "--filter",
+            type=filter_type,
+            nargs=2,
+            metavar="COLUMN REGEXP",
+            help="Regex to filter items",
+            callback=lambda *v: [] if v[2] is None else [v[2]],
+        )(func)
+        func = click.option(
+            "--sort-by",
+            type=click.Choice(columns),
+            default=default_sort,
+            show_default=True,
+            help="Key used to sort items",
+        )(func)
+        return func
+
+    return _add_options
 
 
 def terminal_support_colors():
@@ -190,3 +258,70 @@ def print_task(proxmox, upid, follow=False, wait=False):
         print_output([{"log output": task.decode_log()}])
 
     print_taskstatus(task)
+
+
+def _execute_command(cmd):
+    return subprocess.run(cmd, shell=True, check=True, capture_output=True).stdout.rstrip()
+
+
+def run_auth_commands(clusterconfig):
+    auth = {}
+    regex = r"^\$\((.*)\)$"
+
+    keys = ["user", "password", "token_name", "token_value"]
+
+    if clusterconfig["proxy_certificate"] is not None:
+        if isinstance(clusterconfig.get("proxy_certificate"), str):
+            keys.append("proxy_certificate")
+        else:
+            auth["proxy_certificate"] = clusterconfig["proxy_certificate"]
+
+    for key in keys:
+        value = clusterconfig.get(key)
+        if value is not None:
+            result = re.match(regex, value)
+            if result:
+                value = _execute_command(result.group(1))
+            auth[key] = value
+
+    if "proxy_certificate" in auth and isinstance(auth["proxy_certificate"], bytes):
+        proxy_certificate = json.loads(auth["proxy_certificate"])
+        auth["proxy_certificate"] = {
+            "cert": proxy_certificate.get("cert"),
+            "key": proxy_certificate.get("key"),
+        }
+
+    if "proxy_certificate" in auth:
+        auth["cert"] = (auth["proxy_certificate"]["cert"], auth["proxy_certificate"]["key"])
+        del auth["proxy_certificate"]
+
+    logging.debug("Auth: %s", auth)
+    # check for "incompatible" auth options
+    if "password" in auth and ("token_name" in auth or "token_value" in auth):
+        logging.error("Auth: cannot use both password and token options together.")
+        sys.exit(1)
+    if "token_name" in auth and "token_value" not in auth:
+        logging.error("Auth: token-name requires token-value option.")
+        sys.exit(1)
+
+    return auth
+
+
+def init_cluster(cluster):
+    # Disable urllib3 warnings about invalid certs
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    logging.info("Proxmox cluster: %s", cluster)
+
+    clusterconfig = set_config(cluster)
+    auth = run_auth_commands(clusterconfig)
+    proxmoxcluster = PVECluster(
+        clusterconfig.name,
+        clusterconfig.host,
+        config={"node": clusterconfig.node, "vm": clusterconfig.vm},
+        verify_ssl=clusterconfig.ssl_verify,
+        timeout=clusterconfig.timeout,
+        **auth,
+    )
+
+    return proxmoxcluster
