@@ -1,8 +1,9 @@
 import logging
 import sys
 
-from pvecontrol.utils import print_task, print_output
-
+from pvecontrol.utils import print_task, print_output, add_table_options
+import click
+from pvecontrol.models import vm
 
 def _get_vm(proxmox, vmid):
     for vm in proxmox.vms:
@@ -61,7 +62,10 @@ def action_vmmigrate(proxmox, args):
         print("Dry run, skipping migration")
 
 
-def action_vmlist(proxmox, args):
+@click.command()
+@add_table_options(vm.COLUMNS, 'vmid')
+@click.pass_context
+def action_vmlist(ctx, sort_by, columns, filter):
     """List VMs in the Proxmox Cluster"""
-    vms = proxmox.vms
-    print_output(vms, columns=args.columns, sortby=args.sort_by, filters=args.filter, output=args.output)
+    print_output(ctx.obj['cluster'].vms, columns=columns, sortby=sort_by,
+        filters=filter, output=ctx.obj['args'].output)

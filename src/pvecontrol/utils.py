@@ -8,13 +8,14 @@ import os
 
 from collections import OrderedDict
 from enum import Enum
+import click
 
 import yaml
 
 from humanize import naturalsize
-from prettytable import PrettyTable
-
-
+from prettytable import PrettyTable, TableStyle
+from argparse import ArgumentTypeError
+ 
 class Fonts:
     BLUE = "\033[94m"
     GREEN = "\033[92m"
@@ -33,6 +34,52 @@ class OutputFormats(Enum):
 
     def __str__(self):
         return self.value
+
+
+def _make_filter_type_generator(columns):
+    def _regexp_type(value):
+        try:
+            return re.compile(value)
+        except re.error as e:
+            raise ArgumentTypeError(f"invalid regular expression: '{value}'", e)
+
+    def _column_type(value):
+        if not value in columns:
+            choices = ", ".join([f"'{c}'" for c in columns])
+            raise ArgumentTypeError(f"invalid choice: '{value}' (choose from {choices})")
+        return value
+
+    while True:
+        yield _column_type
+        yield _regexp_type
+
+# this replaces: pvecontrol.add_table_related_arguments(p,c,d)
+def add_table_options(columns, default):
+
+    filter_type_generator = _make_filter_type_generator(columns)
+
+    def filter_type(x):
+        return next(filter_type_generator)(x)
+
+    def check_cols(cols):
+        res = []
+        for col in cols.split(','):
+            if col in columns:
+                res.append(col)
+            else:
+                logging.warning(f"Column ({col}) doesn't exist, will be ignored...")
+        return res
+
+    def _add_options(func):
+        func = click.option('--sort-by', type=click.Choice(columns), default=default,
+            show_default=True, help='Key used to sort items')(func)
+        func = click.option('--columns', type=str, default=','.join(columns),
+            show_default=True, help='Comma-separated list of columns',
+            callback=lambda *v: check_cols(v[2]))(func)
+        func = click.option('--filter', type=filter_type, nargs=2,
+            help="Regex to filter items: colum regexp", callback=lambda *v: [] if v[2] is None else [v[2]] )(func)
+        return func
+    return _add_options
 
 
 def terminal_support_colors():
