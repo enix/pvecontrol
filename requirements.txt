@@ -4,8 +4,9 @@ confuse
 pyyaml
 urllib3
 shtab
+click
 
-# proxmoxer depdends
+# proxmoxer depends on
 proxmoxer>=2.0.1
 requests
 requests_toolbelt

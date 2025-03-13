@@ -1,22 +1,47 @@
 import logging
 import sys
 
-from pvecontrol.utils import print_task, print_output
+import click
+
+from pvecontrol.utils import print_task, print_output, with_table_options, migration_related_command
+from pvecontrol.models.vm import COLUMNS
+from pvecontrol.models.cluster import PVECluster
 
 
-def _get_vm(proxmox, vmid):
-    for vm in proxmox.vms:
-        logging.debug("_get_vm: %s", vm)
-        if vm.vmid == vmid:
-            return vm
-    return None
+@click.group()
+def root():
+    """VM related commands"""
 
 
-def action_vmmigrate(proxmox, args):
-    logging.debug("ARGS: %s", args)
+@root.command("list")
+@with_table_options(COLUMNS, "vmid")
+@click.pass_context
+def vm_list(ctx, sort_by, columns, filters):
+    """List VMs in the Proxmox Cluster"""
+    proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
+    output = ctx.obj["args"].output
+    print_output(proxmox.vms, columns=columns, sortby=sort_by, filters=filters, output=output)
+
+
+@root.command()
+@click.argument("vmid", type=int)
+@click.option(
+    "-t",
+    "--target",
+    metavar="NODEID",
+    required=True,
+    help="ID of the target node",
+)
+@migration_related_command
+@click.pass_context
+def migrate(ctx, vmid, target, online, follow, wait, dry_run):
+    """Migrate VMs in the cluster"""
+
+    proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
+    logging.debug("ARGS: %s", ctx.obj["args"])
     # Migrate a vm to a node
-    vmid = int(args.vmid)
-    target = str(args.target)
+    vmid = int(vmid)
+    target = str(target)
 
     # Check that vmid exists
     vm = _get_vm(proxmox, vmid)
@@ -45,23 +70,25 @@ def action_vmmigrate(proxmox, args):
     options = {}
     options["node"] = node.node
     options["target"] = target.node
-    options["online"] = int(args.online)
+    options["online"] = int(online)
     if len(check["local_disks"]) > 0:
         options["with-local-disks"] = int(True)
 
-    if not args.dry_run:
+    if not dry_run:
         # Lancer tache de migration
         upid = proxmox.api.nodes(node.node).qemu(vmid).migrate.post(**options)
         # Suivre la task cree
         # pylint: disable=duplicate-code
         proxmox.refresh()
         _task = proxmox.find_task(upid)
-        print_task(proxmox, upid, args.follow, args.wait)
+        print_task(proxmox, upid, follow, wait)
     else:
         print("Dry run, skipping migration")
 
 
-def action_vmlist(proxmox, args):
-    """List VMs in the Proxmox Cluster"""
-    vms = proxmox.vms
-    print_output(vms, columns=args.columns, sortby=args.sort_by, filters=args.filter, output=args.output)
+def _get_vm(proxmox, vmid):
+    for v in proxmox.vms:
+        logging.debug("_get_vm: %s", v)
+        if v.vmid == vmid:
+            return v
+    return None

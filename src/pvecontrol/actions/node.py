@@ -1,37 +1,61 @@
 import logging
 
+import click
+
 from pvecontrol.models.node import NodeStatus
 from pvecontrol.models.vm import VmStatus
-from pvecontrol.utils import print_output, print_task
+from pvecontrol.utils import print_output, print_task, with_table_options, migration_related_command
+from pvecontrol.models.node import COLUMNS
+from pvecontrol.models.cluster import PVECluster
 
 
-def action_nodelist(proxmox, args):
-    """List proxmox nodes in the cluster using proxmoxer api"""
-    print_output(proxmox.nodes, columns=args.columns, sortby=args.sort_by, filters=args.filter, output=args.output)
+@click.group()
+def root():
+    """Node related commands"""
 
 
-# pylint: disable=too-many-branches,too-many-statements
-def action_nodeevacuate(proxmox, args):
-    """Evacuate a node by migrating all it's VM out"""
+@root.command("list")
+@with_table_options(COLUMNS, "node")
+@click.pass_context
+def node_list(ctx, sort_by, columns, filters):
+    """List nodes in the cluster"""
+    proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
+    output = ctx.obj["args"].output
+    print_output(proxmox.nodes, columns=columns, sortby=sort_by, filters=filters, output=output)
+
+
+@root.command()
+@click.argument("node", required=True)
+@click.argument("target", nargs=-1)
+@migration_related_command
+@click.option("--no-skip-stopped", is_flag=True, help="Don't skip VMs that are stopped")
+@click.pass_context
+# FIXME: remove pylint disable annotations
+# pylint: disable=too-many-branches,too-many-statements,too-many-locals
+def evacuate(ctx, node, target, follow, wait, dry_run, online, no_skip_stopped):
+    """Evacuate a node by migrating all it's VM out to one or multiple target nodes"""
     # check node exists
-    srcnode = proxmox.find_node(args.node)
+    proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
+    srcnode = proxmox.find_node(node)
     logging.debug(srcnode)
     if not srcnode:
-        print(f"Node {args.node} does not exist")
+        print(f"Node {node} does not exist")
         return
     # check node is online
     if srcnode.status != NodeStatus.ONLINE:
-        print(f"Node {args.node} is not online")
+        print(f"Node {node} is not online")
         return
 
     targets = []
     # compute targets migration possible
-    if args.target:
-        for pattern in list(set(args.target)):
+    if target:
+        for pattern in list(set(target)):
             nodes = proxmox.find_nodes(pattern)
             if not nodes:
                 print(f"No node match the pattern {pattern}, skipping")
                 continue
+            # FIXME: remove pylint disable annotation
+            # pylint: disable=redefined-argument-from-local
             for node in nodes:
                 if node.node == srcnode.node:
                     print(f"Target node {node.node} is the same as source node, skipping")
@@ -52,10 +76,12 @@ def action_nodeevacuate(proxmox, args):
     plan = []
     for vm in srcnode.vms:
         logging.debug("Selecting node for VM: %i, maxmem: %i, cpus: %i", vm.vmid, vm.maxmem, vm.cpus)
-        if vm.status != VmStatus.RUNNING and not args.no_skip_stopped:
+        if vm.status != VmStatus.RUNNING and not no_skip_stopped:
             logging.debug("VM %i is not running, skipping", vm.vmid)
             continue
         # check ressources
+        # FIXME: remove pylint disable annotation
+        # pylint: disable=redefined-argument-from-local
         for target in targets:
             logging.debug(
                 "Test target: %s, allocatedmem: %i, allocatedcpu: %i",
@@ -72,7 +98,7 @@ def action_nodeevacuate(proxmox, args):
                     {
                         "vmid": vm.vmid,
                         "vm": vm,
-                        "node": args.node,
+                        "node": node,
                         "target": target,
                     }
                 )
@@ -104,11 +130,11 @@ def action_nodeevacuate(proxmox, args):
 
     for p in plan:
         print(f"Migrate VM: {p['vmid']} / {p['vm'].name} from {p['node']} to {p['target'].node}")
-        if not args.dry_run:
-            upid = p["vm"].migrate(p["target"].node, args.online)
+        if not dry_run:
+            upid = p["vm"].migrate(p["target"].node, online)
             logging.debug("Migration UPID: %s", upid)
             proxmox.refresh()
             _task = proxmox.find_task(upid)
-            print_task(proxmox, upid, args.follow, args.wait)
+            print_task(proxmox, upid, follow, wait)
         else:
             print("Dry run, skipping migration")
