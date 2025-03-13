@@ -5,12 +5,13 @@ import sys
 from proxmoxer import ProxmoxAPI
 from requests.exceptions import SSLError
 
-from pvecontrol.utils import defaulter
+from pvecontrol.utils import defaulter, run_auth_commands
 from pvecontrol.models.node import PVENode
 from pvecontrol.models.storage import PVEStorage
 from pvecontrol.models.task import PVETask
 from pvecontrol.models.backup_job import PVEBackupJob
 from pvecontrol.models.volume import PVEVolume
+from pvecontrol.config import set_config
 
 
 class PVECluster:
@@ -50,6 +51,23 @@ class PVECluster:
             self.storages.append(
                 PVEStorage(self.api, storage.pop("node"), storage.pop("id"), storage.pop("shared"), **storage)
             )
+
+    @staticmethod
+    def create_from_config(cluster_name):
+        logging.info("Proxmox cluster: %s", cluster_name)
+
+        clusterconfig = set_config(cluster_name)
+        auth = run_auth_commands(clusterconfig)
+        proxmoxcluster = PVECluster(
+            clusterconfig.name,
+            clusterconfig.host,
+            config={"node": clusterconfig.node, "vm": clusterconfig.vm},
+            verify_ssl=clusterconfig.ssl_verify,
+            timeout=clusterconfig.timeout,
+            **auth,
+        )
+
+        return proxmoxcluster
 
     @property
     def ha(self):
