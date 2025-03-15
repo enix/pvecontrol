@@ -237,7 +237,7 @@ def main():
                 sys.exit(1)
 
     # configure logging
-    logging.basicConfig(encoding="utf-8", level=logging.DEBUG if args.debug else logging.INFO)
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
     logging.debug("Arguments: %s", args)
     logging.info("Proxmox cluster: %s", args.cluster)
 
