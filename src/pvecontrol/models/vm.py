@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-COLUMNS = ["vmid", "name", "status", "node", "cpus", "maxmem", "maxdisk", "tags"]]
+COLUMNS = ["vmid", "name", "status", "node", "cpus", "maxmem", "maxdisk", "tags"]
 
 
 class VmStatus(Enum):
@@ -33,7 +33,7 @@ class PVEVm:
         self.maxdisk = kwargs.get("maxdisk", 0)
         self.maxmem = kwargs.get("maxmem", 0)
         self.uptime = kwargs.get("uptime", 0)
-        self.tags = kwargs.get("tags", "")
+        self.tags = set(kwargs.get("tags", "").split(","))
         self.template = kwargs.get("template", 0)
         self.pool = kwargs.get("pool", "")
 

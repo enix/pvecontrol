@@ -107,6 +107,10 @@ def prepare_prettytable(table, sortby, filters):
         for key in line:
             if isinstance(line[key], Enum):
                 line[key] = str(line[key])
+            # transform set to list as some output does not support it
+            if isinstance(line[key], set):
+                line[key] = list(line[key])
+
         if do_sort:
             line["sortby"] = line[sortby]
         for key in NATURALSIZE_KEYS:
