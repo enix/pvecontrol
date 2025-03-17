@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-COLUMNS = ["vmid", "name", "status", "node", "cpus", "maxmem", "maxdisk"]
+COLUMNS = ["vmid", "name", "status", "node", "cpus", "maxmem", "maxdisk", "tags"]]
 
 
 class VmStatus(Enum):
