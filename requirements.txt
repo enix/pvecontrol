@@ -4,6 +4,7 @@ confuse
 pyyaml
 urllib3
 shtab
+pulp
 
 # proxmoxer depdends
 proxmoxer>=2.0.1
