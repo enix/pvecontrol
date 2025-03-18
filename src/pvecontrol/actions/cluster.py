@@ -1,4 +1,5 @@
 import sys
+import textwrap
 
 import click
 
@@ -8,6 +9,7 @@ from pvecontrol.models.node import NodeStatus
 from pvecontrol.sanitycheck import SanityCheck
 from pvecontrol.sanitycheck.tests import DEFAULT_CHECK_IDS
 from pvecontrol.models.cluster import PVECluster
+from pvecontrol.utils import OutputFormats, render_output
 
 
 @click.command()
@@ -41,28 +43,58 @@ def status(ctx):
         d_percent = metrics["disk"]["percent"]
         return f"{d_usage}/{d_total}({d_percent:.1f}%)"
 
-    output = f"""
-  Status: {cluster_status}
-  VMs: {vms - templates}
-  Templates: {templates}
-  Metrics:
-    CPU: {_get_cpu_output()}
-    Memory: {_get_memory_output()}
-    Disk: {_get_disk_output()}
-  Nodes:
-    Offline: {len([node for node in proxmox.nodes if node.status == NodeStatus.OFFLINE])}
-    Online: {len([node for node in proxmox.nodes if node.status == NodeStatus.ONLINE])}
-    Unknown: {len([node for node in proxmox.nodes if node.status == NodeStatus.UNKNOWN])}
-  """
+    if _args.output == OutputFormats.TEXT:
+        output = f"""\
+            Status: {status}
+            VMs: {vms - templates}
+            Templates: {templates}
+            Metrics:
+                CPU: {_get_cpu_output()}
+                Memory: {_get_memory_output()}
+                Disk: {_get_disk_output()}
+            Nodes:
+                Offline: {len([node for node in proxmox.nodes if node.status == NodeStatus.OFFLINE])}
+                Online: {len([node for node in proxmox.nodes if node.status == NodeStatus.ONLINE])}
+                Unknown: {len([node for node in proxmox.nodes if node.status == NodeStatus.UNKNOWN])}
+            """
+        print(textwrap.dedent(output))
+    else:
+        render_table = [
+            dict(
+                status=status,
+                vm=vms - templates,
+                templates=templates,
+                metrics=dict(
+                    cpu=dict(
+                        usage=metrics["cpu"]["usage"],
+                        total=metrics["cpu"]["total"],
+                        percent=metrics["cpu"]["percent"],
+                        allocated=metrics["cpu"]["allocated"],
+                    ),
+                    memory=dict(
+                        usage=metrics["memory"]["usage"],
+                        total=metrics["memory"]["total"],
+                        percent=metrics["memory"]["percent"],
+                        allocated=metrics["memory"]["allocated"],
+                    ),
+                    disk=dict(
+                        usage=metrics["disk"]["usage"],
+                        total=metrics["disk"]["total"],
+                        percent=metrics["disk"]["percent"],
+                    ),
+                ),
+                nodes=dict(
+                    offline=len([node for node in proxmox.nodes if node.status == NodeStatus.OFFLINE]),
+                    online=len([node for node in proxmox.nodes if node.status == NodeStatus.ONLINE]),
+                    unknown=len([node for node in proxmox.nodes if node.status == NodeStatus.UNKNOWN]),
+                ),
+            )
+        ]
+        print(render_output(render_table, output=_args.output))
 
-    print(output)
 
-
-@click.command()
-@click.argument("checks", nargs=-1, type=click.Choice(list(DEFAULT_CHECK_IDS), case_sensitive=False))
-@click.pass_context
-def sanitycheck(ctx, checks):
-    """Run sanity checks on the cluster"""
+def action_sanitycheck(proxmox, args):
+    """Check status of proxmox Cluster"""
     # More checks to implement
     # VM is started but 'startonboot' not set
     # VM is running in cpu = host
