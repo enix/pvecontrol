@@ -146,8 +146,19 @@ class PVECluster:
 
         return result
 
+    @staticmethod
+    def _defaulter(resource, keys, default):
+        for key in keys:
+            if key not in resource.keys():
+                resource[key] = default
+        return resource
+
     @property
     def resources_nodes(self):
+        for resource in self.resources:
+            if resource["type"] == "node":
+                resource = self._defaulter(
+                    resource, ['cpu', 'mem', 'maxmem', 'maxcpu', 'disk', 'maxdisk'], 0)
         return [resource for resource in self.resources if resource["type"] == "node"]
 
     @property
