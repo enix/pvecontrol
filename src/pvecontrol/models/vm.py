@@ -33,7 +33,7 @@ class PVEVm:
         self.maxdisk = kwargs.get("maxdisk", 0)
         self.maxmem = kwargs.get("maxmem", 0)
         self.uptime = kwargs.get("uptime", 0)
-        self.tags = set(filter(None,kwargs.get("tags", "").split(";")))
+        self.tags = set(filter(None, kwargs.get("tags", "").split(";")))
         self.template = kwargs.get("template", 0)
         self.pool = kwargs.get("pool", "")
 
