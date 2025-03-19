@@ -64,25 +64,7 @@ def status(ctx):
                 status=status,
                 vm=vms - templates,
                 templates=templates,
-                metrics=dict(
-                    cpu=dict(
-                        usage=metrics["cpu"]["usage"],
-                        total=metrics["cpu"]["total"],
-                        percent=metrics["cpu"]["percent"],
-                        allocated=metrics["cpu"]["allocated"],
-                    ),
-                    memory=dict(
-                        usage=metrics["memory"]["usage"],
-                        total=metrics["memory"]["total"],
-                        percent=metrics["memory"]["percent"],
-                        allocated=metrics["memory"]["allocated"],
-                    ),
-                    disk=dict(
-                        usage=metrics["disk"]["usage"],
-                        total=metrics["disk"]["total"],
-                        percent=metrics["disk"]["percent"],
-                    ),
-                ),
+                metrics=metrics,
                 nodes=dict(
                     offline=len([node for node in proxmox.nodes if node.status == NodeStatus.OFFLINE]),
                     online=len([node for node in proxmox.nodes if node.status == NodeStatus.ONLINE]),
