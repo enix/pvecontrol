@@ -101,8 +101,15 @@ def add_table_options(columns, default_sort):
 
 
 def task_related_command(func):
-    func = click.option("-f", "--follow", is_flag=True)(func)
     func = click.option("-w", "--wait", is_flag=True)(func)
+    func = click.option("-f", "--follow", is_flag=True)(func)
+    return func
+
+
+def migration_related_command(func):
+    func = click.option("--dry-run", is_flag=True, help="Dry run, do not execute migration for real")(func)
+    func = click.option("--online", is_flag=True, default=True, help="Perform anonline migration")(func)
+    func = task_related_command(func)
     return func
 
 
