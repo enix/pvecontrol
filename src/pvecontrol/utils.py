@@ -15,7 +15,8 @@ import yaml
 from humanize import naturalsize
 from prettytable import PrettyTable, TableStyle
 from argparse import ArgumentTypeError
- 
+
+
 class Fonts:
     BLUE = "\033[94m"
     GREEN = "\033[92m"
@@ -53,8 +54,9 @@ def _make_filter_type_generator(columns):
         yield _column_type
         yield _regexp_type
 
+
 # this replaces: pvecontrol.add_table_related_arguments(p,c,d)
-def add_table_options(columns, default):
+def add_table_options(columns, default_sort):
 
     filter_type_generator = _make_filter_type_generator(columns)
 
@@ -63,7 +65,7 @@ def add_table_options(columns, default):
 
     def check_cols(cols):
         res = []
-        for col in cols.split(','):
+        for col in cols.split(","):
             if col in columns:
                 res.append(col)
             else:
@@ -71,15 +73,37 @@ def add_table_options(columns, default):
         return res
 
     def _add_options(func):
-        func = click.option('--sort-by', type=click.Choice(columns), default=default,
-            show_default=True, help='Key used to sort items')(func)
-        func = click.option('--columns', type=str, default=','.join(columns),
-            show_default=True, help='Comma-separated list of columns',
-            callback=lambda *v: check_cols(v[2]))(func)
-        func = click.option('--filter', type=filter_type, nargs=2,
-            help="Regex to filter items: colum regexp", callback=lambda *v: [] if v[2] is None else [v[2]] )(func)
+        func = click.option(
+            "--sort-by",
+            type=click.Choice(columns),
+            default=default_sort,
+            show_default=True,
+            help="Key used to sort items",
+        )(func)
+        func = click.option(
+            "--columns",
+            type=str,
+            default=",".join(columns),
+            show_default=True,
+            help="Comma-separated list of columns",
+            callback=lambda *v: check_cols(v[2]),
+        )(func)
+        func = click.option(
+            "--filter",
+            type=filter_type,
+            nargs=2,
+            help="Regex to filter items: colum regexp",
+            callback=lambda *v: [] if v[2] is None else [v[2]],
+        )(func)
         return func
+
     return _add_options
+
+
+def task_related_command(func):
+    func = click.option("-f", "--follow", is_flag=True)(func)
+    func = click.option("-w", "--wait", is_flag=True)(func)
+    return func
 
 
 def terminal_support_colors():

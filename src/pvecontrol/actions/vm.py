@@ -3,16 +3,8 @@ import sys
 
 import click
 
-from pvecontrol.utils import print_task, print_output, add_table_options
+from pvecontrol.utils import print_task, print_output, add_table_options, task_related_command
 from pvecontrol.models.vm import COLUMNS
-
-
-def _get_vm(proxmox, vmid):
-    for v in proxmox.vms:
-        logging.debug("_get_vm: %s", v)
-        if v.vmid == vmid:
-            return v
-    return None
 
 
 @click.group()
@@ -20,13 +12,22 @@ def root():
     pass
 
 
+@root.command("list")
+@add_table_options(COLUMNS, "vmid")
+@click.pass_context
+def vm_list(ctx, sort_by, columns, filter):
+    """List VMs in the Proxmox Cluster"""
+    proxmox = ctx.obj["cluster"]
+    output = ctx.obj["args"].output
+    print_output(proxmox.vms, columns=columns, sortby=sort_by, filters=filter, output=output)
+
+
 @root.command()
 @click.argument("vmid")
 @click.argument("target")
 @click.option("--online", is_flag=True)
-@click.option("-f", "--follow", is_flag=True)
-@click.option("-w", "--wait", is_flag=True)
 @click.option("--dry-run", is_flag=True)
+@task_related_command
 @click.pass_context
 def migrate(ctx, vmid, target, online, follow, wait, dry_run):
     """Migrate VMs in the cluster"""
@@ -80,11 +81,9 @@ def migrate(ctx, vmid, target, online, follow, wait, dry_run):
         print("Dry run, skipping migration")
 
 
-@root.command("list")
-@add_table_options(COLUMNS, "vmid")
-@click.pass_context
-def vm_list(ctx, sort_by, columns, filters):
-    """List VMs in the Proxmox Cluster"""
-    print_output(
-        ctx.obj["cluster"].vms, columns=columns, sortby=sort_by, filters=filters, output=ctx.obj["args"].output
-    )
+def _get_vm(proxmox, vmid):
+    for v in proxmox.vms:
+        logging.debug("_get_vm: %s", v)
+        if v.vmid == vmid:
+            return v
+    return None
