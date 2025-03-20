@@ -21,6 +21,7 @@ from pvecontrol.utils import OutputFormats
 
 import click
 
+
 def action_test(proxmox, _args):
     """Hidden optional test action"""
     print(proxmox)
@@ -223,21 +224,30 @@ class IgnoreRequiredForHelp(click.Group):
         try:
             return super(IgnoreRequiredForHelp, self).parse_args(ctx, args)
         except click.MissingParameter as e:
-            if '--help' not in args: raise
+            if "--help" not in args:
+                raise
             self.ignoring = True
-            for param in self.params: param.required = False
+            for param in self.params:
+                param.required = False
             return super(IgnoreRequiredForHelp, self).parse_args(ctx, args)
+
 
 @click.group(
     cls=IgnoreRequiredForHelp,
     help=f"Proxmox VE control CLI, version: {version(__name__)}",
-    epilog="Made with love by Enix.io")
-@click.option('-v', '--verbose')
-@click.option('-d', '--debug')
-@click.option('-o', '--output', type=click.Choice([o.value for o in OutputFormats]),
-    show_default=True, default=OutputFormats.TEXT.value, callback=lambda *v: OutputFormats(v[2]))
-@click.option('-c', '--cluster', required=True,
-    help="Proxmox cluster name as defined in configuration")
+    epilog="Made with love by Enix.io",
+)
+@click.option("-v", "--verbose")
+@click.option("-d", "--debug")
+@click.option(
+    "-o",
+    "--output",
+    type=click.Choice([o.value for o in OutputFormats]),
+    show_default=True,
+    default=OutputFormats.TEXT.value,
+    callback=lambda *v: OutputFormats(v[2]),
+)
+@click.option("-c", "--cluster", required=True, help="Proxmox cluster name as defined in configuration")
 @click.pass_context
 def main(ctx, verbose, debug, output, cluster):
     if not ctx.command.ignoring:
@@ -277,10 +287,10 @@ def main(ctx, verbose, debug, output, cluster):
             **auth,
         )
         ctx.ensure_object(dict)
-        ctx.obj['cluster'] = proxmoxcluster
-        ctx.obj['args'] = args
+        ctx.obj["cluster"] = proxmoxcluster
+        ctx.obj["args"] = args
 
 
-main.add_command(cmd=actions.vm.action_vmlist, name='vmlist')
+main.add_command(cmd=actions.vm.root, name="vm")
 if __name__ == "__main__":
     sys.exit(main())
