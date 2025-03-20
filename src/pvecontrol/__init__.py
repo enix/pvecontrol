@@ -291,6 +291,7 @@ def main(ctx, verbose, debug, output, cluster):
         ctx.obj["args"] = args
 
 
+main.add_command(cmd=actions.storage.root, name="storage")
 main.add_command(cmd=actions.task.root, name="task")
 main.add_command(cmd=actions.vm.root, name="vm")
 if __name__ == "__main__":
