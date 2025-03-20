@@ -6,6 +6,7 @@ from pvecontrol.models.task import COLUMNS
 
 @click.group()
 def root():
+    """Task related commands"""
     pass
 
 

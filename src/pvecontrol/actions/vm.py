@@ -9,6 +9,7 @@ from pvecontrol.models.vm import COLUMNS
 
 @click.group()
 def root():
+    """VM related commands"""
     pass
 
 

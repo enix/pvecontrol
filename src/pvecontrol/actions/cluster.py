@@ -1,12 +1,19 @@
 import sys
 
+import click
+
 from humanize import naturalsize
 
 from pvecontrol.models.node import NodeStatus
 from pvecontrol.sanitycheck import SanityCheck
+from pvecontrol.sanitycheck.tests import DEFAULT_CHECK_IDS
 
 
-def action_clusterstatus(proxmox, _args):
+@click.command()
+@click.pass_context
+def status(ctx):
+    """Show cluster status"""
+    proxmox = ctx.obj["cluster"]
     status = "healthy" if proxmox.is_healthy else "not healthy"
 
     templates = sum(len(node.templates) for node in proxmox.nodes)
@@ -50,13 +57,17 @@ def action_clusterstatus(proxmox, _args):
     print(output)
 
 
-def action_sanitycheck(proxmox, args):
-    """Check status of proxmox Cluster"""
+@click.command()
+@click.argument("checks", nargs=-1, type=click.Choice(list(DEFAULT_CHECK_IDS), case_sensitive=False))
+@click.pass_context
+def sanitycheck(ctx, checks):
+    """Run sanity checks on the cluster"""
     # More checks to implement
     # VM is started but 'startonboot' not set
     # VM is running in cpu = host
     # VM is running in cpu = qemu64
+    proxmox = ctx.obj["cluster"]
     sc = SanityCheck(proxmox)
-    exitcode = sc.run(checks=args.check)
+    exitcode = sc.run(checks=set(checks))
     sc.display()
     sys.exit(exitcode)

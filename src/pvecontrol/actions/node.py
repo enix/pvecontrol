@@ -10,6 +10,7 @@ from pvecontrol.models.node import COLUMNS
 
 @click.group()
 def root():
+    """Node related commands"""
     pass
 
 
@@ -24,7 +25,7 @@ def node_list(ctx, sort_by, columns, filter):
 
 
 # pylint: disable=too-many-branches,too-many-statements
-@root.command("evacuate")
+@root.command()
 @click.argument("node", required=True)
 @click.argument("target", nargs=-1)
 @migration_related_command

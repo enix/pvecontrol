@@ -6,6 +6,7 @@ from pvecontrol.utils import print_output, add_table_options
 
 @click.group()
 def root():
+    """Storage related commands"""
     pass
 
 
