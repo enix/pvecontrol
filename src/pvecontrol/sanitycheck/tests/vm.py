@@ -1,4 +1,5 @@
 from pvecontrol.models.vm import VmStatus
+from pvecontrol.models.storage import PVEStorage
 from pvecontrol.sanitycheck.checks import Check, CheckCode, CheckType, CheckMessage
 
 
@@ -64,10 +65,10 @@ class DiskUnused(Check):
             msg = f"Disk '{key}' is not used on vm {vm.vmid}/{vm.name}"
             self.add_messages(CheckMessage(CheckCode.CRIT, msg))
 
-    def _check_storage_disk_is_unused(self, storage):
+    def _check_storage_disk_is_unused(self, storage: PVEStorage):
         node = self.proxmox.find_node(storage.node)
         node_vms_ids = [vm.vmid for vm in node.vms]
-        for image in storage.get_content("images"):
-            if image["vmid"] not in node_vms_ids:
-                msg = f"Disk '{image['volid']}' is not used, vm {image['vmid']} doesn't exists"
+        for image in storage.images:
+            if image.vmid not in node_vms_ids:
+                msg = f"Disk '{image.volid}' is not used, vm {image.vmid} doesn't exists"
                 self.add_messages(CheckMessage(CheckCode.CRIT, msg))
