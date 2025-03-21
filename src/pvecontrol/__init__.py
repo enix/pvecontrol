@@ -10,7 +10,7 @@ import json
 from importlib.metadata import version
 
 import urllib3
-import shtab
+import click
 
 from pvecontrol import actions
 from pvecontrol.config import set_config
@@ -18,8 +18,6 @@ from pvecontrol.models import node, vm, task, storage
 from pvecontrol.models.cluster import PVECluster
 from pvecontrol.sanitycheck.tests import DEFAULT_CHECK_IDS
 from pvecontrol.utils import OutputFormats
-
-import click
 
 
 def action_test(proxmox, _args):
