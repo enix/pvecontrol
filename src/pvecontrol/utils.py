@@ -74,17 +74,10 @@ def add_table_options(columns, default_sort):
 
     def _add_options(func):
         func = click.option(
-            "--sort-by",
-            type=click.Choice(columns),
-            default=default_sort,
-            show_default=True,
-            help="Key used to sort items",
-        )(func)
-        func = click.option(
             "--columns",
             type=str,
+            metavar="COLUMNS",
             default=",".join(columns),
-            show_default=True,
             help="Comma-separated list of columns",
             callback=lambda *v: check_cols(v[2]),
         )(func)
@@ -92,8 +85,16 @@ def add_table_options(columns, default_sort):
             "--filter",
             type=filter_type,
             nargs=2,
-            help="Regex to filter items: colum regexp",
+            metavar="COLUMN REGEXP",
+            help="Regex to filter items",
             callback=lambda *v: [] if v[2] is None else [v[2]],
+        )(func)
+        func = click.option(
+            "--sort-by",
+            type=click.Choice(columns),
+            default=default_sort,
+            show_default=True,
+            help="Key used to sort items",
         )(func)
         return func
 
