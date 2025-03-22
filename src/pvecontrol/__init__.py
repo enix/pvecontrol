@@ -14,66 +14,8 @@ import click
 
 from pvecontrol import actions
 from pvecontrol.config import set_config
-from pvecontrol.models import node, vm, task, storage
 from pvecontrol.models.cluster import PVECluster
-from pvecontrol.sanitycheck.tests import DEFAULT_CHECK_IDS
 from pvecontrol.utils import OutputFormats
-
-
-def action_test(proxmox, _args):
-    """Hidden optional test action"""
-    print(proxmox)
-
-
-# def _make_filter_type_generator(columns):
-#     def _regexp_type(value):
-#         try:
-#             return re.compile(value)
-#         except re.error as e:
-#             raise argparse.ArgumentTypeError(f"invalid regular expression: '{value}'", e)
-
-#     def _column_type(value):
-#         if not value in columns:
-#             choices = ", ".join([f"'{c}'" for c in columns])
-#             raise argparse.ArgumentTypeError(f"invalid choice: '{value}' (choose from {choices})")
-#         return value
-
-#     while True:
-#         yield _column_type
-#         yield _regexp_type
-
-
-# def add_table_related_arguments(parser, columns, default_sort):
-#     filter_type_generator = _make_filter_type_generator(columns)
-
-#     def filter_type(x):
-#         return next(filter_type_generator)(x)
-
-#     parser.add_argument(
-#         "--sort-by",
-#         action="store",
-#         help="Key used to sort items",
-#         default=default_sort,
-#         choices=columns,
-#     )
-#     parser.add_argument(
-#         "--filter",
-#         action="append",
-#         nargs=2,
-#         type=filter_type,
-#         metavar=("COLUMN", "REGEXP"),
-#         help="Regexp to filter items",
-#         default=[],
-#     )
-#     parser.add_argument(
-#         "--columns",
-#         action="store",
-#         nargs="+",
-#         help="",
-#         default=columns,
-#         choices=columns,
-#     )
-
 
 # def _parser():
 #     parser = argparse.ArgumentParser(
@@ -254,20 +196,6 @@ def main(ctx, verbose, debug, output, cluster):
 
         # get cli arguments
         args = argparse.Namespace(verbose=verbose, debug=debug, output=output, cluster=cluster)
-
-        # FIXME: we shouldn't keep this here (cols and filter will depend on commands)
-        if hasattr(args, "columns"):
-            if not args.sort_by is None and not args.sort_by in args.columns:
-                sys.stderr.write(
-                    f"error: cannot sort by column '{args.sort_by}' because it's not included in the --columns flag.\n"
-                )
-                sys.exit(1)
-            for key, _value in args.filter:
-                if not key in args.columns:
-                    sys.stderr.write(
-                        f"error: cannot filter on the column '{key}' because it's not included in the --columns flag.\n"
-                    )
-                    sys.exit(1)
 
         # configure logging
         logging.basicConfig(encoding="utf-8", level=logging.DEBUG if args.debug else logging.INFO)
