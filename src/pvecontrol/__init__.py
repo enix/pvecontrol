@@ -6,7 +6,6 @@ import logging
 from types import SimpleNamespace
 from importlib.metadata import version
 
-import urllib3
 import click
 
 from pvecontrol import actions
@@ -52,16 +51,12 @@ class IgnoreRequiredForHelp(click.Group):
 )
 @click.pass_context
 def pvecontrol(ctx, debug, output, cluster):
-    # Disable urllib3 warnings about invalid certs
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-    # get cli arguments
-    args = SimpleNamespace(debug=debug, output=output, cluster=cluster)
-
     if not ctx.command.ignoring:
+        # get cli arguments
+        args = SimpleNamespace(output=output, cluster=cluster)
 
         # configure logging
-        logging.basicConfig(encoding="utf-8", level=logging.DEBUG if args.debug else logging.INFO)
+        logging.basicConfig(encoding="utf-8", level=logging.DEBUG if debug else logging.INFO)
         logging.debug("Arguments: %s", args)
 
         ctx.ensure_object(dict)

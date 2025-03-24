@@ -6,6 +6,7 @@ import curses
 import json
 import os
 import subprocess
+import urllib3
 
 from collections import OrderedDict
 from enum import Enum
@@ -318,6 +319,9 @@ def run_auth_commands(clusterconfig):
 
 
 def init_cluster(cluster):
+    # Disable urllib3 warnings about invalid certs
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
     logging.info("Proxmox cluster: %s", cluster)
 
     clusterconfig = set_config(cluster)
