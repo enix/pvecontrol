@@ -4,7 +4,7 @@ import click
 
 from pvecontrol.models.node import NodeStatus
 from pvecontrol.models.vm import VmStatus
-from pvecontrol.utils import print_output, print_task, add_table_options, migration_related_command
+from pvecontrol.utils import print_output, print_task, with_table_options, migration_related_command
 from pvecontrol.models.node import COLUMNS
 
 
@@ -15,7 +15,7 @@ def root():
 
 
 @root.command("list")
-@add_table_options(COLUMNS, "node")
+@with_table_options(COLUMNS, "node")
 @click.pass_context
 def node_list(ctx, sort_by, columns, filter):
     """List nodes in the cluster"""

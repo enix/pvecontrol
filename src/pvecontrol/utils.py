@@ -56,7 +56,7 @@ def _make_filter_type_generator(columns):
 
 
 # this replaces: pvecontrol.add_table_related_arguments(p,c,d)
-def add_table_options(columns, default_sort):
+def with_table_options(columns, default_sort):
 
     filter_type_generator = _make_filter_type_generator(columns)
 

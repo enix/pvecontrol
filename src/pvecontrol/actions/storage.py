@@ -1,7 +1,7 @@
 import click
 
 from pvecontrol.models.storage import PVEStorage, COLUMNS
-from pvecontrol.utils import print_output, add_table_options
+from pvecontrol.utils import print_output, with_table_options
 
 
 @click.group()
@@ -11,7 +11,7 @@ def root():
 
 
 @root.command("list")
-@add_table_options(COLUMNS, "storage")
+@with_table_options(COLUMNS, "storage")
 @click.pass_context
 def storage_list(ctx, sort_by, columns, filter):
     """Describe cluster storages"""

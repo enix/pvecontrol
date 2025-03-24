@@ -3,7 +3,7 @@ import sys
 
 import click
 
-from pvecontrol.utils import print_task, print_output, add_table_options, migration_related_command
+from pvecontrol.utils import print_task, print_output, with_table_options, migration_related_command
 from pvecontrol.models.vm import COLUMNS
 
 
@@ -14,7 +14,7 @@ def root():
 
 
 @root.command("list")
-@add_table_options(COLUMNS, "vmid")
+@with_table_options(COLUMNS, "vmid")
 @click.pass_context
 def vm_list(ctx, sort_by, columns, filter):
     """List VMs in the Proxmox Cluster"""

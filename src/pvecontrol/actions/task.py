@@ -1,6 +1,6 @@
 import click
 
-from pvecontrol.utils import print_task, print_output, add_table_options, task_related_command
+from pvecontrol.utils import print_task, print_output, with_table_options, task_related_command
 from pvecontrol.models.task import COLUMNS
 
 
@@ -11,7 +11,7 @@ def root():
 
 
 @root.command("list")
-@add_table_options(COLUMNS, "starttime")
+@with_table_options(COLUMNS, "starttime")
 @click.pass_context
 def task_list(ctx, sort_by, columns, filter):
     proxmox = ctx.obj["cluster"]
