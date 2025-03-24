@@ -102,8 +102,8 @@ def add_table_options(columns, default_sort):
 
 
 def task_related_command(func):
-    func = click.option("-w", "--wait", is_flag=True)(func)
-    func = click.option("-f", "--follow", is_flag=True)(func)
+    func = click.option("-w", "--wait", is_flag=True, help="Follow task log output")(func)
+    func = click.option("-f", "--follow", is_flag=True, help="Wait task end")(func)
     return func
 
 

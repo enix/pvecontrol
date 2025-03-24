@@ -85,8 +85,7 @@ class IgnoreRequiredForHelp(click.Group):
     help=f"Proxmox VE control CLI, version: {version(__name__)}",
     epilog="Made with love by Enix.io",
 )
-@click.option("-v", "--verbose")
-@click.option("-d", "--debug")
+@click.option("-d", "--debug", is_flag=True)
 @click.option(
     "-o",
     "--output",
@@ -97,13 +96,13 @@ class IgnoreRequiredForHelp(click.Group):
 )
 @click.option("-c", "--cluster", required=True, help="Proxmox cluster name as defined in configuration")
 @click.pass_context
-def main(ctx, verbose, debug, output, cluster):
+def main(ctx, debug, output, cluster):
     if not ctx.command.ignoring:
         # Disable urllib3 warnings about invalid certs
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         # get cli arguments
-        args = SimpleNamespace(verbose=verbose, debug=debug, output=output, cluster=cluster)
+        args = SimpleNamespace(debug=debug, output=output, cluster=cluster)
 
         # configure logging
         logging.basicConfig(encoding="utf-8", level=logging.DEBUG if args.debug else logging.INFO)
