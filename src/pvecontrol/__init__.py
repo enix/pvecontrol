@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 import sys
-import argparse
 import logging
 import re
 import subprocess
 import json
 
+from types import SimpleNamespace
 from importlib.metadata import version
 
 import urllib3
@@ -65,12 +65,13 @@ def run_auth_commands(clusterconfig):
     return auth
 
 
+# Patch click to ignore required parameters when --help is passed
 class IgnoreRequiredForHelp(click.Group):
     def parse_args(self, ctx, args):
         self.ignoring = False
         try:
             return super(IgnoreRequiredForHelp, self).parse_args(ctx, args)
-        except click.MissingParameter as e:
+        except click.MissingParameter:
             if "--help" not in args:
                 raise
             self.ignoring = True
@@ -102,7 +103,7 @@ def main(ctx, verbose, debug, output, cluster):
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         # get cli arguments
-        args = argparse.Namespace(verbose=verbose, debug=debug, output=output, cluster=cluster)
+        args = SimpleNamespace(verbose=verbose, debug=debug, output=output, cluster=cluster)
 
         # configure logging
         logging.basicConfig(encoding="utf-8", level=logging.DEBUG if args.debug else logging.INFO)
