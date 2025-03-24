@@ -42,9 +42,16 @@ class IgnoreRequiredForHelp(click.Group):
     default=OutputFormats.TEXT.value,
     callback=lambda *v: OutputFormats(v[2]),
 )
-@click.option("-c", "--cluster", metavar="NAME", required=True, help="Proxmox cluster name as defined in configuration")
+@click.option(
+    "-c",
+    "--cluster",
+    metavar="NAME",
+    envvar="CLUSTER",
+    required=True,
+    help="Proxmox cluster name as defined in configuration",
+)
 @click.pass_context
-def main(ctx, debug, output, cluster):
+def pvecontrol(ctx, debug, output, cluster):
     # Disable urllib3 warnings about invalid certs
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -61,12 +68,17 @@ def main(ctx, debug, output, cluster):
         ctx.obj["args"] = args
 
 
-main.add_command(cmd=actions.cluster.status, name="status")
-main.add_command(cmd=actions.cluster.sanitycheck, name="sanitycheck")
-main.add_command(cmd=actions.node.root, name="node")
-main.add_command(cmd=actions.storage.root, name="storage")
-main.add_command(cmd=actions.task.root, name="task")
-main.add_command(cmd=actions.vm.root, name="vm")
+pvecontrol.add_command(cmd=actions.cluster.status, name="status")
+pvecontrol.add_command(cmd=actions.cluster.sanitycheck, name="sanitycheck")
+pvecontrol.add_command(cmd=actions.node.root, name="node")
+pvecontrol.add_command(cmd=actions.storage.root, name="storage")
+pvecontrol.add_command(cmd=actions.task.root, name="task")
+pvecontrol.add_command(cmd=actions.vm.root, name="vm")
+
+
+def main():
+    pvecontrol(auto_envvar_prefix="PVECONTROL")
+
 
 if __name__ == "__main__":
     sys.exit(main())
