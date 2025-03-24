@@ -3,7 +3,7 @@ import sys
 
 import click
 
-from pvecontrol.utils import print_task, print_output, with_table_options, migration_related_command
+from pvecontrol.utils import init_cluster, print_task, print_output, with_table_options, migration_related_command
 from pvecontrol.models.vm import COLUMNS
 
 
@@ -18,7 +18,7 @@ def root():
 @click.pass_context
 def vm_list(ctx, sort_by, columns, filter):
     """List VMs in the Proxmox Cluster"""
-    proxmox = ctx.obj["cluster"]
+    proxmox = init_cluster(ctx.obj["args"].cluster)
     output = ctx.obj["args"].output
     print_output(proxmox.vms, columns=columns, sortby=sort_by, filters=filter, output=output)
 
@@ -31,7 +31,7 @@ def vm_list(ctx, sort_by, columns, filter):
 def migrate(ctx, vmid, target, online, follow, wait, dry_run):
     """Migrate VMs in the cluster"""
 
-    proxmox = ctx.obj["cluster"]
+    proxmox = init_cluster(ctx.obj["args"].cluster)
     logging.debug("ARGS: %s", ctx.obj["args"])
     # Migrate a vm to a node
     vmid = int(vmid)

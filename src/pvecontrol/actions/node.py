@@ -4,7 +4,7 @@ import click
 
 from pvecontrol.models.node import NodeStatus
 from pvecontrol.models.vm import VmStatus
-from pvecontrol.utils import print_output, print_task, with_table_options, migration_related_command
+from pvecontrol.utils import init_cluster, print_output, print_task, with_table_options, migration_related_command
 from pvecontrol.models.node import COLUMNS
 
 
@@ -19,7 +19,7 @@ def root():
 @click.pass_context
 def node_list(ctx, sort_by, columns, filter):
     """List nodes in the cluster"""
-    proxmox = ctx.obj["cluster"]
+    proxmox = init_cluster(ctx.obj["args"].cluster)
     output = ctx.obj["args"].output
     print_output(proxmox.nodes, columns=columns, sortby=sort_by, filters=filter, output=output)
 
@@ -34,7 +34,7 @@ def node_list(ctx, sort_by, columns, filter):
 def evacuate(ctx, node, target, follow, wait, dry_run, online, no_skip_stopped):
     """Evacuate a node by migrating all it's VM out to one or multiple target nodes"""
     # check node exists
-    proxmox = ctx.obj["cluster"]
+    proxmox = init_cluster(ctx.obj["args"].cluster)
     srcnode = proxmox.find_node(node)
     logging.debug(srcnode)
     if not srcnode:

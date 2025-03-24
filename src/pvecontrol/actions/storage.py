@@ -1,7 +1,7 @@
 import click
 
 from pvecontrol.models.storage import PVEStorage, COLUMNS
-from pvecontrol.utils import print_output, with_table_options
+from pvecontrol.utils import init_cluster, print_output, with_table_options
 
 
 @click.group()
@@ -15,7 +15,7 @@ def root():
 @click.pass_context
 def storage_list(ctx, sort_by, columns, filter):
     """Describe cluster storages"""
-    proxmox = ctx.obj["cluster"]
+    proxmox = init_cluster(ctx.obj["args"].cluster)
     output = ctx.obj["args"].output
     storages = PVEStorage.get_grouped_list(proxmox)
 

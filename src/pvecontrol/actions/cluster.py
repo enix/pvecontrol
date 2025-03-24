@@ -7,13 +7,14 @@ from humanize import naturalsize
 from pvecontrol.models.node import NodeStatus
 from pvecontrol.sanitycheck import SanityCheck
 from pvecontrol.sanitycheck.tests import DEFAULT_CHECK_IDS
+from pvecontrol.utils import init_cluster
 
 
 @click.command()
 @click.pass_context
 def status(ctx):
     """Show cluster status"""
-    proxmox = ctx.obj["cluster"]
+    proxmox = init_cluster(ctx.obj["args"].cluster)
     status = "healthy" if proxmox.is_healthy else "not healthy"
 
     templates = sum(len(node.templates) for node in proxmox.nodes)
@@ -66,7 +67,7 @@ def sanitycheck(ctx, checks):
     # VM is started but 'startonboot' not set
     # VM is running in cpu = host
     # VM is running in cpu = qemu64
-    proxmox = ctx.obj["cluster"]
+    proxmox = init_cluster(ctx.obj["args"].cluster)
     sc = SanityCheck(proxmox)
     exitcode = sc.run(checks=set(checks))
     sc.display()
