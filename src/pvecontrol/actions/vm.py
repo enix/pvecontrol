@@ -3,7 +3,7 @@ import sys
 
 import click
 
-from pvecontrol.utils import init_cluster, print_task, print_output, with_table_options
+from pvecontrol.utils import init_cluster, print_task, print_output, with_table_options, migration_related_command
 from pvecontrol.models.vm import COLUMNS
 
 
@@ -26,10 +26,7 @@ def vm_list(ctx, sort_by, columns, filter):
 @root.command()
 @click.argument("vmid")
 @click.argument("target")
-@click.option("-w", "--wait", is_flag=True, help="Follow task log output")
-@click.option("-f", "--follow", is_flag=True, help="Wait task end")
-@click.option("--dry-run", is_flag=True, help="Dry run, do not execute migration for real")
-@click.option("--online", is_flag=True, default=True, help="Perform anonline migration")
+@migration_related_command
 @click.pass_context
 def migrate(ctx, vmid, target, online, follow, wait, dry_run):
     """Migrate VMs in the cluster"""
