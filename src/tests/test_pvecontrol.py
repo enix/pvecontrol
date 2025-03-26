@@ -1,7 +1,7 @@
-from pvecontrol.utils import filter_keys
+from pvecontrol.utils import reorder_keys
 
 
-def test_filter_keys():
-    input_d = {"test": "toto", "none": "noninclude"}
-    filter_k = ["test"]
-    assert filter_keys(input_d, filter_k) == {"test": "toto"}
+def test_reorder_keys():
+    input_d = {"a": 1, "b": 2, "c": 3, "d": 4}
+    keys = ["c", "a"]
+    assert reorder_keys(input_d, keys) == {"c": 3, "a": 1, "b": 2, "d": 4}

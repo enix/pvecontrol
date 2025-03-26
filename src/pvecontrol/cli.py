@@ -90,11 +90,18 @@ class ResourceGroup(click.Group):
         add_list_resource_command(name, self, columns, default_sort, list_callback)
 
 
-def add_list_resource_command(resource_name, root_cmd, columns, default_sort, list_callback):
+def add_list_resource_command(resource_name, root_cmd, default_columns, default_sort, list_callback):
     @root_cmd.command("list", help=f"List {resource_name}s in the cluster")
-    @with_table_options(columns, default_sort)
+    @with_table_options(default_columns, default_sort)
     @click.pass_context
     def _(ctx, sort_by, columns, filters):
         proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
         output = ctx.obj["args"].output
-        print_output(list_callback(proxmox), columns=columns, sortby=sort_by, filters=filters, output=output)
+
+        data = list_callback(proxmox)
+        data = [
+            dict((k, item.__dict__[k] if hasattr(item, "__dict__") else item[k]) for k in default_columns)
+            for item in data
+        ]
+
+        print_output(data, columns=columns, sortby=sort_by, filters=filters, output=output)

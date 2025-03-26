@@ -76,7 +76,7 @@ def render_output(table, columns=None, sortby=None, filters=None, output=OutputF
     if len(columns) == 0:
         columns = table[0].keys()
     else:
-        table = [filter_keys(n.__dict__ if hasattr(n, "__dict__") else n, columns) for n in table]
+        table = [reorder_keys(n.__dict__ if hasattr(n, "__dict__") else n, columns) for n in table]
 
     x = prepare_prettytable(table, sortby, filters)
 
@@ -132,10 +132,12 @@ def print_output(table, columns=None, sortby=None, filters=None, output=OutputFo
     print(render_output(table, columns, sortby, filters, output))
 
 
-def filter_keys(input_d, keys):
-    # Filter keys from input dict
+def reorder_keys(input_d, keys):
+    # Reorder keys from input dict
     output = OrderedDict()
-    for key in keys:
+    input_keys = input_d.keys()
+    output_keys = keys + [item for item in input_keys if item not in keys]
+    for key in output_keys:
         output[key] = input_d[key]
     return output
 
