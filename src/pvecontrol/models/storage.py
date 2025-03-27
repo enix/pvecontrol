@@ -56,6 +56,20 @@ class PVEStorage:
 
         return storages.values()
 
+    @staticmethod
+    def get_flattened_grouped_list(proxmox):
+        storages = PVEStorage.get_grouped_list(proxmox)
+
+        for item in storages:
+            storage = item.pop("storage").__dict__
+            storage.pop("node")
+            item.update(storage)
+
+        for storage in storages:
+            storage["nodes"] = ", ".join(storage["nodes"])
+
+        return storages
+
     @property
     def percentage(self):
         return self.disk / self.maxdisk * 100 if self.maxdisk else 0
