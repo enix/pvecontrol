@@ -3,7 +3,8 @@ import sys
 
 import click
 
-from pvecontrol.utils import print_task, print_output, with_table_options, migration_related_command
+from pvecontrol.utils import print_task, print_output
+from pvecontrol.cli import with_table_options, migration_related_command
 from pvecontrol.models.vm import COLUMNS
 from pvecontrol.models.cluster import PVECluster
 

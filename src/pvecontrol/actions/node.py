@@ -4,7 +4,8 @@ import click
 
 from pvecontrol.models.node import NodeStatus
 from pvecontrol.models.vm import VmStatus
-from pvecontrol.utils import print_output, print_task, with_table_options, migration_related_command
+from pvecontrol.utils import print_task, print_output
+from pvecontrol.cli import with_table_options, migration_related_command
 from pvecontrol.models.node import COLUMNS
 from pvecontrol.models.cluster import PVECluster
 

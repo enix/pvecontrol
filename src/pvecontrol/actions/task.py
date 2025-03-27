@@ -1,6 +1,7 @@
 import click
 
-from pvecontrol.utils import print_task, print_output, with_table_options, task_related_command
+from pvecontrol.utils import print_task, print_output
+from pvecontrol.cli import with_table_options, task_related_command
 from pvecontrol.models.task import COLUMNS
 from pvecontrol.models.cluster import PVECluster
 
