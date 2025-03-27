@@ -2,8 +2,6 @@ import click
 import re
 import logging
 
-from argparse import ArgumentTypeError
-
 from pvecontrol.utils import init_cluster, print_output
 
 
@@ -12,12 +10,12 @@ def _make_filter_type_generator(columns):
         try:
             return re.compile(value)
         except re.error as e:
-            raise ArgumentTypeError(f"invalid regular expression: '{value}'", e)
+            raise click.BadParameter(f"invalid regular expression: '{value}' ({e})")
 
     def _column_type(value):
-        if not value in columns:
+        if value not in columns:
             choices = ", ".join([f"'{c}'" for c in columns])
-            raise ArgumentTypeError(f"invalid choice: '{value}' (choose from {choices})")
+            raise click.BadParameter(f"'{value}' is not one of {choices}.")
         return value
 
     while True:
