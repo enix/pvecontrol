@@ -1,23 +1,20 @@
 import click
 
-from pvecontrol.utils import print_task, print_output
-from pvecontrol.cli import with_table_options, task_related_command
+from pvecontrol.utils import print_task
+from pvecontrol.cli import ResourceGroup, task_related_command
 from pvecontrol.models.task import COLUMNS
 from pvecontrol.models.cluster import PVECluster
 
 
-@click.group()
+@click.group(
+    cls=ResourceGroup,
+    name="task",
+    columns=COLUMNS,
+    default_sort="starttime",
+    list_callback=lambda proxmox: proxmox.tasks,
+)
 def root():
-    """Task related commands"""
-
-
-@root.command("list")
-@with_table_options(COLUMNS, "starttime")
-@click.pass_context
-def task_list(ctx, sort_by, columns, filters):
-    proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
-    output = ctx.obj["args"].output
-    print_output(proxmox.tasks, columns=columns, sortby=sort_by, filters=filters, output=output)
+    pass
 
 
 @root.command()
@@ -25,5 +22,6 @@ def task_list(ctx, sort_by, columns, filters):
 @task_related_command
 @click.pass_context
 def get(ctx, upid, follow, wait):
+    """Get detailled information about a task"""
     proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
     print_task(proxmox, upid, follow, wait)

@@ -4,25 +4,21 @@ import click
 
 from pvecontrol.models.node import NodeStatus
 from pvecontrol.models.vm import VmStatus
-from pvecontrol.utils import print_task, print_output
-from pvecontrol.cli import with_table_options, migration_related_command
+from pvecontrol.utils import print_task
+from pvecontrol.cli import ResourceGroup, migration_related_command
 from pvecontrol.models.node import COLUMNS
 from pvecontrol.models.cluster import PVECluster
 
 
-@click.group()
+@click.group(
+    cls=ResourceGroup,
+    name="node",
+    columns=COLUMNS,
+    default_sort="node",
+    list_callback=lambda proxmox: proxmox.nodes,
+)
 def root():
-    """Node related commands"""
-
-
-@root.command("list")
-@with_table_options(COLUMNS, "node")
-@click.pass_context
-def node_list(ctx, sort_by, columns, filters):
-    """List nodes in the cluster"""
-    proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
-    output = ctx.obj["args"].output
-    print_output(proxmox.nodes, columns=columns, sortby=sort_by, filters=filters, output=output)
+    pass
 
 
 @root.command()
