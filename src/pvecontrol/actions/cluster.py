@@ -15,7 +15,7 @@ from pvecontrol.utils import init_cluster
 def status(ctx):
     """Show cluster status"""
     proxmox = init_cluster(ctx.obj["args"].cluster)
-    status = "healthy" if proxmox.is_healthy else "not healthy"
+    cluster_status = "healthy" if proxmox.is_healthy else "not healthy"
 
     templates = sum(len(node.templates) for node in proxmox.nodes)
     vms = sum(len(node.vms) for node in proxmox.nodes)
@@ -42,7 +42,7 @@ def status(ctx):
         return f"{d_usage}/{d_total}({d_percent:.1f}%)"
 
     output = f"""
-  Status: {status}
+  Status: {cluster_status}
   VMs: {vms - templates}
   Templates: {templates}
   Metrics:

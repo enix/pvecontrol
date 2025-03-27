@@ -6,11 +6,11 @@ import curses
 import json
 import os
 import subprocess
-import urllib3
 
 from collections import OrderedDict
 from enum import Enum
 
+import urllib3
 import yaml
 
 from humanize import naturalsize

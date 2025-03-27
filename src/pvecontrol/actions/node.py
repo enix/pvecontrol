@@ -20,13 +20,14 @@ def root():
     pass
 
 
-# pylint: disable=too-many-branches,too-many-statements
 @root.command()
 @click.argument("node", required=True)
 @click.argument("target", nargs=-1)
 @migration_related_command
 @click.option("--no-skip-stopped", is_flag=True, help="Don't skip VMs that are stopped")
 @click.pass_context
+# FIXME: remove pylint disable annotations
+# pylint: disable=too-many-branches,too-many-statements,too-many-locals
 def evacuate(ctx, node, target, follow, wait, dry_run, online, no_skip_stopped):
     """Evacuate a node by migrating all it's VM out to one or multiple target nodes"""
     # check node exists
@@ -49,6 +50,8 @@ def evacuate(ctx, node, target, follow, wait, dry_run, online, no_skip_stopped):
             if not nodes:
                 print(f"No node match the pattern {pattern}, skipping")
                 continue
+            # FIXME: remove pylint disable annotation
+            # pylint: disable=redefined-argument-from-local
             for node in nodes:
                 if node.node == srcnode.node:
                     print(f"Target node {node.node} is the same as source node, skipping")
@@ -73,6 +76,8 @@ def evacuate(ctx, node, target, follow, wait, dry_run, online, no_skip_stopped):
             logging.debug("VM %i is not running, skipping", vm.vmid)
             continue
         # check ressources
+        # FIXME: remove pylint disable annotation
+        # pylint: disable=redefined-argument-from-local
         for target in targets:
             logging.debug(
                 "Test target: %s, allocatedmem: %i, allocatedcpu: %i",

@@ -15,17 +15,20 @@ from pvecontrol.utils import OutputFormats
 
 # Patch click to ignore required parameters when --help is passed
 class IgnoreRequiredForHelp(click.Group):
-    def parse_args(self, ctx, args):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.ignoring = False
+
+    def parse_args(self, ctx, args):
         try:
-            return super(IgnoreRequiredForHelp, self).parse_args(ctx, args)
+            return super().parse_args(ctx, args)
         except click.MissingParameter:
             if "--help" not in args:
                 raise
             self.ignoring = True
             for param in self.params:
                 param.required = False
-            return super(IgnoreRequiredForHelp, self).parse_args(ctx, args)
+            return super().parse_args(ctx, args)
 
 
 @click.group(
@@ -74,6 +77,7 @@ pvecontrol.add_command(cmd=actions.vm.root, name="vm")
 
 
 def main():
+    # pylint: disable=no-value-for-parameter
     pvecontrol(auto_envvar_prefix="PVECONTROL")
 
 

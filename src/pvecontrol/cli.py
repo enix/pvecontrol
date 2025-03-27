@@ -1,6 +1,6 @@
-import click
 import re
 import logging
+import click
 
 from pvecontrol.utils import init_cluster, print_output
 
@@ -35,7 +35,7 @@ def with_table_options(columns, default_sort):
             if col in columns:
                 res.append(col)
             else:
-                logging.warning(f"Column ({col}) doesn't exist, will be ignored...")
+                logging.warning("Column (%s) doesn't exist, will be ignored...", col)
         return res
 
     def _add_options(func):
