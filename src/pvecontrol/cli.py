@@ -49,11 +49,13 @@ def with_table_options(columns, default_sort):
         )(func)
         func = click.option(
             "--filter",
+            "filters",
             type=filter_type,
             nargs=2,
             metavar="COLUMN REGEXP",
-            help="Regex to filter items",
-            callback=lambda *v: [] if v[2] is None else [v[2]],
+            multiple=True,
+            help="Regex to filter items (can be set multiple times)",
+            callback=lambda *v: v[2],
         )(func)
         func = click.option(
             "--sort-by",
@@ -91,7 +93,7 @@ def add_list_resource_command(resource_name, root_cmd, columns, default_sort, li
     @root_cmd.command("list", help=f"List {resource_name}s in the cluster")
     @with_table_options(columns, default_sort)
     @click.pass_context
-    def _(ctx, sort_by, columns, filter):
+    def _(ctx, sort_by, columns, filters):
         proxmox = init_cluster(ctx.obj["args"].cluster)
         output = ctx.obj["args"].output
-        print_output(list_callback(proxmox), columns=columns, sortby=sort_by, filters=filter, output=output)
+        print_output(list_callback(proxmox), columns=columns, sortby=sort_by, filters=filters, output=output)
