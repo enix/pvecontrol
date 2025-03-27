@@ -1,7 +1,8 @@
 import click
 
 from pvecontrol.models.storage import PVEStorage, COLUMNS
-from pvecontrol.utils import init_cluster, print_output, with_table_options
+from pvecontrol.utils import init_cluster, print_output
+from pvecontrol.cli import with_table_options
 
 
 @click.group()
