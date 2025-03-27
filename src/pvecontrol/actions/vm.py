@@ -3,25 +3,20 @@ import sys
 
 import click
 
-from pvecontrol.utils import init_cluster, print_task, print_output
-from pvecontrol.cli import with_table_options, migration_related_command
+from pvecontrol.utils import init_cluster, print_task
+from pvecontrol.cli import ResourceGroup, migration_related_command
 from pvecontrol.models.vm import COLUMNS
 
 
-@click.group()
+@click.group(
+    cls=ResourceGroup,
+    name="VM",
+    columns=COLUMNS,
+    default_sort="vmid",
+    list_callback=lambda proxmox: proxmox.vms,
+)
 def root():
-    """VM related commands"""
     pass
-
-
-@root.command("list")
-@with_table_options(COLUMNS, "vmid")
-@click.pass_context
-def vm_list(ctx, sort_by, columns, filter):
-    """List VMs in the Proxmox Cluster"""
-    proxmox = init_cluster(ctx.obj["args"].cluster)
-    output = ctx.obj["args"].output
-    print_output(proxmox.vms, columns=columns, sortby=sort_by, filters=filter, output=output)
 
 
 @root.command()

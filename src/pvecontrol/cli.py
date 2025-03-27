@@ -4,6 +4,8 @@ import logging
 
 from argparse import ArgumentTypeError
 
+from pvecontrol.utils import init_cluster, print_output
+
 
 def _make_filter_type_generator(columns):
     def _regexp_type(value):
@@ -78,3 +80,20 @@ def migration_related_command(func):
     func = click.option("--online", is_flag=True, default=True, help="Perform anonline migration")(func)
     func = task_related_command(func)
     return func
+
+
+class ResourceGroup(click.Group):
+    def __init__(self, name, columns, default_sort, list_callback, *args, **kwargs):
+        kwargs["help"] = f"{name[0].upper()+name[1:]} related commands"
+        super().__init__(*args, **kwargs)
+        add_list_resource_command(name, self, columns, default_sort, list_callback)
+
+
+def add_list_resource_command(resource_name, root_cmd, columns, default_sort, list_callback):
+    @root_cmd.command("list", help=f"List {resource_name}s in the cluster")
+    @with_table_options(columns, default_sort)
+    @click.pass_context
+    def _(ctx, sort_by, columns, filter):
+        proxmox = init_cluster(ctx.obj["args"].cluster)
+        output = ctx.obj["args"].output
+        print_output(list_callback(proxmox), columns=columns, sortby=sort_by, filters=filter, output=output)

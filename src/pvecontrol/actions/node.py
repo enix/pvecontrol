@@ -4,25 +4,20 @@ import click
 
 from pvecontrol.models.node import NodeStatus
 from pvecontrol.models.vm import VmStatus
-from pvecontrol.utils import init_cluster, print_task, print_output
-from pvecontrol.cli import with_table_options, migration_related_command
+from pvecontrol.utils import init_cluster, print_task
+from pvecontrol.cli import ResourceGroup, migration_related_command
 from pvecontrol.models.node import COLUMNS
 
 
-@click.group()
+@click.group(
+    cls=ResourceGroup,
+    name="node",
+    columns=COLUMNS,
+    default_sort="node",
+    list_callback=lambda proxmox: proxmox.nodes,
+)
 def root():
-    """Node related commands"""
     pass
-
-
-@root.command("list")
-@with_table_options(COLUMNS, "node")
-@click.pass_context
-def node_list(ctx, sort_by, columns, filter):
-    """List nodes in the cluster"""
-    proxmox = init_cluster(ctx.obj["args"].cluster)
-    output = ctx.obj["args"].output
-    print_output(proxmox.nodes, columns=columns, sortby=sort_by, filters=filter, output=output)
 
 
 # pylint: disable=too-many-branches,too-many-statements
