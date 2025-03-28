@@ -186,57 +186,51 @@ clusters:
 
 ## Usage
 
-Here is a quick overview of `pvecontrol` commands and options:
+Here is a quick overview of `pvecontrol` commands and options, it may evolve over time:
 
 ```shell
 $ pvecontrol --help
-usage: pvecontrol [-h] [-v] [--debug] [-o {text,json,csv,yaml}] -c CLUSTER
-               [-s {bash,zsh,tcsh}]
-               {clusterstatus,storagelist,nodelist,nodeevacuate,vmlist,vmmigrate,tasklist,taskget,sanitycheck,_test} ...
+Usage: pvecontrol [OPTIONS] COMMAND [ARGS]...
 
-Proxmox VE control cli.
+  Proxmox VE control CLI, version: x.y.z
 
-positional arguments:
-  {clusterstatus,storagelist,nodelist,nodeevacuate,vmlist,vmmigrate,tasklist,taskget,sanitycheck,_test}
-    clusterstatus       Show cluster status
-    storagelist         Show cluster status
-    nodelist            List nodes in the cluster
-    nodeevacuate        Evacuate an host by migrating all VMs
-    vmlist              List VMs in the cluster
-    vmmigrate           Migrate VMs in the cluster
-    tasklist            List tasks
-    taskget             Get task detail
-    sanitycheck         Run Sanity checks on the cluster
+Options:
+  -d, --debug
+  -o, --output [text|json|csv|yaml]
+                                  [default: text]
+  -c, --cluster NAME              Proxmox cluster name as defined in
+                                  configuration  [required]
+  --help                          Show this message and exit.
 
-options:
-  -h, --help            show this help message and exit
-  -v, --verbose
-  --debug
-  -o, --output {text,json,csv,yaml}
-  -c, --cluster CLUSTER
-                        Proxmox cluster name as defined in configuration
-  -s, --print-completion {bash,zsh,tcsh}
-                        print shell completion script
+Commands:
+  node         Node related commands
+  sanitycheck  Run sanity checks on the cluster
+  status       Show cluster status
+  storage      Storage related commands
+  task         Task related commands
+  vm           VM related commands
+
+  Made with love by Enix.io
 ```
 
-`pvecontrol` works with subcommands for each operation. Each subcommand has its own help:
+`pvecontrol` works with subcommands for each operation. Operation related to a specific kind of object (tasks for instance) will be grouped into their own subcommand group. Each subcommand has its own help:
 
 ```shell
-$ pvecontrol taskget --help
-usage: pvecontrol taskget [-h] --upid UPID [-f]
+$ pvecontrol task get --help
+Usage: pvecontrol task get [OPTIONS] UPID
 
-options:
-  -h, --help    show this help message and exit
-  --upid UPID   Proxmox tasks UPID to get informations
-  -f, --follow  Follow task log output
+Options:
+  -f, --follow  Wait task end
+  -w, --wait    Follow task log output
+  --help        Show this message and exit.
 ```
 
-Commands that communicate with Proxmox (such as `nodelist` or `vmlist`) require that we specify the `-c` or `--cluster` flag to indicate on which cluster we want to work.
+The `-c` or `--cluster` flag is required in order to indicate on which cluster we want to work. You can also use the `PVECONTROL_CLUSTER` environment variable to set the default cluster.
 
-The simplest operation we can do to check that `pvecontrol` works correctly, and that authentication has been configured properly is `clusterstatus`:
+The simplest operation we can do to check that `pvecontrol` works correctly, and that authentication has been configured properly is `status`:
 
 ```shell
-$ pvecontrol --cluster my-test-cluster clusterstatus
+$ pvecontrol --cluster my-test-cluster status
 INFO:root:Proxmox cluster: my-test-cluster
 
   Status: healthy
@@ -262,9 +256,11 @@ You can adapt the following commands to your environment:
 
 ```shell
 # bash
-pvecontrol --print-completion bash > "${BASH_COMPLETION_USER_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion}/completions/pvecontrol"
+_PVECONTROL_COMPLETE=bash_source pvecontrol > "${BASH_COMPLETION_USER_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion}/completions/pvecontrol"
 # zsh
-pvecontrol --print-completion zsh > "${HOME}/.zsh/completions/_pvecontrol"
+_PVECONTROL_COMPLETE=zsh_source pvecontrol > "${HOME}/.zsh/completions/_pvecontrol"
+# fish
+_PVECONTROL_COMPLETE=fish_source pvecontrol > "${HOME}/.fish/completions/pvecontrol"
 ```
 
 ## Development
@@ -272,8 +268,7 @@ pvecontrol --print-completion zsh > "${HOME}/.zsh/completions/_pvecontrol"
 If you want to tinker with the code, all the required dependencies are listed in `requirements.txt`, and you can install them e.g. with pip:
 
 ```shell
-pip3 install -r requirements.txt
-pip3 install -e .
+pip3 install -r requirements.txt -e .
 ```
 
 Then you can run the script directly like so:

@@ -5,14 +5,18 @@ import re
 import curses
 import json
 import os
+import subprocess
 
 from collections import OrderedDict
 from enum import Enum
 
+import urllib3
 import yaml
 
 from humanize import naturalsize
 from prettytable import PrettyTable
+from pvecontrol.config import set_config
+from pvecontrol.models.cluster import PVECluster
 
 
 class Fonts:
@@ -75,7 +79,7 @@ def render_output(table, columns=None, sortby=None, filters=None, output=OutputF
     if len(columns) == 0:
         columns = table[0].keys()
     else:
-        table = [filter_keys(n.__dict__ if hasattr(n, "__dict__") else n, columns) for n in table]
+        table = [reorder_keys(n.__dict__ if hasattr(n, "__dict__") else n, columns) for n in table]
 
     x = prepare_prettytable(table, sortby, filters)
 
@@ -131,10 +135,12 @@ def print_output(table, columns=None, sortby=None, filters=None, output=OutputFo
     print(render_output(table, columns, sortby, filters, output))
 
 
-def filter_keys(input_d, keys):
-    # Filter keys from input dict
+def reorder_keys(input_d, keys):
+    # Reorder keys from input dict
     output = OrderedDict()
-    for key in keys:
+    input_keys = input_d.keys()
+    output_keys = keys + [item for item in input_keys if item not in keys]
+    for key in output_keys:
         output[key] = input_d[key]
     return output
 
@@ -190,3 +196,70 @@ def print_task(proxmox, upid, follow=False, wait=False):
         print_output([{"log output": task.decode_log()}])
 
     print_taskstatus(task)
+
+
+def _execute_command(cmd):
+    return subprocess.run(cmd, shell=True, check=True, capture_output=True).stdout.rstrip()
+
+
+def run_auth_commands(clusterconfig):
+    auth = {}
+    regex = r"^\$\((.*)\)$"
+
+    keys = ["user", "password", "token_name", "token_value"]
+
+    if clusterconfig["proxy_certificate"] is not None:
+        if isinstance(clusterconfig.get("proxy_certificate"), str):
+            keys.append("proxy_certificate")
+        else:
+            auth["proxy_certificate"] = clusterconfig["proxy_certificate"]
+
+    for key in keys:
+        value = clusterconfig.get(key)
+        if value is not None:
+            result = re.match(regex, value)
+            if result:
+                value = _execute_command(result.group(1))
+            auth[key] = value
+
+    if "proxy_certificate" in auth and isinstance(auth["proxy_certificate"], bytes):
+        proxy_certificate = json.loads(auth["proxy_certificate"])
+        auth["proxy_certificate"] = {
+            "cert": proxy_certificate.get("cert"),
+            "key": proxy_certificate.get("key"),
+        }
+
+    if "proxy_certificate" in auth:
+        auth["cert"] = (auth["proxy_certificate"]["cert"], auth["proxy_certificate"]["key"])
+        del auth["proxy_certificate"]
+
+    logging.debug("Auth: %s", auth)
+    # check for "incompatible" auth options
+    if "password" in auth and ("token_name" in auth or "token_value" in auth):
+        logging.error("Auth: cannot use both password and token options together.")
+        sys.exit(1)
+    if "token_name" in auth and "token_value" not in auth:
+        logging.error("Auth: token-name requires token-value option.")
+        sys.exit(1)
+
+    return auth
+
+
+def init_cluster(cluster):
+    # Disable urllib3 warnings about invalid certs
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    logging.info("Proxmox cluster: %s", cluster)
+
+    clusterconfig = set_config(cluster)
+    auth = run_auth_commands(clusterconfig)
+    proxmoxcluster = PVECluster(
+        clusterconfig.name,
+        clusterconfig.host,
+        config={"node": clusterconfig.node, "vm": clusterconfig.vm},
+        verify_ssl=clusterconfig.ssl_verify,
+        timeout=clusterconfig.timeout,
+        **auth,
+    )
+
+    return proxmoxcluster

@@ -1,15 +1,26 @@
-from pvecontrol.utils import print_task, print_output
+import click
+
+from pvecontrol.utils import init_cluster, print_task
+from pvecontrol.cli import ResourceGroup, task_related_command
+from pvecontrol.models.task import COLUMNS
 
 
-def action_tasklist(proxmox, args):
-    print_output(
-        proxmox.tasks,
-        columns=args.columns,
-        sortby=args.sort_by,
-        filters=args.filter,
-        output=args.output,
-    )
+@click.group(
+    cls=ResourceGroup,
+    name="task",
+    columns=COLUMNS,
+    default_sort="starttime",
+    list_callback=lambda proxmox: proxmox.tasks,
+)
+def root():
+    pass
 
 
-def action_taskget(proxmox, args):
-    print_task(proxmox, args.upid, args.follow, args.wait)
+@root.command()
+@click.argument("upid")
+@task_related_command
+@click.pass_context
+def get(ctx, upid, follow, wait):
+    """Get detailled information about a task"""
+    proxmox = init_cluster(ctx.obj["args"].cluster)
+    print_task(proxmox, upid, follow, wait)
