@@ -14,8 +14,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      with:
-        fetch-depth: 0
     - uses: actions/checkout@v4
 
     - name: Set up Python
@@ -34,8 +32,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      with:
-        fetch-depth: 0
     - uses: actions/checkout@v4
 
     - name: Set up Python
