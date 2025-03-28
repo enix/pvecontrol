@@ -20,12 +20,14 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
+        cache: 'pip'
+        cache-dependency-path: '**/requirements*.txt'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements-dev.txt
     - name: Run black
-      run: python -m black . --check --diff
+      run: black . --check --diff
 
   # Run tests for lint
   pylint:
@@ -38,12 +40,14 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
+        cache: 'pip'
+        cache-dependency-path: '**/requirements*.txt'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt -r requirements-dev.txt
     - name: Run pylint
-      run: python -m pylint src/
+      run: pylint src/
 
   # Run tests
   code:
@@ -61,6 +65,8 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: '**/requirements*.txt'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
