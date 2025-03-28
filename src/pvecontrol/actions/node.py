@@ -1,8 +1,10 @@
 import logging
 
+from pvecontrol.models.cluster import PVECluster
 from pvecontrol.models.node import NodeStatus
 from pvecontrol.models.vm import VmStatus
 from pvecontrol.utils import print_output, print_task
+from argparse import ArgumentParser
 
 
 def action_nodelist(proxmox, args):
@@ -11,7 +13,7 @@ def action_nodelist(proxmox, args):
 
 
 # pylint: disable=too-many-branches,too-many-statements
-def action_nodeevacuate(proxmox, args):
+def action_nodeevacuate(proxmox: PVECluster, args: ArgumentParser):
     """Evacuate a node by migrating all it's VM out"""
     # check node exists
     srcnode = proxmox.find_node(args.node)
