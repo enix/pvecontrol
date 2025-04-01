@@ -5,6 +5,7 @@ import sys
 from proxmoxer import ProxmoxAPI
 from requests.exceptions import SSLError
 
+from pvecontrol.utils import defaulter
 from pvecontrol.models.node import PVENode
 from pvecontrol.models.storage import PVEStorage
 from pvecontrol.models.task import PVETask
@@ -148,15 +149,25 @@ class PVECluster:
 
     @property
     def resources_nodes(self):
-        return [resource for resource in self.resources if resource["type"] == "node"]
+        return [
+            defaulter(resource, ["cpu", "mem", "maxmem", "maxcpu", "disk", "maxdisk"], 0)
+            for resource in self.resources
+            if resource["type"] == "node"
+        ]
 
     @property
     def resources_vms(self):
-        return [resource for resource in self.resources if resource["type"] == "qemu"]
+        return [
+            defaulter(resource, ["maxcpu", "maxdisk", "maxmem"], 0)
+            for resource in self.resources
+            if resource["type"] == "qemu"
+        ]
 
     @property
     def resources_storages(self):
-        return [resource for resource in self.resources if resource["type"] == "storage"]
+        return [
+            defaulter(resource, ["disk", "maxdisk"], 0) for resource in self.resources if resource["type"] == "storage"
+        ]
 
     def get_storage(self, storage_name):
         return next(filter(lambda s: s.storage == storage_name, self.storages), None)
@@ -167,7 +178,7 @@ class PVECluster:
         total_cpu = sum(node["maxcpu"] for node in nodes)
         total_cpu_usage = sum(node["cpu"] for node in nodes)
         total_cpu_allocated = sum(node.allocatedcpu for node in self.nodes)
-        cpu_percent = total_cpu_usage / total_cpu * 100
+        cpu_percent = total_cpu_usage / total_cpu * 100 if total_cpu else 0
 
         return {
             "total": total_cpu,
@@ -182,7 +193,7 @@ class PVECluster:
         total_memory = sum(node["maxmem"] for node in nodes)
         total_memory_usage = sum(node["mem"] for node in nodes)
         total_memory_allocated = sum(node.allocatedmem for node in self.nodes)
-        memory_percent = total_memory_usage / total_memory * 100
+        memory_percent = total_memory_usage / total_memory * 100 if total_memory else 0
 
         return {
             "total": total_memory,
@@ -194,9 +205,9 @@ class PVECluster:
     @property
     def disk_metrics(self):
         storages = self.resources_storages
-        total_disk = sum(node.get("maxdisk", 0) for node in storages)
-        total_disk_usage = sum(node.get("disk", 0) for node in storages)
-        disk_percent = total_disk_usage / total_disk * 100
+        total_disk = sum(node["maxdisk"] for node in storages)
+        total_disk_usage = sum(node["disk"] for node in storages)
+        disk_percent = total_disk_usage / total_disk * 100 if total_disk else 0
 
         return {
             "total": total_disk,

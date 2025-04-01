@@ -190,3 +190,10 @@ def print_task(proxmox, upid, follow=False, wait=False):
         print_output([{"log output": task.decode_log()}])
 
     print_taskstatus(task)
+
+
+def defaulter(resource: dict, keys, default):
+    for k in keys:
+        if k not in resource.keys():
+            resource[k] = default
+    return resource
