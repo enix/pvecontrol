@@ -58,9 +58,7 @@ class PVEStorage:
 
     @property
     def percentage(self):
-        if self.maxdisk:
-            return self.disk / self.maxdisk * 100
-        return 0
+        return self.disk / self.maxdisk * 100 if self.maxdisk else 0
 
     def get_content(self, content_type=None):
         if content_type not in self._content:

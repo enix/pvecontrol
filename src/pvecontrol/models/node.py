@@ -1,5 +1,6 @@
 from enum import Enum
 
+from pvecontrol.utils import defaulter
 from pvecontrol.models.vm import PVEVm, VmStatus
 
 
@@ -76,7 +77,11 @@ class PVENode:
 
     @property
     def resources_vms(self):
-        return [resource for resource in self.resources if resource["type"] == "qemu"]
+        return [
+            defaulter(resource, ["maxcpu", "maxdisk", "maxmem"], 0)
+            for resource in self.resources
+            if resource["type"] == "qemu"
+        ]
 
     # def __contains__(self, item):
     #   """Check if a VM is running on this node"""
