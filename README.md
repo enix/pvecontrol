@@ -260,7 +260,7 @@ _PVECONTROL_COMPLETE=bash_source pvecontrol > "${BASH_COMPLETION_USER_DIR:-${XDG
 # zsh
 _PVECONTROL_COMPLETE=zsh_source pvecontrol > "${HOME}/.zsh/completions/_pvecontrol"
 # fish
-_PVECONTROL_COMPLETE=fish_source pvecontrol > "${HOME}/.fish/completions/pvecontrol"
+_PVECONTROL_COMPLETE=fish_source pvecontrol > {$HOME}/.config/fish/completions/pvecontrol.fish
 ```
 
 ## Development
