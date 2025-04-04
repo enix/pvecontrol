@@ -1,5 +1,5 @@
 from pvecontrol.models.vm import VmStatus
-from pvecontrol.models.storage import PVEStorage
+from pvecontrol.models.storage import PVEStorage, STORAGE_SHARED_ENUM
 from pvecontrol.sanitycheck.checks import Check, CheckCode, CheckType, CheckMessage
 
 
@@ -55,7 +55,10 @@ class DiskUnused(Check):
                 # in enix specific case, we don't want to check s3 storage
                 continue
 
-            self._check_storage_disk_is_unused(storage)
+            if storage.shared == STORAGE_SHARED_ENUM[1]:
+                self._check_shared_storage_disk_is_unused(storage)
+            elif storage.shared == STORAGE_SHARED_ENUM[0]:
+                self._check_local_storage_disk_is_unused(storage)
 
     def _check_vm_disk_is_unused(self, vm):
         for key in vm.config.keys():
@@ -65,10 +68,31 @@ class DiskUnused(Check):
             msg = f"Disk '{key}' is not used on vm {vm.vmid}/{vm.name}"
             self.add_messages(CheckMessage(CheckCode.CRIT, msg))
 
-    def _check_storage_disk_is_unused(self, storage: PVEStorage):
+    def _check_local_storage_disk_is_unused(self, storage: PVEStorage):
         node = self.proxmox.find_node(storage.node)
         node_vms_ids = [vm.vmid for vm in node.vms]
-        for image in storage.images:
-            if image.vmid not in node_vms_ids:
-                msg = f"Disk '{image.volid}' is not used, vm {image.vmid} doesn't exists"
-                self.add_messages(CheckMessage(CheckCode.CRIT, msg))
+
+        images = storage.images
+
+        unused_images = [image for image in images if image.vmid not in node_vms_ids]
+
+        msg = f"Storage '{storage.node}/{storage.storage}' have {len(images) - len(unused_images)}/{len(images)} disk used"
+        code = CheckCode.WARN if len(unused_images) > 0 else CheckCode.OK
+        self.add_messages(CheckMessage(code, msg))
+
+        if len(unused_images) == 0:
+            return
+
+        for image in unused_images:
+            msg = f"Disk '{storage.node}/{image.volid}' is not used, vm {image.vmid} doesn't exists on node"
+            self.add_messages(CheckMessage(CheckCode.CRIT, msg))
+
+    def _check_shared_storage_disk_is_unused(self, storage: PVEStorage):
+        images = storage.images
+
+        # check image.vmid vm exist on cluster
+        unused_images = [image for image in images if self.proxmox.get_vm(image.vmid) is None]
+
+        for image in unused_images:
+            msg = f"Disk '{storage.node}/{image.volid}' is not used, vm {image.vmid} doesn't exists"
+            self.add_messages(CheckMessage(CheckCode.CRIT, msg))

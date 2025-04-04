@@ -2,8 +2,34 @@ import json
 import requests
 
 
-def mock_api_requests(nodes, vms, backup_jobs=None, storage_content=None):
-    routes = generate_routes(nodes, vms, backup_jobs, storage_content)
+DEFAULT_VM_CONFIG = {
+    "memory": "1024",
+    "vmgenid": "00000000-0000-0000-0000-000000000000",
+    "template": 1,
+    "scsihw": "virtio-scsi-single",
+    "serial0": "socket",
+    "balloon": 0,
+    "onboot": 1,
+    "ide2": "local:9012/vm-9012-cloudinit.qcow2,media=cdrom",
+    "agent": "1",
+    "cores": 1,
+    "numa": 1,
+    "digest": "0000000000000000000000000000000000000000",
+    "smbios1": "uuid=00000000-0000-0000-0000-000000000000",
+    "boot": "order=scsi0;net0",
+    "ostype": "l26",
+    "sockets": 1,
+    "machine": "q35",
+    "net0": "virtio=00:00:00:00:00:00,bridge=vmbr0",
+    "cpu": "x86-64-v2-AES",
+    "rng0": "source=/dev/urandom",
+    "scsi0": "local:9012/base-9012-disk-0.qcow2,size=2G,ssd=1",
+    "name": "template.debian-12-bookworm-amd64",
+}
+
+
+def mock_api_requests(nodes, vms, backup_jobs=None, storage_resources=None, storage_content=None):
+    routes = generate_routes(nodes, vms, backup_jobs, storage_resources, storage_content)
 
     def side_effect(method, url, **kwargs):
         print(f"{method} {url}")
@@ -25,8 +51,9 @@ def mock_api_requests(nodes, vms, backup_jobs=None, storage_content=None):
     return side_effect
 
 
-def generate_routes(nodes, vms, backup_jobs, storages_contents):
-    storage_resources = [fake_storage_resource("s3", n["status"]["name"]) for n in nodes]
+def generate_routes(nodes, vms, backup_jobs, storage_resources=None, storage_contents=None):
+    storage_resources = storage_resources or []
+
     routes = {
         "/api2/json/cluster/status": [
             {"type": "cluster", "version": 2, "quorate": 1, "nodes": len(nodes), "id": "cluster", "name": "devel"},
@@ -46,7 +73,7 @@ def generate_routes(nodes, vms, backup_jobs, storages_contents):
         "/api2/json/cluster/ha/resources": [],
         "/api2/json/cluster/backup": backup_jobs,
         **generate_vm_routes(nodes, vms),
-        **generate_storages_contents_routes(nodes, storage_resources, storages_contents),
+        **generate_storages_contents_routes(nodes, storage_resources, storage_contents),
     }
 
     print("ROUTES:")
@@ -67,30 +94,7 @@ def generate_vm_routes(nodes, vms):
     for vm in vms:
         node_name = vm["node"]
         vm_id = vm["vmid"]
-        routes[f"/api2/json/nodes/{node_name}/qemu/{vm_id}/config"] = {
-            "memory": "1024",
-            "vmgenid": "00000000-0000-0000-0000-000000000000",
-            "template": 1,
-            "scsihw": "virtio-scsi-single",
-            "serial0": "socket",
-            "balloon": 0,
-            "onboot": 1,
-            "ide2": "local:9012/vm-9012-cloudinit.qcow2,media=cdrom",
-            "agent": "1",
-            "cores": 1,
-            "numa": 1,
-            "digest": "0000000000000000000000000000000000000000",
-            "smbios1": "uuid=00000000-0000-0000-0000-000000000000",
-            "boot": "order=scsi0;net0",
-            "ostype": "l26",
-            "sockets": 1,
-            "machine": "q35",
-            "net0": "virtio=00:00:00:00:00:00,bridge=vmbr0",
-            "cpu": "x86-64-v2-AES",
-            "rng0": "source=/dev/urandom",
-            "scsi0": "local:9012/base-9012-disk-0.qcow2,size=2G,ssd=1",
-            "name": "template.debian-12-bookworm-amd64",
-        }
+        routes[f"/api2/json/nodes/{node_name}/qemu/{vm_id}/config"] = generate_vm_config_route(vm)
         routes[f"/api2/json/nodes/{node_name}/qemu"].append(
             {
                 "name": vm["name"],
@@ -115,12 +119,19 @@ def generate_vm_routes(nodes, vms):
     return routes
 
 
+def generate_vm_config_route(vm):
+    if "config" in vm.keys() and vm["config"] is not None:
+        return vm["config"]
+
+    return DEFAULT_VM_CONFIG
+
+
 def generate_storage_content_route(storage, storages_contents):
     def storage_content_route(_method, params=None, **_kwargs):
         items = []
         for item in storages_contents:
             storage_filter = item["volid"].split(":")[0] == storage["storage"]
-            content_filter = "content" not in params or item["content"] == params["content"]
+            content_filter = "content" not in params or item["content"] in params["content"]
             if storage_filter and content_filter:
                 items.append(item)
         return items
@@ -136,7 +147,7 @@ def generate_storages_contents_routes(nodes, storage_resources, storages_content
         for storage in storage_resources:
 
             storage_name = storage["storage"]
-            route = generate_storage_content_route(storage, storages_contents)
+            route = generate_storage_content_route(storage, storages_contents[node_name][storage_name])
             routes[f"/api2/json/nodes/{node_name}/storage/{storage_name}/content"] = route
     return routes
 
@@ -177,7 +188,7 @@ def fake_node(node_id, local=False):
     }
 
 
-def fake_vm(vm_id, node, status="running"):
+def fake_vm(vm_id, node, status="running", config=None):
     return {
         "id": f"qemu/{vm_id}",
         "vmid": vm_id,
@@ -198,6 +209,7 @@ def fake_vm(vm_id, node, status="running"):
         "hastate": "started",
         "maxcpu": 1,
         "type": "qemu",
+        "config": config,
     }
 
 
@@ -218,25 +230,32 @@ def fake_backup_job(job_id, vmid):
     }
 
 
-def fake_storage_resource(name, node_name):
+def fake_storage_resource(name, node_name, shared=None, plugin_type=None):
+    if shared is None:
+        shared = 1
+
+    if plugin_type is None:
+        plugin_type = "s3"
+
     return {
         "content": "snippets,images,iso,backup,rootdir,vztmpl",
         "id": f"storage/{node_name}/{name}",
         "disk": 0,
         "storage": name,
-        "shared": 1,
+        "shared": shared,
         "status": "available",
         "maxdisk": 33601372160,
         "type": "storage",
         "node": node_name,
-        "plugintype": "s3",
+        "plugintype": plugin_type,
     }
 
 
-def fake_storage_content(storage, volid, content, ctime, storage_format, options):
+def fake_storage_content(storage, volid, vmid, content, ctime, storage_format, options):
     return {
-        "volid": f"{storage}:{content}/{volid}",
+        "volid": f"{storage}:{vmid}/{volid}",
         "content": content,
+        "vmid": vmid,
         "ctime": ctime,
         "format": storage_format,
         "size": 1124800,
@@ -252,4 +271,4 @@ def fake_backup(storage, vmid, created_at):
         "notes": f"VM {vmid}",
         "subtype": "qemu",
     }
-    return fake_storage_content(storage, volid, "backup", int(created_at.timestamp()), "vma.zst", options)
+    return fake_storage_content(storage, volid, "backup", "backup", int(created_at.timestamp()), "vma.zst", options)
