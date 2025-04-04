@@ -4,7 +4,14 @@ from pvecontrol.models.cluster import PVECluster
 from pvecontrol.sanitycheck.tests.vm_backups import VmBackups
 from pvecontrol.sanitycheck import SanityCheck
 from pvecontrol.sanitycheck.checks import CheckCode
-from tests.fixtures.api import mock_api_requests, fake_node, fake_vm, fake_backup_job, fake_backup
+from tests.fixtures.api import (
+    mock_api_requests,
+    fake_node,
+    fake_storage_resource,
+    fake_vm,
+    fake_backup_job,
+    fake_backup,
+)
 
 
 @patch("proxmoxer.backends.https.ProxmoxHTTPAuth")
@@ -25,12 +32,23 @@ def test_sanitycheck_vm_backups(request, _proxmox_http_auth):
         fake_backup_job(2, "101"),
         fake_backup_job(3, "102"),
     ]
-    storages_contents = [
+
+    storage_resources = [fake_storage_resource("s3", n["status"]["name"]) for n in nodes]
+
+    backups = [
         fake_backup("s3", 100, datetime.now() - timedelta(minutes=110)),
         fake_backup("s3", 101, datetime.now() - timedelta(minutes=90)),
     ]
+    storages_contents = {
+        nodes[0]["status"]["name"]: {
+            "s3": backups,
+        },
+        nodes[1]["status"]["name"]: {
+            "s3": backups,
+        },
+    }
 
-    request.side_effect = mock_api_requests(nodes, vms, backup_jobs, storages_contents)
+    request.side_effect = mock_api_requests(nodes, vms, backup_jobs, storage_resources, storages_contents)
 
     proxmox = PVECluster(
         "name",
