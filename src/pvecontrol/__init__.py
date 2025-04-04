@@ -14,22 +14,55 @@ from pvecontrol import actions
 from pvecontrol.utils import OutputFormats
 
 
+def get_leaf_command(cmd, ctx, args):
+    if len(args) == 0:
+        return cmd, []
+
+    # remove options from args
+    parser = cmd.make_parser(ctx)
+    _, args_without_options, _ = parser.parse_args(list(args))
+
+    if len(args_without_options) == 0:
+        return cmd, args
+
+    # resolve sub command
+    name, sub_cmd, sub_args = cmd.resolve_command(ctx, args_without_options)
+    if isinstance(sub_cmd, click.MultiCommand) and len(sub_args) > 0:
+        sub_ctx = sub_cmd.make_context(name, sub_args, parent=ctx)
+        return get_leaf_command(sub_cmd, sub_ctx, sub_args)
+
+    return sub_cmd, sub_args
+
+
 # Patch click to ignore required parameters when --help is passed
 class IgnoreRequiredForHelp(click.Group):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ignoring = False
 
-    def parse_args(self, ctx, args):
+    def _is_defaulting_to_help(self, ctx, args):
         try:
-            return super().parse_args(ctx, args)
-        except click.MissingParameter:
-            if "--help" not in args:
-                raise
+            leaf_cmd, leaf_args = get_leaf_command(self, ctx, args)
+
+            # keep the default behavior when no subcommand is passed or when the subcommand doesn't exists
+            if leaf_cmd is None or leaf_cmd is self:
+                return False
+
+            return (
+                "--help" in leaf_args
+                or (isinstance(leaf_cmd, click.MultiCommand) and not leaf_cmd.invoke_without_command)
+                or (leaf_cmd.no_args_is_help and len(leaf_args) == 0)
+            )
+        except click.exceptions.UsageError:
+            return False
+
+    def parse_args(self, ctx, args):
+        if self._is_defaulting_to_help(ctx, args):
             self.ignoring = True
             for param in self.params:
                 param.required = False
-            return super().parse_args(ctx, args)
+
+        return super().parse_args(ctx, args)
 
     def format_commands(self, ctx, formatter) -> None:
         commands = []
