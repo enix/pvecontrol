@@ -197,3 +197,10 @@ def defaulter(resource: dict, keys, default):
         if k not in resource.keys():
             resource[k] = default
     return resource
+
+
+def dict_to_attr(obj: object, base_attr: str):
+    kw = getattr(obj, base_attr, {}) or {}
+    for k, v in kw.items():
+        setattr(obj, k, v)
+    return obj

@@ -1,6 +1,8 @@
+from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any, Dict, List
 
-from pvecontrol.utils import defaulter
+from pvecontrol.utils import defaulter, dict_to_attr
 from pvecontrol.models.vm import PVEVm, VmStatus
 
 
@@ -13,27 +15,31 @@ class NodeStatus(Enum):
     OFFLINE = 2
 
 
+@dataclass
 class PVENode:
     """A proxmox VE Node"""
 
-    def __init__(self, cluster, node, status, kwargs=None):
-        if not kwargs:
-            kwargs = {}
+    cluster: object
+    node: str
+    status: NodeStatus
+    kwargs: Dict[str, Any] = field(default_factory=dict)
 
-        self.node = node
-        self.status = NodeStatus[status.upper()]
-        self.cluster = cluster
-        self.cpu = kwargs.get("cpu", 0)
-        self.allocatedcpu = 0
-        self.maxcpu = kwargs.get("maxcpu", 0)
-        self.mem = kwargs.get("mem", 0)
-        self.allocatedmem = 0
-        self.maxmem = kwargs.get("maxmem", 0)
-        self.disk = kwargs.get("disk", 0)
-        self.maxdisk = kwargs.get("maxdisk", 0)
+    cpu: int = field(init=True, default=0)
+    allocatedcpu: int = field(init=True, default=0)
+    maxcpu: int = field(init=True, default=0)
+    mem: int = field(init=True, default=0)
+    allocatedmem: int = field(init=True, default=0)
+    maxmem: int = field(init=True, default=0)
+    disk: int = field(init=True, default=0)
+    maxdisk: int = field(init=True, default=0)
+    vms: List[PVEVm] = field(default_factory=list)
+
+    def __post_init__(self):
+        dict_to_attr(self, 'kwargs')
+        self.status = NodeStatus[self.status.upper()]
         self._init_vms()
-        self._init_allocatedmem()
-        self._init_allocatedcpu()
+        self._init_allocatedmem() 
+        self._init_allocatedcpu() 
 
     def __str__(self):
         output = "Node: " + self.node + "\n"

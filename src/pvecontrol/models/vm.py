@@ -1,4 +1,8 @@
+from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any, Dict
+from proxmoxer import ProxmoxAPI
+from pvecontrol.utils import dict_to_attr
 
 
 COLUMNS = ["vmid", "name", "status", "node", "cpus", "maxmem", "maxdisk", "tags"]
@@ -13,36 +17,36 @@ class VmStatus(Enum):
     PRELAUNCH = 5
 
 
+@dataclass
 class PVEVm:
     """Proxmox VE Qemu VM"""
 
-    _api = None
+    api: ProxmoxAPI
+    node: str
+    vmid: int
+    status: VmStatus
+    kwargs: Dict[str, Any] = field(default_factory=dict)
 
-    def __init__(self, api, node, vmid, status, kwargs=None):
-        if not kwargs:
-            kwargs = {}
+    name: str = field(init=True, default="")
+    lock: str = field(init=True, default="")
+    cpus: int = field(init=True, default=0)
+    maxdisk: int = field(init=True, default=0)
+    maxmem: int = field(init=True, default=0)
+    uptime: int = field(init=True, default=0)
+    template: int = field(init=True, default=0)
+    pool: str = field(init=True, default="")
+    tags: str = field(init=True, default="")
 
-        self.vmid = vmid
-        self.status = VmStatus[status.upper()]
-        self.node = node
-        self._api = api
-
-        self.name = kwargs.get("name", "")
-        self.lock = kwargs.get("lock", "")
-        self.cpus = kwargs.get("maxcpu", 0)
-        self.maxdisk = kwargs.get("maxdisk", 0)
-        self.maxmem = kwargs.get("maxmem", 0)
-        self.uptime = kwargs.get("uptime", 0)
-        self.tags = set(filter(None, kwargs.get("tags", "").split(";")))
-        self.template = kwargs.get("template", 0)
-        self.pool = kwargs.get("pool", "")
-
+    def __post_init__(self):
+        dict_to_attr(self, 'kwargs')
+        self.status = VmStatus[self.status.upper()]
+        self.tags = set(self.tags.split(";"))
         self._config = None
 
     @property
     def config(self):
         if not self._config:
-            self._config = self._api.nodes(self.node).qemu(self.vmid).config.get()
+            self._config = self.api.nodes(self.node).qemu(self.vmid).config.get()
 
         return self._config
 
@@ -59,30 +63,23 @@ class PVEVm:
             "tags",
             "template",
         ]
-        output = []
-        for k in str_keys:
-            output.append(f"{k}: {getattr(self, k)}")
+        output = [f"{k}: {getattr(self, k)}" for k in str_keys]
         return ", ".join(output)
 
     def migrate(self, target, online=False):
         options = {}
         options["node"] = self.node
         options["target"] = target
-        check = self._api.nodes(self.node).qemu(self.vmid).migrate.get(**options)
+        check = self.api.nodes(self.node).qemu(self.vmid).migrate.get(**options)
         #    logging.debug("Migration check: %s"%check)
         options["online"] = int(online)
         if len(check["local_disks"]) > 0:
             options["with-local-disks"] = int(True)
 
-        upid = self._api.nodes(self.node).qemu(self.vmid).migrate.post(**options)
-        return upid
+        return self.api.nodes(self.node).qemu(self.vmid).migrate.post(**options)
 
     def get_backup_jobs(self, proxmox):
-        vm_backup_jobs = []
-        for backup_job in proxmox.backup_jobs:
-            if backup_job.is_selection_matching(self):
-                vm_backup_jobs.append(backup_job)
-        return vm_backup_jobs
+        return [job for job in proxmox.backup_jobs if job.is_selection_matching(self)]
 
     def get_backups(self, proxmox):
         return [backup for backup in proxmox.backups if backup.vmid == self.vmid]
