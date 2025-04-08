@@ -60,7 +60,7 @@ def set_config(cluster_name):
         if c.name == cluster_name:
             clusterconfig = c
     if not clusterconfig:
-        print("No such cluster %s", cluster_name)
+        logging.error('No such cluster "%s"', cluster_name)
         sys.exit(1)
     logging.debug("clusterconfig is %s", clusterconfig)
 
