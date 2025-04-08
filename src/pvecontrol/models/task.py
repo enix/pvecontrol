@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
 import proxmoxer.core
 from proxmoxer.tools import Tasks
 from proxmoxer import ProxmoxAPI

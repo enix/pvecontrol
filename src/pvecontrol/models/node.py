@@ -35,11 +35,11 @@ class PVENode:
     vms: List[PVEVm] = field(default_factory=list)
 
     def __post_init__(self):
-        dict_to_attr(self, 'kwargs')
+        dict_to_attr(self, "kwargs")
         self.status = NodeStatus[self.status.upper()]
         self._init_vms()
-        self._init_allocatedmem() 
-        self._init_allocatedcpu() 
+        self._init_allocatedmem()
+        self._init_allocatedcpu()
 
     def __str__(self):
         output = "Node: " + self.node + "\n"

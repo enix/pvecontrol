@@ -2,8 +2,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict
 
-from pvecontrol.utils import dict_to_attr
 from proxmoxer import ProxmoxAPI
+from pvecontrol.utils import dict_to_attr
 
 
 STORAGE_SHARED_ENUM = ["local", "shared"]
@@ -44,7 +44,7 @@ class PVEStorage:
     type: str = field(init=True, default="")
 
     def __post_init__(self):
-        dict_to_attr(self, 'kwargs')
+        dict_to_attr(self, "kwargs")
         self.shared = STORAGE_SHARED_ENUM[self.shared]
         self._content = {}
 

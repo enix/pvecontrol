@@ -38,7 +38,7 @@ class PVEVm:
     tags: str = field(init=True, default="")
 
     def __post_init__(self):
-        dict_to_attr(self, 'kwargs')
+        dict_to_attr(self, "kwargs")
         self.status = VmStatus[self.status.upper()]
         self.tags = set(self.tags.split(";"))
         self._config = None
