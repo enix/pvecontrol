@@ -230,13 +230,7 @@ def fake_backup_job(job_id, vmid):
     }
 
 
-def fake_storage_resource(name, node_name, shared=None, plugin_type=None):
-    if shared is None:
-        shared = 1
-
-    if plugin_type is None:
-        plugin_type = "s3"
-
+def fake_storage_resource(name, node_name, shared=1, plugin_type="s3"):
     return {
         "content": "snippets,images,iso,backup,rootdir,vztmpl",
         "id": f"storage/{node_name}/{name}",
