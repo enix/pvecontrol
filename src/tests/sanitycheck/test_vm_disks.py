@@ -3,6 +3,7 @@ from pvecontrol.models.cluster import PVECluster
 from pvecontrol.sanitycheck.tests.vm import DiskUnused
 from pvecontrol.sanitycheck import SanityCheck
 from pvecontrol.sanitycheck.checks import CheckCode
+from tests.sanitycheck.utils import assert_message
 from tests.fixtures.api import (
     mock_api_requests,
     fake_node,
@@ -40,11 +41,6 @@ def test_sanitycheck_vm_disk_unused(request, _proxmox_http_auth):
 
     disk_unused_check = DiskUnused(proxmox)
     disk_unused_check.run()
-
-    def assert_message(message, expected_code, *message_contains):
-        assert message.code == expected_code
-        for string in message_contains:
-            assert string in message.message
 
     sc = SanityCheck(proxmox)
     with patch.object(sc, "_checks", new=[disk_unused_check]):
@@ -97,11 +93,6 @@ def test_sanitycheck_local_storage_vm_deleted(request, _proxmox_http_auth):
     disk_unused_check.run()
 
     sc = SanityCheck(proxmox)
-
-    def assert_message(message, expected_code, *message_contains):
-        assert message.code == expected_code
-        for string in message_contains:
-            assert string in message.message
 
     with patch.object(sc, "_checks", new=[disk_unused_check]):
         exitcode = sc.get_exit_code()
@@ -164,11 +155,6 @@ def test_sanitycheck_shared_storage_vm_deleted(request, _proxmox_http_auth):
     disk_unused_check.run()
 
     sc = SanityCheck(proxmox)
-
-    def assert_message(message, expected_code, *message_contains):
-        assert message.code == expected_code
-        for string in message_contains:
-            assert string in message.message
 
     with patch.object(sc, "_checks", new=[disk_unused_check]):
         exitcode = sc.get_exit_code()
