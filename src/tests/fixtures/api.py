@@ -131,6 +131,8 @@ def generate_storage_content_route(storage, storages_contents):
         items = []
         for item in storages_contents:
             storage_filter = item["volid"].split(":")[0] == storage["storage"]
+            # we use in operator to check if the item content is a substring of the params content
+            # ex: "image" in "images"
             content_filter = "content" not in params or item["content"] in params["content"]
             if storage_filter and content_filter:
                 items.append(item)

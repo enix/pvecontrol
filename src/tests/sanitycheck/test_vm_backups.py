@@ -4,6 +4,7 @@ from pvecontrol.models.cluster import PVECluster
 from pvecontrol.sanitycheck.tests.vm_backups import VmBackups
 from pvecontrol.sanitycheck import SanityCheck
 from pvecontrol.sanitycheck.checks import CheckCode
+from tests.sanitycheck.utils import assert_message
 from tests.fixtures.api import (
     mock_api_requests,
     fake_node,
@@ -68,11 +69,6 @@ def test_sanitycheck_vm_backups(request, _proxmox_http_auth):
 
     vm_backups_check = VmBackups(proxmox)
     vm_backups_check.run()
-
-    def assert_message(message, expected_code, *message_contains):
-        assert message.code == expected_code
-        for string in message_contains:
-            assert string in message.message
 
     sc = SanityCheck(proxmox)
     with patch.object(sc, "_checks", new=[vm_backups_check]):
