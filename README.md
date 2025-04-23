@@ -54,7 +54,7 @@ clusters:
 And see `pvecontrol` in action right away:
 
 ```shell
-pvecontrol -c fr-par-1 vmlist
+pvecontrol -c fr-par-1 vm list
 ```
 
 If you plan to use `pvecontrol` to move VMs around, you should grant it `PVEVMAdmin` permissions:
