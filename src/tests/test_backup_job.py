@@ -4,10 +4,10 @@ from pvecontrol.models.vm import PVEVm
 
 def test_is_selection_matching():
     vms = [
-        PVEVm(None, "node-0", 0, "running", {"pool": "pool-A"}),
-        PVEVm(None, "node-1", 1, "running", {"pool": "pool-A"}),
-        PVEVm(None, "node-0", 2, "running", {"pool": "pool-B"}),
-        PVEVm(None, "node-1", 3, "running", {"pool": "pool-B"}),
+        PVEVm(api=None, node="node-0", vmid=0, status="running", pool="pool-A"),
+        PVEVm(api=None, node="node-1", vmid=1, status="running", pool="pool-A"),
+        PVEVm(api=None, node="node-0", vmid=2, status="running", pool="pool-B"),
+        PVEVm(api=None, node="node-1", vmid=3, status="running", pool="pool-B"),
     ]
 
     def check_is_selection_matching_array(truth_table, backup_job):
