@@ -1,39 +1,44 @@
-class PVEBackupJob:
-    """Proxmox VE Backup Job"""
+from dataclasses import dataclass, field
+from typing import Optional
 
-    _default_kwargs = {
-        "all": 0,
-        "compress": None,
-        "enabled": None,
-        "exclude": "",
-        "fleecing": None,
-        "mode": None,
-        "next-run": None,
-        "node": None,
-        "notes-template": None,
-        "pool": None,
-        "prune-backups": None,
-        "schedule": None,
-        "storage": None,
-        "type": None,
-        "vmid": "",
-    }
+from pvecontrol.models.storage import StorageShared
+
+
+@dataclass
+class PVEBackupJobData:
+    all: int = field(default=0)
+    compress: object = None
+    enabled: object = None
+    exclude: str = field(default="")
+    fleecing: object = None
+    mode: str = field(default="")
+    next_run: int = field(default=0)
+    node: str = field(default="")
+    notes_template: str = field(default="")
+    pool: str = field(default="")
+    prune_backups: object = None,
+    schedule: str = field(default="")
+    storage: Optional["StorageShared"] = None
+    type: str = field(default="")
+    vmid: str = field(default=""),
+
+
+class PVEBackupJob(PVEBackupJobData):
+    """Proxmox VE Backup Job"""
 
     def __init__(self, backup_id, **kwargs):
         self.id = backup_id
-
-        for k, v in self._default_kwargs.items():
-            self.__setattr__(k, kwargs.get(k, v))
+        _values = {k: v for k, v in kwargs.items() if hasattr(PVEBackupJobData, k)}
+        super().__init__(**_values)
 
         self.all = self.all == 1
-        self.vmid = self.vmid.split(",")
-        self.exclude = self.exclude.split(",")
+        if isinstance(self.vmid, str):
+            self.vmid = list(self.vmid.split(","))
+        if isinstance(self.exclude, str):
+            self.exclude = self.exclude.split(",")
 
     def __str__(self):
-        output = f"Vm(s): {self.vmid}\n" + f"Id: {self.id}\n"
-        for key in self._default_kwargs:
-            output += f"{key.capitalize()}: {self.__getattribute__(key)}\n"
-        return output
+        return "\n".join([f"{k.capitalize()}: {v}" for k, v in self.__dict__.items()])
 
     def is_selection_matching(self, vm):
         if self.node is not None and self.node != vm.node:
