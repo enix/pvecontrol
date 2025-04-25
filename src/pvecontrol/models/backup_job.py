@@ -16,11 +16,11 @@ class PVEBackupJobData:
     node: str = field(default="")
     notes_template: str = field(default="")
     pool: str = field(default="")
-    prune_backups: object = None,
+    prune_backups: object = (None,)
     schedule: str = field(default="")
     storage: Optional["StorageShared"] = None
     type: str = field(default="")
-    vmid: str = field(default=""),
+    vmid: str = (field(default=""),)
 
 
 class PVEBackupJob(PVEBackupJobData):
