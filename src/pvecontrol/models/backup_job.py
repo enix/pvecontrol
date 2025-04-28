@@ -20,7 +20,7 @@ class PVEBackupJobData:
     schedule: str = field(default="")
     storage: Optional["StorageShared"] = None
     type: str = field(default="")
-    vmid: str = (field(default=""),)
+    vmid: str = field(default="")
 
 
 class PVEBackupJob(PVEBackupJobData):
