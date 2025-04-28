@@ -1,6 +1,6 @@
 import re
 
-from pvecontrol.models.storage import STORAGE_SHARED_ENUM, PVEStorage, StorageShared
+from pvecontrol.models.storage import PVEStorage, StorageShared
 from pvecontrol.sanitycheck.checks import Check, CheckType, CheckMessage, CheckCode
 
 
