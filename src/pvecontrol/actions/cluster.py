@@ -1,5 +1,4 @@
 import sys
-import textwrap
 
 import click
 
@@ -43,21 +42,20 @@ def status(ctx):
         d_percent = metrics["disk"]["percent"]
         return f"{d_usage}/{d_total}({d_percent:.1f}%)"
 
-    if _args.output == OutputFormats.TEXT:
-        output = f"""\
-            Status: {status}
-            VMs: {vms - templates}
-            Templates: {templates}
-            Metrics:
-                CPU: {_get_cpu_output()}
-                Memory: {_get_memory_output()}
-                Disk: {_get_disk_output()}
-            Nodes:
-                Offline: {len([node for node in proxmox.nodes if node.status == NodeStatus.OFFLINE])}
-                Online: {len([node for node in proxmox.nodes if node.status == NodeStatus.ONLINE])}
-                Unknown: {len([node for node in proxmox.nodes if node.status == NodeStatus.UNKNOWN])}
-            """
-        print(textwrap.dedent(output))
+    if ctx.obj['args'].output == OutputFormats.TEXT:
+        print(f"""\n\
+  Status: {status}
+  VMs: {vms - templates}
+  Templates: {templates}
+  Metrics:
+    CPU: {_get_cpu_output()}
+    Memory: {_get_memory_output()}
+    Disk: {_get_disk_output()}
+  Nodes:
+    Offline: {len([node for node in proxmox.nodes if node.status == NodeStatus.OFFLINE])}
+    Online: {len([node for node in proxmox.nodes if node.status == NodeStatus.ONLINE])}
+    Unknown: {len([node for node in proxmox.nodes if node.status == NodeStatus.UNKNOWN])}
+""")
     else:
         render_table = [
             dict(
@@ -72,10 +70,13 @@ def status(ctx):
                 ),
             )
         ]
-        print(render_output(render_table, output=_args.output))
+        print(render_output(render_table, output=ctx.obj['args'].output))
 
 
-def action_sanitycheck(proxmox, args):
+@click.command()
+@click.argument("checks", nargs=-1, type=click.Choice(list(DEFAULT_CHECK_IDS), case_sensitive=False))
+@click.pass_context
+def sanitycheck(ctx, checks):
     """Check status of proxmox Cluster"""
     # More checks to implement
     # VM is started but 'startonboot' not set

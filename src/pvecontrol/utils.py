@@ -91,7 +91,8 @@ def render_output(table, columns=None, sortby=None, filters=None, output=OutputF
     if output == OutputFormats.CSV:
         return x.get_csv_string(sortby=sortby, fields=columns)
     if output in (OutputFormats.JSON, OutputFormats.YAML):
-        json_string = x.get_json_string(sortby=sortby, fields=columns)
+        json_string = x.get_json_string()
+        # json_string = x.get_json_string(sortby=sortby, fields=columns)
         data = json.loads(json_string)[1:]
         if output == OutputFormats.JSON:
             return json.dumps(data)
