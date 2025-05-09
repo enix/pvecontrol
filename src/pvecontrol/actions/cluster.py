@@ -59,19 +59,17 @@ def status(ctx):
 """
         )
     else:
-        render_table = [
-            dict(
-                status=cluster_status,
-                vm=vms - templates,
-                templates=templates,
-                metrics=metrics,
-                nodes=dict(
-                    offline=len([node for node in proxmox.nodes if node.status == NodeStatus.OFFLINE]),
-                    online=len([node for node in proxmox.nodes if node.status == NodeStatus.ONLINE]),
-                    unknown=len([node for node in proxmox.nodes if node.status == NodeStatus.UNKNOWN]),
-                ),
-            )
-        ]
+        render_table = [{
+            "status": cluster_status,
+            "vm": vms - templates,
+            "templates": templates,
+            "metrics": metrics,
+            "nodes": {
+                "offline": len([node for node in proxmox.nodes if node.status == NodeStatus.OFFLINE]),
+                "online": len([node for node in proxmox.nodes if node.status == NodeStatus.ONLINE]),
+                "unknown": len([node for node in proxmox.nodes if node.status == NodeStatus.UNKNOWN]),
+            }
+        }]
         print(render_output(render_table, output=ctx.obj["args"].output))
 
 

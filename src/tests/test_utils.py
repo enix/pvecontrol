@@ -22,8 +22,10 @@ def test_render_output():
     output_json = render_output(vms, columns=COLUMNS, output=OutputFormats.JSON)
     output_csv = render_output(vms, columns=COLUMNS, output=OutputFormats.CSV)
     output_yaml = render_output(vms, columns=COLUMNS, output=OutputFormats.YAML)
+    output_md = render_output(vms, columns=COLUMNS, output=OutputFormats.MARKDOWN)
 
     assert output_text.split("\n")[0].replace("+", "").replace("-", "") == ""
     assert len(json.loads(output_json)) == 3
     assert len(list(csv.DictReader(StringIO(output_csv)))) == 3
     assert len(yaml.safe_load(output_yaml)) == 3
+    assert len(output_md.split("\n")) == 5
