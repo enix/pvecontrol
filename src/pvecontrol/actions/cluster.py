@@ -44,7 +44,7 @@ def status(ctx):
 
     if ctx.obj['args'].output == OutputFormats.TEXT:
         print(f"""\n\
-  Status: {status}
+  Status: {cluster_status}
   VMs: {vms - templates}
   Templates: {templates}
   Metrics:
@@ -59,7 +59,7 @@ def status(ctx):
     else:
         render_table = [
             dict(
-                status=status,
+                status=cluster_status,
                 vm=vms - templates,
                 templates=templates,
                 metrics=metrics,
