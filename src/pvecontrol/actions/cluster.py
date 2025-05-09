@@ -8,6 +8,7 @@ from pvecontrol.models.node import NodeStatus
 from pvecontrol.sanitycheck import SanityCheck
 from pvecontrol.sanitycheck.tests import DEFAULT_CHECK_IDS
 from pvecontrol.models.cluster import PVECluster
+from pvecontrol.utils import OutputFormats, render_output
 
 
 @click.command()
@@ -41,7 +42,9 @@ def status(ctx):
         d_percent = metrics["disk"]["percent"]
         return f"{d_usage}/{d_total}({d_percent:.1f}%)"
 
-    output = f"""
+    if ctx.obj["args"].output == OutputFormats.TEXT:
+        print(
+            f"""\n\
   Status: {cluster_status}
   VMs: {vms - templates}
   Templates: {templates}
@@ -53,16 +56,30 @@ def status(ctx):
     Offline: {len([node for node in proxmox.nodes if node.status == NodeStatus.OFFLINE])}
     Online: {len([node for node in proxmox.nodes if node.status == NodeStatus.ONLINE])}
     Unknown: {len([node for node in proxmox.nodes if node.status == NodeStatus.UNKNOWN])}
-  """
-
-    print(output)
+"""
+        )
+    else:
+        render_table = [
+            {
+                "status": cluster_status,
+                "vm": vms - templates,
+                "templates": templates,
+                "metrics": metrics,
+                "nodes": {
+                    "offline": len([node for node in proxmox.nodes if node.status == NodeStatus.OFFLINE]),
+                    "online": len([node for node in proxmox.nodes if node.status == NodeStatus.ONLINE]),
+                    "unknown": len([node for node in proxmox.nodes if node.status == NodeStatus.UNKNOWN]),
+                },
+            }
+        ]
+        print(render_output(render_table, output=ctx.obj["args"].output))
 
 
 @click.command()
 @click.argument("checks", nargs=-1, type=click.Choice(list(DEFAULT_CHECK_IDS), case_sensitive=False))
 @click.pass_context
 def sanitycheck(ctx, checks):
-    """Run sanity checks on the cluster"""
+    """Check status of proxmox Cluster"""
     # More checks to implement
     # VM is started but 'startonboot' not set
     # VM is running in cpu = host

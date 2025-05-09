@@ -13,7 +13,7 @@ from enum import Enum
 import yaml
 
 from humanize import naturalsize
-from prettytable import PrettyTable
+from prettytable import PrettyTable, TableStyle
 
 
 class Fonts:
@@ -31,6 +31,7 @@ class OutputFormats(Enum):
     JSON = "json"
     CSV = "csv"
     YAML = "yaml"
+    MARKDOWN = "md"
 
     def __str__(self):
         return self.value
@@ -83,7 +84,9 @@ def render_output(table, columns=None, sortby=None, filters=None, output=OutputF
     if sortby is not None:
         sortby = "sortby"
 
-    if output == OutputFormats.TEXT:
+    if output in (OutputFormats.TEXT, OutputFormats.MARKDOWN):
+        if output == OutputFormats.MARKDOWN:
+            x.set_style(TableStyle.MARKDOWN)
         return x.get_string(sortby=sortby, fields=columns)
     if output == OutputFormats.CSV:
         return x.get_csv_string(sortby=sortby, fields=columns)
