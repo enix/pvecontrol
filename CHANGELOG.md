@@ -1,196 +1,412 @@
 # CHANGELOG
 
 
-## v0.5.0 (2025-01-22)
+## v0.6.0 (2025-05-12)
+
+### Bug Fixes
+
+- Bad formatting in "no such cluster" log
+  ([`8d333d1`](https://github.com/enix/pvecontrol/commit/8d333d1fa200829bb73c436dcfdd26c25f7d3b3f))
+
+- Enable ssl_verification from config, catch failures
+  ([`c82c9e4`](https://github.com/enix/pvecontrol/commit/c82c9e4b140f56d5be6dc4d694faff8181d256e8))
+
+- Exit 130 without printing stacktrace on sigint
+  ([`bffe5d1`](https://github.com/enix/pvecontrol/commit/bffe5d1b9e432f6047627913a0c4d9d9ab28102a))
+
+- Get version with help command, README typos
+  ([`d4ac84f`](https://github.com/enix/pvecontrol/commit/d4ac84f35a5e111002393ebe700a6320911bc15f))
+
+- Rebase click changes, more stuffs broken with json/yaml translator
+  ([`fbab03a`](https://github.com/enix/pvecontrol/commit/fbab03aecd7a4af7735ea76ae70927b80da71406))
+
+- Rm duped main (pip should gen the executable script)
+  ([`a5fb557`](https://github.com/enix/pvecontrol/commit/a5fb557e453894815c992d743e53312cecf4d144))
+
+- Set default memoryminimum to 8GB (8589934592 instead of 81928589934592)
+  ([`c22ec97`](https://github.com/enix/pvecontrol/commit/c22ec977868d42e1590fc56f8c1b482e37743ff0))
+
+The value was almost good, but prefixed with 8192, which is almost good also. But all together, it
+  wasn't good at all.
+
+- Set default when assigning resource_* prop (KeyError on faulty nodes)
+  ([`53e2c2e`](https://github.com/enix/pvecontrol/commit/53e2c2ebd17dcda0fc4913342a5137f5d8f11c6a))
+
+- Typo, incorrect status ref
+  ([`afab5ae`](https://github.com/enix/pvecontrol/commit/afab5ae7a2608a1421d5fa74cfb09cbe3c6b8f7d))
+
+- Use env in she-bangs
+  ([`de6a25d`](https://github.com/enix/pvecontrol/commit/de6a25d20264ffed1390bcb988e60e73f363c00b))
+
+- **config**: Set default timeout to 60
+  ([`13a58ad`](https://github.com/enix/pvecontrol/commit/13a58ad490a89463ef85ec79e966a718f4c3f239))
+
+- **sanitycheck**: Correct disk unused on check
+  ([`ee32fc1`](https://github.com/enix/pvecontrol/commit/ee32fc1e6feb53fd05835c6999a0c2fa8f9790de))
+
+- **sanitycheck**: Fix wording in backup messages
+  ([`3e599e1`](https://github.com/enix/pvecontrol/commit/3e599e1071e5024bbc4cebae71e993a1e28ea4d4))
+
+- **sanitycheck**: Patch VM startonboot option check
+  ([`1ded8c4`](https://github.com/enix/pvecontrol/commit/1ded8c424ef24901399ad33d8b5255d52e3b6f20))
+
+- **sanitycheck**: Reduce complexity on VMStartOnBoot check
+  ([`591c60f`](https://github.com/enix/pvecontrol/commit/591c60f32da2bcdd970a220a324182dafda1ebc7))
+
+- **sanitycheck**: Warn when vms don't have any backup
+  ([`b86ea89`](https://github.com/enix/pvecontrol/commit/b86ea8955b4f26e219689c152ddbc0787fca742d))
+
+- **sanitycheck**: Wording
+  ([`fb10b29`](https://github.com/enix/pvecontrol/commit/fb10b292e484e3d070f8bf8372fb398e77aec4fd))
+
+- **test**: Correct code repetition
+  ([`f8f9625`](https://github.com/enix/pvecontrol/commit/f8f96253aa68f37413a94c89a2a491c01f0bc61f))
+
+- **vm**: Add tags as vm columns
+  ([`6a48132`](https://github.com/enix/pvecontrol/commit/6a48132123c8ffa677dceda56d07da0f25d43fbb))
+
+- **vm**: Correctly parse tag list
+  ([`c6f7e78`](https://github.com/enix/pvecontrol/commit/c6f7e7842677ca941409d732b343540b507ac35f))
+
+- **vm**: Get_backup_jobs when selection mode is "all" or "exclude selected" and filter by node
+  ([`b10ba25`](https://github.com/enix/pvecontrol/commit/b10ba25a410eb8c7b219528dfe8ef8f08a4c4abf))
+
+- **vm**: Get_backup_jobs when selection mode is "pool based"
+  ([`0cf55ef`](https://github.com/enix/pvecontrol/commit/0cf55efa65926cbb38ccb3db8173a96743a641b7))
+
+- **vmstatus**: Add new VmStatus
+  ([`fa20415`](https://github.com/enix/pvecontrol/commit/fa2041543dc1284652aaa3d17d8554601823ec37))
+
+### Build System
+
+- Trigger release manually from main branch only
+  ([`5ff5bbd`](https://github.com/enix/pvecontrol/commit/5ff5bbda9e9bad6fc149b966434eb3559424153f))
+
+- **ci**: Enable pip dependencies caching
+  ([`7e9a391`](https://github.com/enix/pvecontrol/commit/7e9a3918cf51b71838296a6e8cf3587408b22da3))
+
+- **ci**: Fetch with default depth (1 commit) instead of the whole history
+  ([`f569685`](https://github.com/enix/pvecontrol/commit/f56968528cf263b0fff35e2baa981600a6370451))
+
+- **ci**: Install pvecontrol package before running tests
+  ([`949a85e`](https://github.com/enix/pvecontrol/commit/949a85ea258d0eac6821a9b3b131787ed9d453d2))
+
+- **ci**: Remove flake8 linting and redundant pytest job
+  ([`8c41a46`](https://github.com/enix/pvecontrol/commit/8c41a46e923559e846ffc0c2acb0ae9592ff81e8))
+
+- **ci**: Trigger tests on pull requests but not on push
+  ([`a04dc02`](https://github.com/enix/pvecontrol/commit/a04dc02d07c8e59c59c87ddc253272588ff86b73))
+
+- **ci**: Upgrade actions versions
+  ([`b72f95a`](https://github.com/enix/pvecontrol/commit/b72f95a9dfe5e5266a7df37c3306c1003102bd76))
+
+### Chores
+
+- Drop python-3.8 support, enable python-3.13
+  ([`df51da3`](https://github.com/enix/pvecontrol/commit/df51da3e809152c0b1eee312e19a445b406332ff))
+
+- Enable 'diff' option with black formatter
+  ([`9d1edd5`](https://github.com/enix/pvecontrol/commit/9d1edd53c23ec8cb368b4fdcd81373dd7f3efdf8))
+
+- Move root models to a dedicated folder
+  ([`71fdc63`](https://github.com/enix/pvecontrol/commit/71fdc631124d74dc6beea022645ba14df322219d))
+
+- **black**: Fix syntax
+  ([`394b83e`](https://github.com/enix/pvecontrol/commit/394b83e21c28a2428ad45d2294aaeb3e3a104ee1))
+
+- **cluster**: Add some logging around backups
+  ([`ff863f8`](https://github.com/enix/pvecontrol/commit/ff863f8298aa7a99ee81cb34d3eccc7b39a386a4))
+
+- **README**: Update fish completion documentation
+  ([`c68bb6c`](https://github.com/enix/pvecontrol/commit/c68bb6cf6ed270871ea01fa88f5e869eafb5d90e))
+
+### Documentation
+
+- A command in README was using the legacy syntax
+  ([`25cb79e`](https://github.com/enix/pvecontrol/commit/25cb79e47728810467feb6061f9cf4425383029b))
+
+### Features
+
+- Add a markdown outputFormat
+  ([`fd9613f`](https://github.com/enix/pvecontrol/commit/fd9613f3743957babf744296ab061116ba316315))
+
+- Add api timeout configuration
+  ([`d2291ff`](https://github.com/enix/pvecontrol/commit/d2291ff8b3b3a238d92f239be1b57f2d9e1c24e8))
+
+- Add list of available checks in sanitycheck --help
+  ([`202eff5`](https://github.com/enix/pvecontrol/commit/202eff5bc19435f0c879982408197658f6cf20e3))
+
+- Allow sorting and filtering on hidden columns
+  ([`ce59a7a`](https://github.com/enix/pvecontrol/commit/ce59a7a764f9f84672162aa3388700f739f11022))
+
+In render_output, we stopped using `filter_keys`, in order to be able to sort and filter on hidden
+  columns as well. Instead, we use `reorder_keys` because filter_keys used to reorder keys and we
+  want the columns to appears in the order given by the arguments. Last but not least: in
+  `add_list_resource_command` we actually reimplement `filter_keys` in order to remove columns that
+  should never be rendered (node._api for instance). First because we don't want users to display
+  them, and second because PrettyTable take in account the rendering of hidden columns to calculate
+  the height of each cells, which would produce very high columns in some cases.
+
+- Allow to configure proxy certificate and key with one unique command
+  ([`3b2571d`](https://github.com/enix/pvecontrol/commit/3b2571da998c38fa629763163eb91899a1a58edb))
+
+- Enable outputFormats (yaml, json) for clusterstatus
+  ([`eb9262a`](https://github.com/enix/pvecontrol/commit/eb9262ae02dd01684675bce88e4612500f180f0f))
+
+- Support for proxmox clusters behind a reverse proxy with certificate-based authentication
+  ([`902c759`](https://github.com/enix/pvecontrol/commit/902c759a1c31dd151df876169983312579dc3224))
+
+- **cli**: Get --cluster flag from env
+  ([`760c613`](https://github.com/enix/pvecontrol/commit/760c6135c72ecb2007ce7649ec9ace995a7c7526))
+
+- **sanitycheck**: Check if disks are unused
+  ([`d31752f`](https://github.com/enix/pvecontrol/commit/d31752f1420484515ba4a2a418ac5e716cdc6a07))
+
+- **sanitycheck**: Check vms have a backup job configured
+  ([`1b8617f`](https://github.com/enix/pvecontrol/commit/1b8617f9cf13aa0cc658376dfba0909e0b4c44d9))
+
+- **sanitycheck**: Check vms have at least one recent backup
+  ([`db42367`](https://github.com/enix/pvecontrol/commit/db42367a0290eccb4b40e53dcbe400ab56274b33))
+
+- **sanitychecks**: Check onboot vm option
+  ([`cda70f8`](https://github.com/enix/pvecontrol/commit/cda70f8c1a3e8ef8b04e6c083b19c8925a181cdc))
+
+- **vm**: Parse tags as sets for easier usage
+  ([`7dda4fe`](https://github.com/enix/pvecontrol/commit/7dda4fe3e19ec3ad3e461909a0b65f43accfcd6c))
+
+### Refactoring
+
+- Add PVEVolume and PVEBackupJob classes
+  ([`f488dbe`](https://github.com/enix/pvecontrol/commit/f488dbe62a68042cfa0fb647a942152e50c41ae8))
+
+- Create a click ResourceGroup class that automatically adds a list subcommand
+  ([`592b6d0`](https://github.com/enix/pvecontrol/commit/592b6d0941a81106f7419a61be37fa28cca4218b))
+
+- Move backups and backups_job listing in PVECluster and PVEVm
+  ([`2cedc7d`](https://github.com/enix/pvecontrol/commit/2cedc7dc759601d4918bd51ed26eb0516836fe02))
+
+- Move cli related functions from utils.py to cli.py
+  ([`67cc27a`](https://github.com/enix/pvecontrol/commit/67cc27a2ade021ae696ccd49366992d54e6323d9))
+
+- Move PVECluster.get_node_resources to PVENode.resources property
+  ([`5f028ad`](https://github.com/enix/pvecontrol/commit/5f028adf0f71dc1a54dcf15d7b33f82d10f95fac))
+
+- Remove dead code in Check
+  ([`2a24f61`](https://github.com/enix/pvecontrol/commit/2a24f6124ffc62bfd8f91467057d57d9ab753d28))
+
+- Use property instead of method whenever possible in PVECluster and PVENode
+  ([`34efd0c`](https://github.com/enix/pvecontrol/commit/34efd0c51cff3286f1d8f92784dfbbcac767cc57))
+
+- **cli**: Show help instead of an error when no args is provided
+  ([`4d2d474`](https://github.com/enix/pvecontrol/commit/4d2d474ea56da6b7f7c44e67b80e305bdc9b9ccd))
+
+- **cli**: Split subcommands between name and verb and use click instead of argparse
+  ([`38f28f9`](https://github.com/enix/pvecontrol/commit/38f28f9633a09f79c369b1f17791db2982c3566a))
+
+Co-authored-by: Yoann Lamouroux <yoann.lamouroux@enix.fr>
+
+- **sanitycheck**: Improve vm_backups wording
+  ([`1ca8721`](https://github.com/enix/pvecontrol/commit/1ca8721b0d008e3b249a12be061585445d767d7d))
+
+- **sanitycheck**: Use storage.images instead of storage.get_content("images")
+  ([`aa6db96`](https://github.com/enix/pvecontrol/commit/aa6db969ab8fab661f939cfe60bd526ef0aae6e9))
+
+### Testing
+
+- **sanitycheck**: Vm backups
+  ([`5e0fd4e`](https://github.com/enix/pvecontrol/commit/5e0fd4e9d6a5676470de8ee7513742bb9bfe475d))
+
+
+## v0.5.0 (2025-01-30)
 
 ### Bug Fixes
 
 - Cleanup code
-  ([`dd97cdc`](https://github.com/enix/pvecontrol/commit/dd97cdc18eddb2cbe9e07eb351933c3ee228b634))
+  ([`992d6d2`](https://github.com/enix/pvecontrol/commit/992d6d266196b86a946ef2af275189de5013300b))
 
 - Correct clusterconfig default value overwrite
-  ([`45fd3c2`](https://github.com/enix/pvecontrol/commit/45fd3c28c9dc813551bfc35b8a5d20cb8dc9ea6f))
+  ([`aa30cbf`](https://github.com/enix/pvecontrol/commit/aa30cbf48f52cdb44b901dcf1f719943b7143d7a))
 
 - Crash on sortby None (default value)
-  ([`d62164e`](https://github.com/enix/pvecontrol/commit/d62164efd964047e1813665e1a45bb67750c5c37))
+  ([`075761e`](https://github.com/enix/pvecontrol/commit/075761ecdb7a879197ade4c061e683c4b61f7622))
 
 - Crash when filtering returns 0 results
-  ([`55bd00b`](https://github.com/enix/pvecontrol/commit/55bd00b8e7fbe075b35b5bb96935963669b6ddf8))
+  ([`57c6892`](https://github.com/enix/pvecontrol/commit/57c68929bc93191f1b1b17984623ea090dbb7d40))
 
 - Harmonize logs when using --wait and --follow
-  ([`aac7714`](https://github.com/enix/pvecontrol/commit/aac77144f9191147ee08398cb5efcb5058bac3e8))
+  ([`81df66a`](https://github.com/enix/pvecontrol/commit/81df66aca8cf664046832849aa0ced1e275607b5))
 
 - Missing method self._initstatus() in task.refresh()
-  ([`547bdd1`](https://github.com/enix/pvecontrol/commit/547bdd1585f0fcb6006e14a5f835429badef017c))
+  ([`a730fc4`](https://github.com/enix/pvecontrol/commit/a730fc4de142f0bb215da15f9b5fdb20827ab5a8))
 
 - Patch clusterconfig never set to default config
-  ([`910a7ac`](https://github.com/enix/pvecontrol/commit/910a7ac44160cf5ef2b039a3eed96d9626f1d13a))
+  ([`9d02b41`](https://github.com/enix/pvecontrol/commit/9d02b41befd0b5da09a919db7a6bb116573dddf6))
 
 - Strenum isn't available for python 3.10
-  ([`d32fffc`](https://github.com/enix/pvecontrol/commit/d32fffc06741c8ee2c7ff5d7a51ffe3e059992ae))
+  ([`29e44bd`](https://github.com/enix/pvecontrol/commit/29e44bdc31a75eafc30bfeb1ae13c1a92826d8c3))
 
 - Transpose existing sanity checks to new class
-  ([`ea4ac51`](https://github.com/enix/pvecontrol/commit/ea4ac51bbb1b8841462b7a202ea29dfe5e90ad6a))
+  ([`368d868`](https://github.com/enix/pvecontrol/commit/368d8680928ed97286c0842b656bb39b67099939))
 
 - **clusterstatus**: Update cli output
-  ([`d6fac76`](https://github.com/enix/pvecontrol/commit/d6fac7698679eace9bd9cf87d86aab5e13cd7c4c))
+  ([`23d3aa7`](https://github.com/enix/pvecontrol/commit/23d3aa722f75d50e0c3ec86fec53580c082cd2a4))
 
 - **config**: Correct PVECluster args node to config
-  ([`c576f2e`](https://github.com/enix/pvecontrol/commit/c576f2ef11ff34c7253babba53eba9fa949c61a0))
+  ([`833dd6e`](https://github.com/enix/pvecontrol/commit/833dd6ec51cdd664d2d5b160660097f19c3eb1ec))
 
 - **config**: Correct PVECluster args node to config
-  ([`92b030e`](https://github.com/enix/pvecontrol/commit/92b030e713f6559017b7858107c2e61e05bff0c1))
+  ([`e5367e8`](https://github.com/enix/pvecontrol/commit/e5367e8aa478bb3c350bcf3c58e7ca0aa4df1b8b))
 
 - **config**: Rollback node_factors to node
-  ([`f5f5ec4`](https://github.com/enix/pvecontrol/commit/f5f5ec41d6d8444c9cb930f38e50b7c8701871fe))
+  ([`8dffbc8`](https://github.com/enix/pvecontrol/commit/8dffbc897148375ec6ad83103135454cff66b116))
 
 - **evacuate**: Change log output
-  ([`0433c60`](https://github.com/enix/pvecontrol/commit/0433c60b8188b206574094601869aa1a5a4cdb9e))
+  ([`c2c4fd8`](https://github.com/enix/pvecontrol/commit/c2c4fd8b6573044b149706161293150574aa9671))
 
 - **evacuate**: Make sure targets are unique
-  ([`9266a25`](https://github.com/enix/pvecontrol/commit/9266a25f5b4a9e7c74e987690758e524670bc07a))
+  ([`3627ef7`](https://github.com/enix/pvecontrol/commit/3627ef72658eca65c0587315bedd2fc1826b7ae0))
 
 - **sanitycheck**: In VM config, cpu are not always return by API
-  ([`7e40e21`](https://github.com/enix/pvecontrol/commit/7e40e219bde6f43a716815a2021084c9ccfa2074))
+  ([`842a444`](https://github.com/enix/pvecontrol/commit/842a44471dc7935ca73bf4e5cbb438d9eb0c21bf))
 
 - **sanitycheck**: Patch error on if statements in ha_vms check
-  ([`13f7fd5`](https://github.com/enix/pvecontrol/commit/13f7fd5d2e231bdb2a0ce5e5b10f206104821679))
+  ([`9030ffe`](https://github.com/enix/pvecontrol/commit/9030ffead30d8075598e7df19d09a3765ea96ebd))
 
 - **sanitycheck**: Patch no checks append to sanity checks list
-  ([`21341f8`](https://github.com/enix/pvecontrol/commit/21341f87758c4979ca26090c68e6f65bc8e75ac6))
+  ([`b280650`](https://github.com/enix/pvecontrol/commit/b280650174ac7f13cafee28a18d15e8888526bf3))
 
 - **sanitycheck**: Verify check exists before trying to run it
-  ([`b83be42`](https://github.com/enix/pvecontrol/commit/b83be4269ede73d6b46bf56b8e4bdebadc1e8dc5))
+  ([`1535772`](https://github.com/enix/pvecontrol/commit/15357720ae7a69b57b0ab8110955e67746df3999))
 
 - **sanitychecks**: Add exitcode and correct message criticity code
-  ([`21f0864`](https://github.com/enix/pvecontrol/commit/21f0864a36fd8aef2fe7f421a56123f2190abc96))
+  ([`ada9222`](https://github.com/enix/pvecontrol/commit/ada9222cf28516e8098cdd2713c7a159ac344704))
 
 - **sanitychecks**: Add terminal supports verification (utf-8, bold, colors)
-  ([`1983eca`](https://github.com/enix/pvecontrol/commit/1983ecaf4592f7e5076aab6a516aa7c4c50fa8e5))
+  ([`b37570a`](https://github.com/enix/pvecontrol/commit/b37570ac20a353f1f4a0a729f0b384ef614e3b6f))
 
 - **sanitychecks**: Correct check code for ha_group
-  ([`16aca67`](https://github.com/enix/pvecontrol/commit/16aca67b94ac1094d5935c373617d6b0272ba505))
+  ([`723a3e6`](https://github.com/enix/pvecontrol/commit/723a3e6f56a950d91e7f6724824576de08f388f4))
 
 - **sanitychecks**: Patch display issues depending on terminal using curses
-  ([`f69e07c`](https://github.com/enix/pvecontrol/commit/f69e07c9a83458b1270202134354c56bda4a861b))
+  ([`b8d1b04`](https://github.com/enix/pvecontrol/commit/b8d1b048faeeed73b54146d4dfa9cb8ae3ef3651))
 
 - **sanitychecks**: Patch display issues depending on terminal using curses
-  ([`6a9e93a`](https://github.com/enix/pvecontrol/commit/6a9e93ae6f4f38165844f44618c282eab1eb52ff))
+  ([`b83e6e7`](https://github.com/enix/pvecontrol/commit/b83e6e798cacb641738b75c2c6986ccff1c0fb67))
 
 - **sanitychecks**: Patch some issues
-  ([`049d6e6`](https://github.com/enix/pvecontrol/commit/049d6e6caf74ab6ffacf66dffb9da4e9b1f8c382))
+  ([`31ef892`](https://github.com/enix/pvecontrol/commit/31ef892d5ed2efbcdfd9943a8253bcff42db3c76))
 
 - **sanitychecks**: Refacto Checks run with classes
-  ([`660a837`](https://github.com/enix/pvecontrol/commit/660a837dd0ad109e3f3abb2a2286943ee3ddf5ea))
+  ([`2de9331`](https://github.com/enix/pvecontrol/commit/2de933116ab5e08902dfb5c395f05ced91782443))
 
 - **storage**: Patch error on PVEStorage.__str__
-  ([`9e71daa`](https://github.com/enix/pvecontrol/commit/9e71daaefd22344d71e93b7b86aaeac0266e820e))
+  ([`8a83370`](https://github.com/enix/pvecontrol/commit/8a83370655ea10fd8363b9dc3377feda6766cdc7))
 
 - **storagelist**: Add sort-by arg
-  ([`76337ab`](https://github.com/enix/pvecontrol/commit/76337ab53bc5a6c897be45fa234228e2b7ed1089))
+  ([`0da34d4`](https://github.com/enix/pvecontrol/commit/0da34d4f9ae125dc2f3b18588feab9dfab9120bd))
 
 - **storagelist**: Correct shared col
-  ([`ee9d082`](https://github.com/enix/pvecontrol/commit/ee9d0829a69fccb4010a903996748b6eeccd8e5a))
+  ([`0d78b7f`](https://github.com/enix/pvecontrol/commit/0d78b7f153b1098e2ef2c891fd8f0ed08cd15496))
 
 - **storagelist**: Prototype of print_tableoutput has changed
-  ([`f7e27cc`](https://github.com/enix/pvecontrol/commit/f7e27cc841f3bb5b310bc393b975eac3b697c033))
+  ([`b5d4367`](https://github.com/enix/pvecontrol/commit/b5d43673b3d55502bb08ded47a325b2d423a8ae6))
 
 - **storagelist**: Update PVEStorage kwargs loading
-  ([`43990a5`](https://github.com/enix/pvecontrol/commit/43990a5f20e221ad159be301f6ee5ddfe3b28a25))
+  ([`496118d`](https://github.com/enix/pvecontrol/commit/496118defc011b788b371d2a2452ddfafaf0659b))
 
 - **tasks**: Nicely handle vanished tasks
-  ([`1fbf112`](https://github.com/enix/pvecontrol/commit/1fbf112a6ed6604891bd5ebf86cc18ed79a2529a))
+  ([`64a1c4c`](https://github.com/enix/pvecontrol/commit/64a1c4c70c9ef08ad8fdb78be90f5126d34216d9))
 
 Some tasks can deseappear from the API with time. So we must handle this case.
 
 ### Chores
 
 - Add CI job for black and config in pyproject
-  ([`6b76a99`](https://github.com/enix/pvecontrol/commit/6b76a99164cb2f045ec4daaaa53c0d1adc688352))
+  ([`d08192b`](https://github.com/enix/pvecontrol/commit/d08192babe9e6196b232922ea1f0c891c0232bbf))
 
 - Fix ci cancelled jobs
-  ([`e3c4af0`](https://github.com/enix/pvecontrol/commit/e3c4af0f0af058931e92f74a7b4ef7c5900c44d0))
+  ([`61d6607`](https://github.com/enix/pvecontrol/commit/61d660763ef722d0d5ebaafbbee28d3cf7cc2868))
 
 - Optimize cli by reducing HTTP calls
-  ([`f78a040`](https://github.com/enix/pvecontrol/commit/f78a040bdcdc3b54180021be0668df9bcaa12753))
+  ([`078c37d`](https://github.com/enix/pvecontrol/commit/078c37d698a222afff53493bf2d0fce7ec262c0f))
 
 - Remove Github deployment in CI stage tests
-  ([`c35723c`](https://github.com/enix/pvecontrol/commit/c35723c6cd2b822d78bf4fd5c12a8f32fe908e64))
+  ([`5ee2257`](https://github.com/enix/pvecontrol/commit/5ee22570823172116a1d48526982418653661f85))
 
 - Remove Github deployment in CI stage tests
-  ([`8bdbceb`](https://github.com/enix/pvecontrol/commit/8bdbceb5b4e23e72e6588051fa5576d90ddc5d3b))
+  ([`a95bd61`](https://github.com/enix/pvecontrol/commit/a95bd614559d2a009d851418b4fec644e06e2c97))
 
 - Run black
-  ([`12f1045`](https://github.com/enix/pvecontrol/commit/12f1045ed4849f59092003df03e91c714610d2c6))
+  ([`ef4be01`](https://github.com/enix/pvecontrol/commit/ef4be01563d4f7a6016b2c3d04a1dadf2a411efd))
 
 - Run black
-  ([`f4e5013`](https://github.com/enix/pvecontrol/commit/f4e5013c900eac05707655696b5ad6eabfc9d30e))
+  ([`9aa757b`](https://github.com/enix/pvecontrol/commit/9aa757b54c0aa9d1e49887cd8d58c9e5b093ff6b))
 
 - **auth**: Patch tests and lint
-  ([`3aa20b2`](https://github.com/enix/pvecontrol/commit/3aa20b2f8874d5ddcb0d4f5e0149c0002ffb8785))
+  ([`8b3d837`](https://github.com/enix/pvecontrol/commit/8b3d837b4a6ed65463686e8c4ddff888c98736dc))
 
 - **black**: Correct style for sanitycheck
-  ([`62e792e`](https://github.com/enix/pvecontrol/commit/62e792e97bf5ea35eddd895432c0779c1acacc87))
+  ([`27b3c73`](https://github.com/enix/pvecontrol/commit/27b3c73c561d5e31dc27eb6b2697baa529e97151))
 
 - **black**: Patch black warnings
-  ([`800c157`](https://github.com/enix/pvecontrol/commit/800c1577ab71070c70b7bfce29a1abdef08a70bc))
+  ([`bb17d7b`](https://github.com/enix/pvecontrol/commit/bb17d7b298341bfe47b94eb0f1a61ed895dcf619))
 
 - **ci**: Fix CI execution for PRs
-  ([`2bf9fe8`](https://github.com/enix/pvecontrol/commit/2bf9fe88868155ce6443d75cdeb98238e0c1d548))
+  ([`197c49f`](https://github.com/enix/pvecontrol/commit/197c49f35186c134f6e81a06f5ea8da2d1e71f32))
 
 - **ci**: Update file requirements-dev.txt
-  ([`3536c51`](https://github.com/enix/pvecontrol/commit/3536c5194f1859ce0eca889a99bbdf64a53d1453))
+  ([`13a540c`](https://github.com/enix/pvecontrol/commit/13a540cf0f18d4f38a202ed4ebc5f3e22878f551))
 
 - **pylint**: Add CI job for pylint
-  ([`58d29cd`](https://github.com/enix/pvecontrol/commit/58d29cd07312c5fc7719252b54c9919966188df9))
+  ([`579b436`](https://github.com/enix/pvecontrol/commit/579b4362f950fd5a8269499ee1907de24d3042c0))
 
 - **pylint**: Init pylint refacto
-  ([`2712d88`](https://github.com/enix/pvecontrol/commit/2712d882eec1ecaabe23a7e9438f6fa14720e384))
+  ([`2daa821`](https://github.com/enix/pvecontrol/commit/2daa82188abe6185bd1beeea7403a50551aa8a16))
 
 - **pylint**: Patch last needed
-  ([`17503b9`](https://github.com/enix/pvecontrol/commit/17503b966ed926cc76a1f6a669a9588da3b1a000))
+  ([`0d87cde`](https://github.com/enix/pvecontrol/commit/0d87cdee065bdbe5cef0dd6bd7e39f5a26ab9678))
 
 - **pylint**: Patch loop on pvecontrol module
-  ([`6eed68f`](https://github.com/enix/pvecontrol/commit/6eed68f0884342372227e74e6a92ac540c626a45))
+  ([`a218711`](https://github.com/enix/pvecontrol/commit/a218711a7af675fed3a3b64a76544196af8b9d3c))
 
 - **pylint**: Patch pvecontrol/actions/cluster.py
-  ([`62eb341`](https://github.com/enix/pvecontrol/commit/62eb341e5dcc42f6464e1f0ad240f7b37179f1d1))
+  ([`77725cb`](https://github.com/enix/pvecontrol/commit/77725cbf4460c8edda2189b209f859c7312dbc79))
 
 - **pylint**: Patch pvecontrol/actions/storage.py
-  ([`6669615`](https://github.com/enix/pvecontrol/commit/66696154d56bf0352f851ad209631a12c66ef18b))
+  ([`97a12c7`](https://github.com/enix/pvecontrol/commit/97a12c70d621574b58086178d041dbfb0b4e3469))
 
 - **pylint**: Patch pvecontrol/actions/task.py
-  ([`3106b23`](https://github.com/enix/pvecontrol/commit/3106b23fb7895f5e9cd11410f828993c6b403327))
+  ([`9332e6b`](https://github.com/enix/pvecontrol/commit/9332e6bf9a67ea74c771739d3a3020152fb83aa8))
 
 - **pylint**: Patch pvecontrol/actions/vm.py
-  ([`d453dfb`](https://github.com/enix/pvecontrol/commit/d453dfbd83efa89d2bdc5fe7202738b67da5ed32))
+  ([`611afb7`](https://github.com/enix/pvecontrol/commit/611afb71a9b4632407d270eb92b9b6c8bcbe00f0))
 
 - **pylint**: Patch pvecontrol/node.py
-  ([`2a81710`](https://github.com/enix/pvecontrol/commit/2a817101c1792071a110357f39b1856bd2404d29))
+  ([`5f27f0b`](https://github.com/enix/pvecontrol/commit/5f27f0b989b2b4529f3879fea3151379e70c6ac5))
 
 - **pylint**: Patch src/pvecontrol/cluster.py
-  ([`d1e1f78`](https://github.com/enix/pvecontrol/commit/d1e1f7850d405dffeb3540026f8c4c2ff5041a5d))
+  ([`17bb25e`](https://github.com/enix/pvecontrol/commit/17bb25e1b7d01b5c9c5608918738cc5869ff6796))
 
 - **pylint**: Patch src/pvecontrol/storage.py
-  ([`e3582ad`](https://github.com/enix/pvecontrol/commit/e3582ad360ad91c1fbd7f1596a8d4e5fdbc94b1d))
+  ([`363b079`](https://github.com/enix/pvecontrol/commit/363b079fbbea4a803a4cde86679d2e3fc4c4cd5e))
 
 - **pylint**: Patch src/pvecontrol/utils.py
-  ([`509f911`](https://github.com/enix/pvecontrol/commit/509f91128d908f18d0e6595e5b9e100a6b0f32f8))
+  ([`8b76209`](https://github.com/enix/pvecontrol/commit/8b76209d118ea7d91b377f237f6ae6d75972841a))
 
 - **pylint**: Patch typo
-  ([`6308701`](https://github.com/enix/pvecontrol/commit/630870192280a84e699101b86ec0559b2d83aa1e))
+  ([`8353a7e`](https://github.com/enix/pvecontrol/commit/8353a7ebe44e3d412e4b570e6d0d8655537833f7))
 
 - **pylint**: Rebase to branch black
-  ([`149ee27`](https://github.com/enix/pvecontrol/commit/149ee27e702bb7c5625e0a7901188c2acb5a8064))
+  ([`2c60f5e`](https://github.com/enix/pvecontrol/commit/2c60f5ee7d300f4fff0765f5d219d1bb6c71a01a))
 
 - **pylint**: Remove unnecessary pylint comment
-  ([`77e8329`](https://github.com/enix/pvecontrol/commit/77e832919c2bbedcba2452b2c6dca5b52dc1814d))
+  ([`d902a2e`](https://github.com/enix/pvecontrol/commit/d902a2ef137a26292cf064cb0353f687e6ba33a8))
 
 - **README**: Add documentation about shell auto completion
-  ([`239ef7a`](https://github.com/enix/pvecontrol/commit/239ef7a9618bac806d4a78c28799f25802a02c7d))
+  ([`2695418`](https://github.com/enix/pvecontrol/commit/26954187421b3be93aa947e4cbade4dd00e6b3e9))
 
 - **README**: Complete doc for release
-  ([`56d2fea`](https://github.com/enix/pvecontrol/commit/56d2fea73691cf69265e57b853fad37f7e61d9a6))
+  ([`c8143c2`](https://github.com/enix/pvecontrol/commit/c8143c28f0787c340a2f28b63464cf888752edb7))
 
 * docs: update README
 
@@ -203,100 +419,100 @@ Some tasks can deseappear from the API with time. So we must handle this case.
 Co-authored-by: Laurent Corbes <laurent.corbes@enix.fr>
 
 - **README**: Fix missing newline
-  ([`53e6924`](https://github.com/enix/pvecontrol/commit/53e6924ab1a2d626c549bee3220fe287f16af9f9))
+  ([`d091473`](https://github.com/enix/pvecontrol/commit/d09147347dd76faf2594a090b8f3d0b8a15a6d92))
 
 - **README**: Fix title
-  ([`5897f2a`](https://github.com/enix/pvecontrol/commit/5897f2a8b7af270b82d2c5a80952ee79c21df70d))
+  ([`16eedc4`](https://github.com/enix/pvecontrol/commit/16eedc40c6798676363a21931ae7e928b1e8688d))
 
 - **README**: With pylint modification dev command was updated
-  ([`d4071f6`](https://github.com/enix/pvecontrol/commit/d4071f6657bc8510c8eac79a062c19b2cba41783))
+  ([`305759c`](https://github.com/enix/pvecontrol/commit/305759ce51961bde3dcdfb25265268f49d794c2c))
 
 ### Features
 
 - --columns flag
-  ([`ef518d9`](https://github.com/enix/pvecontrol/commit/ef518d93e00e5cb8e94aa0b2ecb177441b1a043a))
+  ([`2397102`](https://github.com/enix/pvecontrol/commit/239710200aabbdfb642104eee134be993f1d101b))
 
 - Add --filter flag to node, task and vm
-  ([`65691ae`](https://github.com/enix/pvecontrol/commit/65691ae594194ca499f90ed751ae40a3ca9a95ca))
+  ([`4dfbb52`](https://github.com/enix/pvecontrol/commit/4dfbb527593e5e84d66ec68723d268bc0fb977d4))
 
 - Add --output option to list commands (supports text, json, csv and yaml)
-  ([`889dc9a`](https://github.com/enix/pvecontrol/commit/889dc9aad6e1742bc0caf7364663399e7b29fc0f))
+  ([`c1ee523`](https://github.com/enix/pvecontrol/commit/c1ee5233034f86baa4c62acea9a0a16da9c69515))
 
 - Add --sort-by flag
-  ([`e87a8cc`](https://github.com/enix/pvecontrol/commit/e87a8cc4073b9022b4e2be7c9f370fd834fbc456))
+  ([`0a0cf4d`](https://github.com/enix/pvecontrol/commit/0a0cf4dc12103a00a74e1f5204afcad69922ae18))
 
 - Add completion generation
-  ([`c431b37`](https://github.com/enix/pvecontrol/commit/c431b37e442b783fc5261c1b6d67e459eddd5819))
+  ([`3a38437`](https://github.com/enix/pvecontrol/commit/3a384374bf1dcd48abc7eccf1740170b1e7eea80))
 
 - Add sanitycheck VM has HA disks
-  ([`df14e9e`](https://github.com/enix/pvecontrol/commit/df14e9e86b8a6ade11302c6911985604cd07dc48))
+  ([`bcf535a`](https://github.com/enix/pvecontrol/commit/bcf535a174efee7d13242f80d31472174793f6d2))
 
 - Add sanitycheck VM has HA disks
-  ([`81ca806`](https://github.com/enix/pvecontrol/commit/81ca8066625b943eb8f85ab326c0c8abdc79f6ac))
+  ([`2722de8`](https://github.com/enix/pvecontrol/commit/2722de87f531da115e3a8a1ffdee2e409dabde90))
 
 - Add shell-like globbing on nodeevacuate --target flag
-  ([`8ae1582`](https://github.com/enix/pvecontrol/commit/8ae15823a7cb29bca3c74d77498b93e37fd1fd7a))
+  ([`d7b3393`](https://github.com/enix/pvecontrol/commit/d7b3393ace577c14ac24cfd72064b01e935d1fe9))
 
 based on fnmatch.fnmatchcase from python stdlib
 
 - Add support for authentication tokens
-  ([`1e44bb8`](https://github.com/enix/pvecontrol/commit/1e44bb8cfb3024274d1214e13c4d7495819cf872))
+  ([`7a913a8`](https://github.com/enix/pvecontrol/commit/7a913a8181383c016b4839088f0f74949a0e34f1))
 
 - Columns name validation (--sort-by & --filter flags)
-  ([`e59e1ac`](https://github.com/enix/pvecontrol/commit/e59e1acd4936c8c7a7e56e3ab9d27dbbc1fcca3e))
+  ([`7cd0bdb`](https://github.com/enix/pvecontrol/commit/7cd0bdb94d41f600dc1ac8cca1b623715fa3204b))
 
 - Implement cpufactor and memoryminimum by cluster
-  ([`e6e4f8f`](https://github.com/enix/pvecontrol/commit/e6e4f8f5c182aca2d316688fd0fc32ba7b0e6eaa))
+  ([`bab64bf`](https://github.com/enix/pvecontrol/commit/bab64bf302c82d7c73b24b7db2ecc11c55cff136))
 
 - **auth**: Add some checks on token auth
-  ([`bf4ffa5`](https://github.com/enix/pvecontrol/commit/bf4ffa586a0701a2ddd800291d8646f7b933ff95))
+  ([`4394cde`](https://github.com/enix/pvecontrol/commit/4394cdec2d140d2f03c2cc519241cb5182a9d870))
 
 - **auth**: Allow command on user, password config attributes
-  ([`8679dbc`](https://github.com/enix/pvecontrol/commit/8679dbc2eca9df285908db0e6989b0d116409805))
+  ([`c628f96`](https://github.com/enix/pvecontrol/commit/c628f96c7a4d860560f2c2be85820e46e3ce363a))
 
 - **auth**: Allow command on user, password config attributes
-  ([`90d41e9`](https://github.com/enix/pvecontrol/commit/90d41e9906fbe971a642b6d530a87c4adb82b2d3))
+  ([`ffe12dc`](https://github.com/enix/pvecontrol/commit/ffe12dc3a04bbf60bdf593754b06eb698a165968))
 
 - **auth**: Allow command on user, password config attributes
-  ([`2d46e63`](https://github.com/enix/pvecontrol/commit/2d46e63eb469f9e2d8a25176283a498031e7c4ab))
+  ([`92cf67d`](https://github.com/enix/pvecontrol/commit/92cf67d45cb316b981fcbb71b902bd5e5820e8d2))
 
 - **auth**: Update README.md
-  ([`50ec2e0`](https://github.com/enix/pvecontrol/commit/50ec2e02349267760011889c7800a320622b1081))
+  ([`01ca6fe`](https://github.com/enix/pvecontrol/commit/01ca6fecbd2fe8624111022fcdcb9c0fce728414))
 
 - **node**: Nodeevacuate add --wait flag
-  ([`1235191`](https://github.com/enix/pvecontrol/commit/1235191cef0b8a2d36db073c753aa89bc558fac5))
+  ([`edae9da`](https://github.com/enix/pvecontrol/commit/edae9da4db0d7678f85b6f9d1a165585fe76c936))
 
 - **sanitycheck**: Check HA VM has cpu type != host
-  ([`f6d4c39`](https://github.com/enix/pvecontrol/commit/f6d4c39777c247de9d92df5cc0e39cbf0caa208d))
+  ([`d5c7d1f`](https://github.com/enix/pvecontrol/commit/d5c7d1f0b7870818eed68aa334ad431af2cb17b2))
 
 - **sanitycheck**: Rewrite logic to run tests
-  ([`b2d8a50`](https://github.com/enix/pvecontrol/commit/b2d8a505ece8f916642cc77c0a9daa70d768135c))
+  ([`c8153c9`](https://github.com/enix/pvecontrol/commit/c8153c9fac5d991ff66aff909cbfe31dfd171eb9))
 
 - **sanitychecks**: Add colors support on ASCII icons
-  ([`de28a97`](https://github.com/enix/pvecontrol/commit/de28a97f9740ae0ed992287cedb5b799a852b6db))
+  ([`e8097c9`](https://github.com/enix/pvecontrol/commit/e8097c92d72ea993fe99b915df6a0d726b3eaf1b))
 
 - **storagelist**: Add missing --filter flag
-  ([`bbf348e`](https://github.com/enix/pvecontrol/commit/bbf348e8804679ded0b9b9d98a11a0937ab462ec))
+  ([`4d644fd`](https://github.com/enix/pvecontrol/commit/4d644fde98e2f8fe260509bc0ecb5de0ece8e8ea))
 
 - **storagelist**: Add storages list group shared by storage name
-  ([`1f0be0e`](https://github.com/enix/pvecontrol/commit/1f0be0e6c55d6247ae424716440c0f89a70a5642))
+  ([`361fc39`](https://github.com/enix/pvecontrol/commit/361fc39ec95ecbfc581ad05d78e2ea210c121192))
 
 - **tasks**: Taskget add --wait flag
-  ([`87dd240`](https://github.com/enix/pvecontrol/commit/87dd2407252134aca5d9bf35bf4e60da9c282afd))
+  ([`011db78`](https://github.com/enix/pvecontrol/commit/011db785d9a47ff33a25ff02ba56c969f0b06a98))
 
 - **vm**: Vmmigrate add --wait flag
-  ([`13c1bed`](https://github.com/enix/pvecontrol/commit/13c1bedec9847c265f290b7c0e6ed39726272ea5))
+  ([`8b8f1f1`](https://github.com/enix/pvecontrol/commit/8b8f1f1f8dd0f48a45516f41507b83a2f5963f5d))
 
 ### Refactoring
 
 - Default values of PVE objects (node, vm & task)
-  ([`a49a56c`](https://github.com/enix/pvecontrol/commit/a49a56c7c7d138f9cdbf4537dae6aab2572ab70a))
+  ([`4ca64ea`](https://github.com/enix/pvecontrol/commit/4ca64eaa4dfdce67c3d384901cd2db1a0e46e101))
 
 - Move tests in src directory
-  ([`ff64315`](https://github.com/enix/pvecontrol/commit/ff643158836c2f97e2fdf0e8064ade21030101da))
+  ([`98755da`](https://github.com/enix/pvecontrol/commit/98755da38f83ef3ef1daed953edfbdfa816699c2))
 
 - Simplify print_task
-  ([`5d42984`](https://github.com/enix/pvecontrol/commit/5d429848ec98291126b66fd3bf6e31f782ee014c))
+  ([`c65104f`](https://github.com/enix/pvecontrol/commit/c65104fc30cba247f00bb218665ae47a498a753e))
 
 
 ## v0.4.0 (2024-11-04)
