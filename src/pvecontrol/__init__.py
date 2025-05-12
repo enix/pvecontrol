@@ -136,6 +136,7 @@ def pvecontrol(ctx, debug, output, cluster):
 
 pvecontrol.add_command(cmd=actions.cluster.status, name="status")
 pvecontrol.add_command(cmd=actions.cluster.sanitycheck, name="sanitycheck")
+pvecontrol.add_command(cmd=actions.cluster_balance.balance, name="balance")
 pvecontrol.add_command(cmd=actions.node.root, name="node")
 pvecontrol.add_command(cmd=actions.storage.root, name="storage")
 pvecontrol.add_command(cmd=actions.task.root, name="task")
