@@ -9,6 +9,26 @@ from ortools.sat.python import cp_model
 
 # import numpy as np
 
+def displayer(vms: list[PVEVm], px: PVECluster, moves):
+    from rich.tree import Tree
+    from rich import print
+    from rich.panel import Panel
+    from rich.columns import Columns
+    def draw_tree(color):
+        t = Tree(px.name)
+        for node in sorted(px.nodes, key=lambda n: n.node):
+            n = t.add(f"[cyan][b]{node.node}[/b]")
+            for vm in filter(lambda vm: vm.node == node.node, vms):
+                if vms.index(vm) in [m[0] for m in moves]:
+                    n.add(f"[{color}]{ vm.name }")
+                else:
+                    n.add(f"{vm.name}")
+        return t
+    before = draw_tree('red')
+    for move in moves:
+        vms[move[0]].node = px.nodes[move[2]].node
+    after = draw_tree('green')
+    print(Columns([Panel(before), Panel(after)]))
 
 @click.command()
 @click.option(
@@ -16,8 +36,9 @@ from ortools.sat.python import cp_model
 )
 @click.option("-p", "--movement-penalty", default=0, type=int, help="Higher values minimize VM movement")
 @click.option("-d", "--dry-run", is_flag=True, help="Only print the `vm migrate` commands, doesn't take action")
+@click.option("-r", "--rich-display", is_flag=True, help="Use rich display")
 @click.pass_context
-def balance(ctx, anti_affinity, movement_penalty, dry_run):
+def balance(ctx, anti_affinity, movement_penalty, dry_run, rich_display):
     """Balances VMs across nodes in the cluster"""
     overcommit_factor = 1.2
     proxmox: PVECluster = PVECluster.create_from_config(ctx.obj["args"].cluster)
@@ -35,7 +56,6 @@ def balance(ctx, anti_affinity, movement_penalty, dry_run):
 
     node_map = {vm.name: node_idx for node_idx, node in enumerate(nodes) for vm in node.vms}
     initial_locations = {i: node_map.get(vm.name) for i, vm in enumerate(vms) if vm.name in node_map}
-
     model = cp_model.CpModel()
     vm_to_nodes = {
         (vm_index, node_index): model.NewBoolVar(f"vm_{vm_index}_to_node_{node_index}")
@@ -153,6 +173,9 @@ def balance(ctx, anti_affinity, movement_penalty, dry_run):
 
         #     group_distributions[gid] = group_dist
         #     group_variances[gid] = np.var(group_dist)
+
+        if rich_display:
+            displayer(vms, proxmox, moves)
 
         for move in moves:
             print(f"{sys.argv[0]} vm migrate --target {nodes[move[2]].node} {vms[move[0]].vmid}")
