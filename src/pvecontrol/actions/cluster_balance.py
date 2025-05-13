@@ -1,3 +1,4 @@
+import sys
 from itertools import chain
 import click
 
@@ -21,7 +22,8 @@ def balance(ctx, anti_affinity, movement_penalty, dry_run):
     overcommit_factor = 1.2
     proxmox: PVECluster = PVECluster.create_from_config(ctx.obj["args"].cluster)
     nodes: list[PVENode] = proxmox.nodes
-    vms: list[PVEVm] = list(chain.from_iterable(node.vms for node in nodes))
+    # keep only non-template instances
+    vms: list[PVEVm] = list(filter(lambda vm: vm.template == 0, chain.from_iterable(node.vms for node in nodes)))
     vms_count = len(vms)
     nodes_count = len(nodes)
     vm_params = [{"cpu": vm.cpus, "memory": vm.maxmem} for vm in vms]
@@ -152,7 +154,9 @@ def balance(ctx, anti_affinity, movement_penalty, dry_run):
         #     group_distributions[gid] = group_dist
         #     group_variances[gid] = np.var(group_dist)
 
-        print(moves)
+        for move in moves:
+            print(f"{sys.argv[0]} vm migrate --target {nodes[move[2]].node} {vms[move[0]].vmid}")
+
     else:
         print("failed")
     # print(vm_params)
