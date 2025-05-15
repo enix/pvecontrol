@@ -12,6 +12,7 @@ Here are a few examples of things you can do with `pvecontrol`:
 
 - List all VMs across all hypervisors, along with their state and size;
 - Evacuate (=drain) a hypervisor, i.e. migrate all VMs that are running on that hypervisor, automatically picking nodes with enough capacity to host these VMs.
+- Run sanity checks on a cluster. Sanity checks are sets of tests designed to verify the integrity of the cluster.
 
 To communicate with Proxmox VE, `pvecontrol` uses [proxmoxer](https://pypi.org/project/proxmoxer/), a wonderful library that enables communication with various Proxmox APIs.
 
