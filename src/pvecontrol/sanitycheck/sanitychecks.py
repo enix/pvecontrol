@@ -34,12 +34,25 @@ class SanityCheck:
                 size = max(size, len(msg))
         return size + 1
 
+    def display_footer(self):
+        title = "SUMMARY"
+        size = self._get_longest_message()
+        dash_size = int((size + 2 - len(title)) / 2)
+        print(f"{dash_size*'-'} {title} {dash_size*'-'}\n")
+        print(f"{'Total checks:':<20} {len(self._checks)}")
+        print(f"{'Critical:':<20} {len([check for check in self._checks if check.status == CheckCode.CRIT])}")
+        print(f"{'Warning:':<20} {len([check for check in self._checks if check.status == CheckCode.WARN])}")
+        print(f"{'OK:':<20} {len([check for check in self._checks if check.status == CheckCode.OK])}")
+        print(f"{'Info:':<20} {len([check for check in self._checks if check.status == CheckCode.INFO])}")
+
     def display(self):
         size = self._get_longest_message()
         current_type = None
         for check in self._checks:
             if current_type != check.type:
                 current_type = check.type
-                dash_size = int((size - (len(check.type.value) + 2)) / 2)
+                dash_size = int((size + 2 - len(check.type.value)) / 2)
                 print(f"{dash_size*'-'} {check.type.value} {dash_size*'-'}\n")
             check.display(size)
+        print("")
+        self.display_footer()

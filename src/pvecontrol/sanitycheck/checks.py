@@ -58,7 +58,7 @@ class CheckMessage:
 
     def display(self, padding_max_size):
         padding = padding_max_size - len(self.message)
-        msg = f"{self.message}{padding * '.'}{ICONS[self.code.value]}"
+        msg = f"- {self.message}{padding * '.'}{ICONS[self.code.value]}"
         print(msg)
 
     def __len__(self):
@@ -106,10 +106,10 @@ class Check(ABC):
 
     def display(self, padding_max_size):
         if terminal_support_colors():
-            name = f"{Fonts.BOLD}{self.name}{Fonts.END}\n"
+            name = f"{Fonts.BOLD}{self.name}{Fonts.END}"
         else:
-            name = f"{self.name}\n"
-        print(name)
+            name = f"{self.name}"
+        print(f"{name}: {ICONS[self.status.value]}\n")
 
         for msg in self.messages:
             msg.display(padding_max_size)
