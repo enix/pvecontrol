@@ -116,15 +116,27 @@ class IgnoreRequiredForHelp(click.Group):
     required=True,
     help="Proxmox cluster name as defined in configuration",
 )
+@click.option(
+    "--unicode/--no-unicode",
+    envvar="UNICODE",
+    default=True,
+    help="Use unicode characters for output",
+)
+@click.option(
+    "--color/--no-color",
+    envvar="COLOR",
+    default=True,
+    help="Use colorized output",
+)
 @click.pass_context
-def pvecontrol(ctx, debug, output, cluster):
+def pvecontrol(ctx, debug, output, cluster, unicode, color):
     signal.signal(signal.SIGINT, lambda *_: sys.exit(130))
     # Disable urllib3 warnings about invalid certs
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     if not ctx.command.ignoring:
         # get cli arguments
-        args = SimpleNamespace(output=output, cluster=cluster)
+        args = SimpleNamespace(output=output, cluster=cluster, unicode=unicode, color=color)
 
         # configure logging
         logging.basicConfig(encoding="utf-8", level=logging.DEBUG if debug else logging.INFO)

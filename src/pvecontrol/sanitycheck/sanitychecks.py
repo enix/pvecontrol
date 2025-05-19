@@ -5,16 +5,18 @@ from pvecontrol.sanitycheck.tests import DEFAULT_CHECKS, DEFAULT_CHECK_IDS
 
 class SanityCheck:
 
-    def __init__(self, proxmox: PVECluster):
+    def __init__(self, proxmox: PVECluster, colors=True, unicode=True):
         self._proxmox = proxmox
         self._checks = []
+        self._colors = colors
+        self._unicode = unicode
 
     def run(self, checks):
         if not checks:
             checks = DEFAULT_CHECK_IDS
 
         for key in checks:
-            check = DEFAULT_CHECKS[key](self._proxmox)
+            check = DEFAULT_CHECKS[key](self._proxmox, colors=self._colors, unicode=self._unicode)
             check.run()
             self._checks.append(check)
 
@@ -39,11 +41,11 @@ class SanityCheck:
         size = self._get_longest_message()
         dash_size = int((size + 2 - len(title)) / 2)
         print(f"{dash_size*'-'} {title} {dash_size*'-'}\n")
-        print(f"{'Total checks:':<20} {len(self._checks)}")
-        print(f"{'Critical:':<20} {len([check for check in self._checks if check.status == CheckCode.CRIT])}")
-        print(f"{'Warning:':<20} {len([check for check in self._checks if check.status == CheckCode.WARN])}")
-        print(f"{'OK:':<20} {len([check for check in self._checks if check.status == CheckCode.OK])}")
-        print(f"{'Info:':<20} {len([check for check in self._checks if check.status == CheckCode.INFO])}")
+        print(f"Total checks: {len(self._checks)}")
+        print(f"Critical: {len([check for check in self._checks if check.status == CheckCode.CRIT])}")
+        print(f"Warning: {len([check for check in self._checks if check.status == CheckCode.WARN])}")
+        print(f"OK: {len([check for check in self._checks if check.status == CheckCode.OK])}")
+        print(f"Info: {len([check for check in self._checks if check.status == CheckCode.INFO])}")
 
     def display(self):
         size = self._get_longest_message()

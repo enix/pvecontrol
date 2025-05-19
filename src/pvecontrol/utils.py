@@ -4,7 +4,6 @@ import sys
 import re
 import curses
 import json
-import os
 import subprocess
 
 from collections import OrderedDict
@@ -38,9 +37,6 @@ class OutputFormats(Enum):
 
 
 def terminal_support_colors():
-    if os.getenv("NO_COLOR"):
-        return False
-
     try:
         _stdscr = curses.initscr()
         curses.start_color()
@@ -51,10 +47,13 @@ def terminal_support_colors():
     except Exception:  # pylint: disable=broad-exception-caught
         return False
     finally:
-        curses.endwin()
+        try:
+            curses.endwin()
+        except Exception:  # pylint: disable=broad-exception-caught
+            pass
 
 
-def teminal_support_utf_8():
+def terminal_support_utf_8():
     return sys.stdout.encoding.lower() == "utf-8"
 
 
