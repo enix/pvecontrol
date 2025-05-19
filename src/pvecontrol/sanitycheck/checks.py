@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 
-from pvecontrol.utils import Fonts, teminal_support_utf_8, terminal_support_colors
+from pvecontrol.utils import Fonts, terminal_support_emojis, terminal_support_colors
 
 
 class CheckType(Enum):
@@ -40,25 +40,25 @@ ICONS_COLORED_ASCII = {
 }
 
 
-def set_icons():
-    if teminal_support_utf_8():
+def get_icons(colors=True, unicode=True):
+    if unicode and terminal_support_emojis():
         return ICONS_UTF8
-    if terminal_support_colors():
+    if colors and terminal_support_colors():
         return ICONS_COLORED_ASCII
     return ICONS_ASCII
 
 
-ICONS = set_icons()
-
-
 class CheckMessage:
-    def __init__(self, code: CheckCode, message):
+    def __init__(self, code: CheckCode, message, color=True, unicode=True):
         self.code = code
         self.message = message
+        self._colors = color
+        self._unicode = unicode
+        self._icon = get_icons(self._colors, self._unicode)[self.code.value]
 
     def display(self, padding_max_size):
         padding = padding_max_size - len(self.message)
-        msg = f"- {self.message}{padding * '.'}{ICONS[self.code.value]}"
+        msg = f"- {self.message}{padding * '.'}{self._icon}"
         print(msg)
 
     def __len__(self):
@@ -70,11 +70,13 @@ class Check(ABC):
     type = ""
     name = ""
 
-    def __init__(self, proxmox, messages=None):
+    def __init__(self, proxmox, messages=None, colors=True, unicode=True):
         if messages is None:
             messages = []
         self.proxmox = proxmox
         self.messages = messages
+        self._colors = colors
+        self._unicode = unicode
 
     @abstractmethod
     def run(self):
@@ -105,11 +107,11 @@ class Check(ABC):
             self.messages += messages
 
     def display(self, padding_max_size):
-        if terminal_support_colors():
+        if self._colors and terminal_support_colors():
             name = f"{Fonts.BOLD}{self.name}{Fonts.END}"
         else:
             name = f"{self.name}"
-        print(f"{name}: {ICONS[self.status.value]}\n")
+        print(f"{name}: {get_icons(self._colors, self._unicode)[self.status.value]}\n")
 
         for msg in self.messages:
             msg.display(padding_max_size)

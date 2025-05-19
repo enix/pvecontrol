@@ -197,19 +197,24 @@ Usage: pvecontrol [OPTIONS] COMMAND [ARGS]...
 
 Options:
   -d, --debug
-  -o, --output [text|json|csv|yaml]
+  -o, --output [text|json|csv|yaml|md]
                                   [default: text]
   -c, --cluster NAME              Proxmox cluster name as defined in
                                   configuration  [required]
+  --unicode / --no-unicode        Use unicode characters for output
+  --color / --no-color            Use colorized output
   --help                          Show this message and exit.
 
 Commands:
-  node         Node related commands
-  sanitycheck  Run sanity checks on the cluster
-  status       Show cluster status
-  storage      Storage related commands
-  task         Task related commands
-  vm           VM related commands
+  node evacuate  Evacuate a node by migrating all it's VM out to one or...
+  node list      List nodes in the cluster
+  sanitycheck    Check status of proxmox Cluster
+  status         Show cluster status
+  storage list   List storages in the cluster
+  task get       Get detailled information about a task
+  task list      List tasks in the cluster
+  vm list        List VMs in the cluster
+  vm migrate     Migrate VMs in the cluster
 
   Made with love by Enix.io
 ```
@@ -226,7 +231,7 @@ Options:
   --help        Show this message and exit.
 ```
 
-The `-c` or `--cluster` flag is required in order to indicate on which cluster we want to work. You can also use the `PVECONTROL_CLUSTER` environment variable to set the default cluster.
+The `-c` or `--cluster` flag is required in order to indicate on which cluster we want to work.
 
 The simplest operation we can do to check that `pvecontrol` works correctly, and that authentication has been configured properly is `status`:
 
@@ -248,6 +253,14 @@ INFO:root:Proxmox cluster: my-test-cluster
 ```
 
 If this works, we're good to go!
+
+## Environment variables
+
+`pvecontrol` supports the following environment variables:
+- `PVECONTROL_CLUSTER`: the default cluster to use when no `-c` or `--cluster` option is specified.
+- `PVECONTROL_COLOR`: if set to `False`, it will disable all colorized output.
+- `PVECONTROL_UNICODE`: if set to `False`, it will disable all unicode output.
+
 
 ## Shell completion
 

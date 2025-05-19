@@ -23,7 +23,7 @@ class HaVms(Check):
 
         if not self.messages:
             msg = "HA VMS checked"
-            self.add_messages(CheckMessage(CheckCode.OK, msg))
+            self.add_messages(CheckMessage(CheckCode.OK, msg, color=self._colors, unicode=self._unicode))
 
     def _check_disk_ha_consistency(self, ha_vms):
         messages = []
@@ -44,7 +44,7 @@ class HaVms(Check):
 
         for vm in vms_not_consistent:
             msg = f"Node '{vm['node']}' has VM '{vm['name']}' with disk(s) '{', '.join(vm['disks'])}' not on shared storage"
-            messages.append(CheckMessage(CheckCode.CRIT, msg))
+            messages.append(CheckMessage(CheckCode.CRIT, msg, color=self._colors, unicode=self._unicode))
 
         return messages
 
@@ -53,8 +53,8 @@ class HaVms(Check):
         for vm in ha_vms:
             if vm.config.get("cpu", "") == "host":
                 msg = f"Node '{vm.node}' has VM '{vm.name}' with cpu type host"
-                messages.append(CheckMessage(CheckCode.WARN, msg))
+                messages.append(CheckMessage(CheckCode.WARN, msg, color=self._colors, unicode=self._unicode))
             else:
                 msg = f"Node '{vm.node}' has VM '{vm.name}' with cpu type {vm.config.get('cpu', 'Default')}"
-                messages.append(CheckMessage(CheckCode.OK, msg))
+                messages.append(CheckMessage(CheckCode.OK, msg, color=self._colors, unicode=self._unicode))
         return messages

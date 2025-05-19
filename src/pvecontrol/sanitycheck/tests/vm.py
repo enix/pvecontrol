@@ -26,18 +26,18 @@ class VmsStartOnBoot(Check):
     def _check_vm_statonboot_enabled(self, vm):
         if vm.status == VmStatus.RUNNING:
             msg = f"VM '{vm.vmid}/{vm.name}' has the good 'startonboot' option"
-            self.add_messages(CheckMessage(CheckCode.OK, msg))
+            self.add_messages(CheckMessage(CheckCode.OK, msg, color=self._colors, unicode=self._unicode))
         elif vm.status == VmStatus.STOPPED:
             msg = f"VM '{vm.vmid}/{vm.name}' is stopped but 'startonboot' is set to true"
-            self.add_messages(CheckMessage(CheckCode.CRIT, msg))
+            self.add_messages(CheckMessage(CheckCode.CRIT, msg, color=self._colors, unicode=self._unicode))
 
     def _check_vm_statonboot_disabled(self, vm):
         if vm.status == VmStatus.STOPPED:
             msg = f"VM '{vm.vmid}/{vm.name}' has the good 'startonboot' option"
-            self.add_messages(CheckMessage(CheckCode.OK, msg))
+            self.add_messages(CheckMessage(CheckCode.OK, msg, color=self._colors, unicode=self._unicode))
         elif vm.status == VmStatus.RUNNING:
             msg = f"VM '{vm.vmid}/{vm.name}' is running but 'startonboot' is set to false"
-            self.add_messages(CheckMessage(CheckCode.CRIT, msg))
+            self.add_messages(CheckMessage(CheckCode.CRIT, msg, color=self._colors, unicode=self._unicode))
 
 
 class DiskUnused(Check):
@@ -66,7 +66,7 @@ class DiskUnused(Check):
             if "unused" not in key:
                 continue
             msg = f"Disk '{key}' is not used on vm {vm.vmid}/{vm.name}"
-            self.add_messages(CheckMessage(CheckCode.CRIT, msg))
+            self.add_messages(CheckMessage(CheckCode.CRIT, msg, color=self._colors, unicode=self._unicode))
 
     def _check_local_storage_disk_is_unused(self, storage: PVEStorage):
         node = self.proxmox.find_node(storage.node)
@@ -78,14 +78,14 @@ class DiskUnused(Check):
 
         msg = f"Storage '{storage.node}/{storage.storage}' have {len(images) - len(unused_images)}/{len(images)} disk used"
         code = CheckCode.WARN if len(unused_images) > 0 else CheckCode.OK
-        self.add_messages(CheckMessage(code, msg))
+        self.add_messages(CheckMessage(code, msg, color=self._colors, unicode=self._unicode))
 
         if len(unused_images) == 0:
             return
 
         for image in unused_images:
             msg = f"Disk '{storage.node}/{image.volid}' is not used, vm {image.vmid} doesn't exists on node"
-            self.add_messages(CheckMessage(CheckCode.CRIT, msg))
+            self.add_messages(CheckMessage(CheckCode.CRIT, msg, color=self._colors, unicode=self._unicode))
 
     def _check_shared_storage_disk_is_unused(self, storage: PVEStorage):
         images = storage.images
@@ -95,4 +95,4 @@ class DiskUnused(Check):
 
         for image in unused_images:
             msg = f"Disk '{storage.node}/{image.volid}' is not used, vm {image.vmid} doesn't exists"
-            self.add_messages(CheckMessage(CheckCode.CRIT, msg))
+            self.add_messages(CheckMessage(CheckCode.CRIT, msg, color=self._colors, unicode=self._unicode))

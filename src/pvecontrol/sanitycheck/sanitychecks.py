@@ -5,16 +5,18 @@ from pvecontrol.sanitycheck.tests import DEFAULT_CHECKS, DEFAULT_CHECK_IDS
 
 class SanityCheck:
 
-    def __init__(self, proxmox: PVECluster):
+    def __init__(self, proxmox: PVECluster, colors=True, unicode=True):
         self._proxmox = proxmox
         self._checks = []
+        self._colors = colors
+        self._unicode = unicode
 
     def run(self, checks):
         if not checks:
             checks = DEFAULT_CHECK_IDS
 
         for key in checks:
-            check = DEFAULT_CHECKS[key](self._proxmox)
+            check = DEFAULT_CHECKS[key](self._proxmox, colors=self._colors, unicode=self._unicode)
             check.run()
             self._checks.append(check)
 

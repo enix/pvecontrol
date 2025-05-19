@@ -19,11 +19,11 @@ class VmBackups(Check):
             vm_enabled_backup_ids = [backup.id for backup in vm_backup_jobs if backup.enabled == 1]
             if len(vm_enabled_backup_ids) > 0:
                 msg = f"Vm {vm.vmid} ({vm.name}) is associated to {len(vm_enabled_backup_ids)} enabled backup job(s)"
-                self.add_messages(CheckMessage(CheckCode.OK, msg))
+                self.add_messages(CheckMessage(CheckCode.OK, msg, color=self._colors, unicode=self._unicode))
                 backuped_vms.append(vm)
             else:
                 msg = f"Vm {vm.vmid} ({vm.name}) is not associated to any backup job"
-                self.add_messages(CheckMessage(CheckCode.WARN, msg))
+                self.add_messages(CheckMessage(CheckCode.WARN, msg, color=self._colors, unicode=self._unicode))
         return backuped_vms
 
     def _check_backup_ran_recently(self, vms):

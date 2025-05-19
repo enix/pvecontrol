@@ -15,19 +15,19 @@ class Nodes(Check):
         for node in self.proxmox.nodes:
             if self._mem_is_overcommited(node.maxmem, self.proxmox.config["node"]["memoryminimum"], node.allocatedmem):
                 msg = f"Node '{node.node}' is in mem overcommit status: {node.allocatedmem} allocated but {node.maxmem} available"
-                self.add_messages(CheckMessage(CheckCode.CRIT, msg))
+                self.add_messages(CheckMessage(CheckCode.CRIT, msg, color=self._colors, unicode=self._unicode))
             else:
                 msg = f"Node '{node.node}' isn't in mem overcommit"
-                self.add_messages(CheckMessage(CheckCode.OK, msg))
+                self.add_messages(CheckMessage(CheckCode.OK, msg, color=self._colors, unicode=self._unicode))
 
     def _check_cpu_overcommit(self):
         for node in self.proxmox.nodes:
             if self._cpu_is_overcommited(node.maxcpu, self.proxmox.config["node"]["cpufactor"], node.allocatedcpu):
                 msg = f"Node {node.node} is in cpu overcommit status: {node.allocatedcpu} allocated but {node.maxcpu} available"
-                self.add_messages(CheckMessage(CheckCode.WARN, msg))
+                self.add_messages(CheckMessage(CheckCode.WARN, msg, color=self._colors, unicode=self._unicode))
             else:
                 msg = f"Node '{node.node}' isn't in cpu overcommit"
-                self.add_messages(CheckMessage(CheckCode.OK, msg))
+                self.add_messages(CheckMessage(CheckCode.OK, msg, color=self._colors, unicode=self._unicode))
 
     def _cpu_is_overcommited(self, maxcpu, cpufactor, allocated_cpu):
         return (maxcpu * cpufactor) <= allocated_cpu
