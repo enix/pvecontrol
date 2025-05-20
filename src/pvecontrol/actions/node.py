@@ -29,7 +29,7 @@ def root():
 @click.pass_context
 # FIXME: remove pylint disable annotations
 # pylint: disable=too-many-branches,too-many-statements,too-many-locals
-def evacuate(ctx, node, target, follow, wait, dry_run, online, no_skip_stopped):
+def evacuate(ctx, node, target, dry_run, online, follow, wait, no_skip_stopped):
     """Evacuate a node by migrating all it's VM out to one or multiple target nodes"""
     # check node exists
     proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
@@ -95,7 +95,7 @@ def evacuate(ctx, node, target, follow, wait, dry_run, online, no_skip_stopped):
                     {
                         "vmid": vm.vmid,
                         "vm": vm,
-                        "node": node,
+                        "node": srcnode,
                         "target": target,
                     }
                 )
@@ -117,7 +117,7 @@ def evacuate(ctx, node, target, follow, wait, dry_run, online, no_skip_stopped):
         print("No VM to migrate")
         return
     for p in plan:
-        print(f"Migrating VM {p['vmid']} ({p['vm'].name}) from {p['node']} to {p['target'].node}")
+        print(f"Migrating VM {p['vmid']} ({p['vm'].name}) from {p['node'].node} to {p['target'].node}")
     confirmation = input("Confirm (yes):")
     logging.debug("Confirmation input: %s", confirmation)
     if confirmation.lower() != "yes":
@@ -126,7 +126,7 @@ def evacuate(ctx, node, target, follow, wait, dry_run, online, no_skip_stopped):
     # run migrations
 
     for p in plan:
-        print(f"Migrate VM: {p['vmid']} / {p['vm'].name} from {p['node']} to {p['target'].node}")
+        print(f"Migrate VM: {p['vmid']} / {p['vm'].name} from {p['node'].node} to {p['target'].node}")
         if not dry_run:
             upid = p["vm"].migrate(p["target"].node, online)
             logging.debug("Migration UPID: %s", upid)
