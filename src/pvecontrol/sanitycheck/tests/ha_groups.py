@@ -12,8 +12,8 @@ class HaGroups(Check):
             num_nodes = len(group["nodes"].split(","))
             if num_nodes < 2:
                 msg = f"Group {group['group']} contain only {num_nodes} node"
-                self.add_messages(CheckMessage(CheckCode.CRIT, msg))
+                self.add_messages(CheckMessage(CheckCode.CRIT, msg, color=self._colors, unicode=self._unicode))
 
         if not self.messages:
             msg = "HA Group checked"
-            self.add_messages(CheckMessage(CheckCode.OK, msg))
+            self.add_messages(CheckMessage(CheckCode.OK, msg, color=self._colors, unicode=self._unicode))
