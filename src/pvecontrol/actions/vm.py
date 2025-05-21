@@ -2,10 +2,11 @@ import logging
 import sys
 
 import click
+import proxmoxer.core
 
 from pvecontrol.utils import print_task
 from pvecontrol.cli import ResourceGroup, migration_related_command
-from pvecontrol.models.vm import COLUMNS
+from pvecontrol.models.vm import PVEVm, COLUMNS
 from pvecontrol.models.cluster import PVECluster
 
 
@@ -83,6 +84,26 @@ def migrate(ctx, vmid, target, online, follow, wait, dry_run):
         print("Dry run, skipping migration")
 
 
+@root.command()
+@click.argument("vmid", type=int)
+@click.option("-t", "--target", metavar="NODEID", required=True, help="ID of the target node")
+@click.option("-a", "--archive", metavar="ARCHIVE", required=True, help="The archive to restore")
+@click.option("-s", "--storage", metavar="STORAGE", help="The storage to read the archive from")
+@click.option("-f", "--force", is_flag=True, help="Overwrite existing VM")
+@click.pass_context
+def restore(ctx, vmid, target, archive, storage, force):
+    """Restore a VM from a backup archive"""
+
+    proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
+
+    try:
+        PVEVm.create(proxmox, vmid, target, archive=archive, storage=storage, force=force)
+    except proxmoxer.core.ResourceException as e:
+        logging.error("Error creating VM: %s", e)
+        sys.exit(1)
+
+
+# FIXME: merge with PVECluster.get_vm()
 def _get_vm(proxmox, vmid):
     for v in proxmox.vms:
         logging.debug("_get_vm: %s", v)
