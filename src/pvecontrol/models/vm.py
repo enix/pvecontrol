@@ -77,6 +77,12 @@ class PVEVm:
         upid = self._api.nodes(self.node).qemu(self.vmid).migrate.post(**options)
         return upid
 
+    @staticmethod
+    def create(proxmox, vmid, target, **options):
+        if "force" in options:
+            options["force"] = 1 if options["force"] else 0
+        return proxmox.api.nodes(target).qemu().post(vmid=vmid, **options)
+
     def get_backup_jobs(self, proxmox):
         vm_backup_jobs = []
         for backup_job in proxmox.backup_jobs:
