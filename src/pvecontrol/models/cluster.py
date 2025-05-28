@@ -29,28 +29,10 @@ class PVECluster:
         self._ha = None
         self._backups = None
         self._backup_jobs = None
-        self._initstatus()
-
-    def _initstatus(self):
         self.status = self.api.cluster.status.get()
         self.resources = self.api.cluster.resources.get()
-
-        self.nodes = []
-        for node in self.resources_nodes:
-            self.nodes.append(
-                PVENode(
-                    self,
-                    node["node"],
-                    node["status"],
-                    kwargs=node,
-                )
-            )
-
-        self.storages = []
-        for storage in self.resources_storages:
-            self.storages.append(
-                PVEStorage(self.api, storage.pop("node"), storage.pop("id"), storage.pop("shared"), **storage)
-            )
+        self.nodes = [PVENode(self, **node) for node in self.resources_nodes]
+        self.storages = [PVEStorage(self.api, **storage) for storage in self.resources_storages]
 
     @staticmethod
     def create_from_config(cluster_name):
@@ -249,9 +231,7 @@ class PVECluster:
                 logging.debug("Find storage: %s", (str(item)))
                 for backup in item["storage"].get_content("backup"):
                     logging.debug("New vm backup: %s", (str(backup)))
-                    self._backups.append(
-                        PVEVolume(backup.pop("volid"), backup.pop("format"), backup.pop("size"), **backup)
-                    )
+                    self._backups.append(PVEVolume(**backup))
         return self._backups
 
     @property
