@@ -109,7 +109,7 @@ def evacuate(ctx, node, target, dry_run, online, follow, wait, no_skip_stopped):
                 )
                 break
         else:
-            print("No target found for VM %s", vm.vmid)
+            print(f"No target found for VM {vm.vmid} ({vm.name}), skipping")
 
     logging.debug(plan)
     # validate input

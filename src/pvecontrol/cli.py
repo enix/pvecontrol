@@ -78,7 +78,7 @@ def task_related_command(func):
 
 def migration_related_command(func):
     func = click.option("--dry-run", is_flag=True, help="Dry run, do not execute migration for real")(func)
-    func = click.option("--online", is_flag=True, default=False, help="Perform anonline migration")(func)
+    func = click.option("--online", is_flag=True, default=False, help="Perform an online migration")(func)
     func = task_related_command(func)
     return func
 
