@@ -33,8 +33,6 @@ class PVECluster:
         self.resources = self.api.cluster.resources.get()
         self.nodes = [PVENode(self, **node) for node in self.resources_nodes]
         self.storages = [PVEStorage(self.api, **storage) for storage in self.resources_storages]
-        for bu in self.backup_jobs:
-            print(bu)
 
     @staticmethod
     def create_from_config(cluster_name):
