@@ -1,4 +1,6 @@
+from dataclasses import dataclass, field
 from enum import Enum
+from typing import Optional
 
 
 COLUMNS = ["vmid", "name", "status", "node", "cpus", "maxmem", "maxdisk", "tags"]
@@ -13,31 +15,37 @@ class VmStatus(Enum):
     PRELAUNCH = 5
 
 
-class PVEVm:
+@dataclass
+class PVEVmData:
+    api: object = None
+    node: str = field(default="")
+    status: Optional["VmStatus"] = None
+    vmid: int = field(default=0)
+    name: str = field(default="")
+    lock: str = field(default="")
+    pool: str = field(default="")
+    maxcpu: int = field(default=0)
+    maxdisk: int = field(default=0)
+    maxmem: int = field(default=0)
+    uptime: int = field(default=0)
+    tags: str = field(default="")
+    template: int = field(default=0)
+
+
+class PVEVm(PVEVmData):
     """Proxmox VE Qemu VM"""
 
     _api = None
+    _config = None
 
-    def __init__(self, api, node, vmid, status, kwargs=None):
-        if not kwargs:
-            kwargs = {}
-
-        self.vmid = vmid
-        self.status = VmStatus[status.upper()]
-        self.node = node
+    def __init__(self, api, **kwargs):
+        _values = {k: v for k, v in kwargs.items() if hasattr(PVEVmData, k)}
+        super().__init__(**_values)
+        if isinstance(self.status, str):
+            self.status = VmStatus[self.status.upper()]
         self._api = api
-
-        self.name = kwargs.get("name", "")
-        self.lock = kwargs.get("lock", "")
-        self.cpus = kwargs.get("maxcpu", 0)
-        self.maxdisk = kwargs.get("maxdisk", 0)
-        self.maxmem = kwargs.get("maxmem", 0)
-        self.uptime = kwargs.get("uptime", 0)
-        self.tags = set(filter(None, kwargs.get("tags", "").split(";")))
-        self.template = kwargs.get("template", 0)
-        self.pool = kwargs.get("pool", "")
-
-        self._config = None
+        self.tags = set(filter(None, self.tags.split(";")))
+        self.cpus = self.maxcpu
 
     @property
     def config(self):
