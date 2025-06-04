@@ -1,6 +1,30 @@
 # CHANGELOG
 
 
+## v0.6.1 (2025-06-04)
+
+### Bug Fixes
+
+- Better sanity check output
+  ([`aad6126`](https://github.com/enix/pvecontrol/commit/aad6126509f76b906b1dcb80205195c49d8c46ea))
+
+- Patch terminal display
+  ([`e86f30d`](https://github.com/enix/pvecontrol/commit/e86f30d4bc0c30125ef95e37e729f7a1d3bb2bf0))
+
+- **migration**: Change default value of --online option
+  ([`4b1508b`](https://github.com/enix/pvecontrol/commit/4b1508b6b911a93e404967e07de14b0efd459e62))
+
+### Build System
+
+- Use python-semantic-release v9 instead of master
+  ([`da11a91`](https://github.com/enix/pvecontrol/commit/da11a91718f60b8e611de7618810eb9beea5a36c))
+
+### Chores
+
+- Update README.md
+  ([`0eb4fc9`](https://github.com/enix/pvecontrol/commit/0eb4fc9d966d821ee19189dc6410a3006761c733))
+
+
 ## v0.6.0 (2025-05-12)
 
 ### Bug Fixes
