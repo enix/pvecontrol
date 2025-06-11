@@ -153,6 +153,7 @@ class PVECluster:
 
         result = None
         node_name = None
+        # FIXME: wouldn't be easier AND faster to iterate over all nodes and vms directly?
         for vm in self.resources_vms:
             if vm["vmid"] == vm_id:
                 node_name = vm["node"]

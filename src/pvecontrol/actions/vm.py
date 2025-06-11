@@ -2,10 +2,11 @@ import logging
 import sys
 
 import click
+import proxmoxer.core
 
 from pvecontrol.utils import print_task
-from pvecontrol.cli import ResourceGroup, migration_related_command
-from pvecontrol.models.vm import COLUMNS
+from pvecontrol.cli import ResourceGroup, migration_related_command, task_related_command
+from pvecontrol.models.vm import PVEVm, COLUMNS
 from pvecontrol.models.cluster import PVECluster
 
 
@@ -77,12 +78,45 @@ def migrate(ctx, vmid, target, online, follow, wait, dry_run):
         # Suivre la task cree
         # pylint: disable=duplicate-code
         proxmox.refresh()
-        _task = proxmox.find_task(upid)
         print_task(proxmox, upid, follow, wait)
     else:
         print("Dry run, skipping migration")
 
 
+@root.command()
+@click.argument("vmid", type=int)
+@click.option("-t", "--target", metavar="NODEID", required=True, help="ID of the target node")
+@click.option(
+    "-a",
+    "--archive",
+    metavar="ARCHIVE",
+    required=True,
+    help="The archive to restore. Either the file system path to a .tar or .vma file or a proxmox storage backup volume identifier.",
+)
+@click.option(
+    "-s",
+    "--storage",
+    metavar="STORAGE",
+    help="Target storage ID where the VM's disks will be created (defaults to the storage from the backup configuration).",
+)
+@click.option("--force", is_flag=True, help="Overwrite existing VM")
+@task_related_command
+@click.pass_context
+def restore(ctx, vmid, target, archive, storage, force, follow, wait):
+    """Restore a VM from a backup archive"""
+
+    proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
+
+    try:
+        upid = PVEVm.create(proxmox, vmid, target, archive=archive, storage=storage, force=force)
+        proxmox.refresh()
+        print_task(proxmox, upid, follow, wait)
+    except proxmoxer.core.ResourceException as e:
+        logging.error("Error creating VM: %s", e)
+        sys.exit(1)
+
+
+# FIXME: merge with PVECluster.get_vm()
 def _get_vm(proxmox, vmid):
     for v in proxmox.vms:
         logging.debug("_get_vm: %s", v)
