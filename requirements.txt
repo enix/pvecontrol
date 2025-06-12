@@ -12,3 +12,5 @@ requests
 requests_toolbelt
 openssh_wrapper
 paramiko
+ortools
+rich
