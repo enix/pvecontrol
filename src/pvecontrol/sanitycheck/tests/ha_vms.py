@@ -1,6 +1,6 @@
 import re
 
-from pvecontrol.models.storage import StorageShared
+from pvecontrol.models.storage import PVEStorage, StorageShared
 from pvecontrol.sanitycheck.checks import Check, CheckType, CheckMessage, CheckCode
 
 
@@ -36,8 +36,8 @@ class HaVms(Check):
                 if not isinstance(v, str):
                     continue
                 if regex_result := re.search(regex, v):
-                    storage = self.proxmox.get_storage(regex_result.group(1))
-                    if storage is not None and StorageShared[storage.shared.upper()] != StorageShared.SHARED:
+                    storage: PVEStorage = self.proxmox.get_storage(regex_result.group(1))
+                    if storage is not None and storage.shared != StorageShared.SHARED:
                         result["disks"].append(k)
             if result["disks"]:
                 vms_not_consistent.append(result)

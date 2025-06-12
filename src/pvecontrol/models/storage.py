@@ -1,4 +1,6 @@
+from dataclasses import dataclass, field
 from enum import Enum
+from typing import Optional
 
 from pvecontrol.models.volume import PVEVolume
 
@@ -21,30 +23,34 @@ class StorageShared(Enum):
     SHARED = 1
 
 
-class PVEStorage:
+@dataclass
+class PVEStorageData:
+    api: object = None
+    node: str = field(default="")
+    id: str = field(default="")
+    shared: Optional["StorageShared"] = None
+    type: str = field(default="")
+    storage: str = field(default="")
+    maxdisk: int = field(default=0)
+    disk: int = field(default=0)
+    plugintype: str = field(default="")
+    status: str = field(default="")
+    content: str = field(default="")
+
+
+class PVEStorage(PVEStorageData):
     """Proxmox VE Storage"""
 
-    _default_kwargs = {
-        "storage": None,
-        "maxdisk": None,
-        "disk": None,
-        "plugintype": None,
-        "status": None,
-        "test": None,
-    }
+    _api = None
 
-    def __init__(self, api, node, storage_id, shared, **kwargs):
-        self.id = storage_id
-        self.short_id = storage_id.split("/")[-1]
-        self.node = node
+    def __init__(self, api, **kwargs):
+        super().__init__(**kwargs)
+        if isinstance(self.id, str):
+            self.short_id = self.id.rsplit("/", maxsplit=1)[-1]
         self._api = api
         self._content = {}
         self._details = {}
-
-        self.shared = STORAGE_SHARED_ENUM[shared]
-
-        for k, v in self._default_kwargs.items():
-            self.__setattr__(k, kwargs.get(k, v))
+        self.shared = StorageShared[STORAGE_SHARED_ENUM[self.shared].upper()]
 
     @property
     def details(self):
@@ -58,7 +64,7 @@ class PVEStorage:
         storages = {}
         for storage in proxmox.storages:
             value = {"storage": storage, "nodes": [], "usage": f"{storage.percentage:.1f}%"}
-            if StorageShared[storage.shared.upper()] == StorageShared.SHARED:
+            if storage.shared == StorageShared.SHARED:
                 storages[storage.storage] = storages.get(storage.storage, value)
                 storages[storage.storage]["nodes"] += [storage.node]
             else:
@@ -87,10 +93,7 @@ class PVEStorage:
 
     @property
     def images(self):
-        images = []
-        for image in self.get_content("images"):
-            images.append(PVEVolume(image.pop("volid"), image.pop("format"), image.pop("size"), **image))
-        return images
+        return [PVEVolume(**image) for image in self.get_content("images")]
 
     def get_content(self, content_type=None):
         if content_type not in self._content:
