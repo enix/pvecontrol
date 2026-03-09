@@ -2,7 +2,6 @@ from enum import Enum
 
 from pvecontrol.models.volume import PVEVolume
 
-
 STORAGE_SHARED_ENUM = ["local", "shared"]
 COLUMNS = [
     "storage",

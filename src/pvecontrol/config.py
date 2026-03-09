@@ -2,7 +2,6 @@ import logging
 import sys
 import confuse
 
-
 configtemplate = {
     "clusters": confuse.Sequence(
         {
