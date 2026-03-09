@@ -3,7 +3,7 @@ import sys
 import confuse
 
 configtemplate = {
-    "clusters": confuse.Sequence(
+    "clusters": confuse.Sequence(  # pylint: disable=abstract-class-instantiated
         {
             "name": str,
             "host": str,
