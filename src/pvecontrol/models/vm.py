@@ -1,6 +1,5 @@
 from enum import Enum
 
-
 COLUMNS = ["vmid", "name", "status", "node", "cpus", "maxmem", "maxdisk", "tags"]
 
 

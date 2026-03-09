@@ -2,7 +2,6 @@ from enum import Enum
 import proxmoxer.core
 from proxmoxer.tools import Tasks
 
-
 COLUMNS = [
     "upid",
     "exitstatus",

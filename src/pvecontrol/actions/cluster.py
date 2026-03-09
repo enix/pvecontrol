@@ -43,8 +43,7 @@ def status(ctx):
         return f"{d_usage}/{d_total}({d_percent:.1f}%)"
 
     if ctx.obj["args"].output == OutputFormats.TEXT:
-        print(
-            f"""\n\
+        print(f"""\n\
   Status: {cluster_status}
   VMs: {vms - templates}
   Templates: {templates}
@@ -56,8 +55,7 @@ def status(ctx):
     Offline: {len([node for node in proxmox.nodes if node.status == NodeStatus.OFFLINE])}
     Online: {len([node for node in proxmox.nodes if node.status == NodeStatus.ONLINE])}
     Unknown: {len([node for node in proxmox.nodes if node.status == NodeStatus.UNKNOWN])}
-"""
-        )
+""")
     else:
         render_table = [
             {
