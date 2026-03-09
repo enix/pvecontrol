@@ -1,6 +1,7 @@
 prettytable
 humanize
 confuse
+typing_extensions
 pyyaml
 urllib3
 shtab
