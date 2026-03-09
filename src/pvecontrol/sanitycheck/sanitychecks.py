@@ -1,4 +1,16 @@
+<<<<<<< ours
+||||||| ancestor
+from pvecontrol.models.cluster import PVECluster
+=======
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+>>>>>>> theirs
 from pvecontrol.sanitycheck.checks import CheckCode
+
+if TYPE_CHECKING:
+    from pvecontrol.models.cluster import PVECluster
 from pvecontrol.sanitycheck.tests import DEFAULT_CHECKS, DEFAULT_CHECK_IDS
 from pvecontrol.models.cluster import PVECluster
 
