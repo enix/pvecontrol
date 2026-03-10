@@ -32,6 +32,7 @@ class PVECluster:
         self._initstatus()
 
     def _initstatus(self):
+        self.version = self.api.version.get()
         self.status = self.api.cluster.status.get()
         self.resources = self.api.cluster.resources.get()
 
@@ -74,8 +75,13 @@ class PVECluster:
         if self._ha is not None:
             return self._ha
 
+        # use rules instead of ha in newer versions
+        if float(self.version['release']) >= 9.1:
+            _ha_groups= self.api.cluster.ha.rules.get()
+        else:
+            _ha_groups= self.api.cluster.ha.groups.get()
         self._ha = {
-            "groups": self.api.cluster.ha.groups.get(),
+            "groups": _ha_groups,
             "manager_status": self.api.cluster.ha.status.manager_status.get(),
             "resources": self.api.cluster.ha.resources.get(),
         }

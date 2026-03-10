@@ -16,6 +16,7 @@ from pvecontrol.utils import OutputFormats, render_output
 def status(ctx):
     """Show cluster status"""
     proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
+    cluster_version = proxmox.version
     cluster_status = "healthy" if proxmox.is_healthy else "not healthy"
 
     templates = sum(len(node.templates) for node in proxmox.nodes)
@@ -44,6 +45,7 @@ def status(ctx):
 
     if ctx.obj["args"].output == OutputFormats.TEXT:
         print(f"""\n\
+  Version: {cluster_version['version']}
   Status: {cluster_status}
   VMs: {vms - templates}
   Templates: {templates}
