@@ -10,6 +10,7 @@ class VmStatus(Enum):
     SUSPENDED = 3
     POSTMIGRATE = 4
     PRELAUNCH = 5
+    UNKNOWN = 6
 
 
 class PVEVm:
