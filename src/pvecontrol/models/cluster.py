@@ -76,10 +76,10 @@ class PVECluster:
             return self._ha
 
         # use rules instead of ha in newer versions
-        if float(self.version['release']) >= 9.1:
-            _ha_groups= self.api.cluster.ha.rules.get()
+        if float(self.version["release"]) >= 9.1:
+            _ha_groups = self.api.cluster.ha.rules.get()
         else:
-            _ha_groups= self.api.cluster.ha.groups.get()
+            _ha_groups = self.api.cluster.ha.groups.get()
         self._ha = {
             "groups": _ha_groups,
             "manager_status": self.api.cluster.ha.status.manager_status.get(),
