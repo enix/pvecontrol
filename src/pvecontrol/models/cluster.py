@@ -153,6 +153,10 @@ class PVECluster:
     def is_healthy(self):
         return bool([item for item in self.status if item.get("type") == "cluster"][0]["quorate"])
 
+    @property
+    def cluster_name(self):
+        return str([item for item in self.status if item.get("type") == "cluster"][0]["name"])
+
     def get_vm(self, vm_id):
         if isinstance(vm_id, str):
             vm_id = int(vm_id)
@@ -230,7 +234,7 @@ class PVECluster:
     @property
     def disk_metrics(self):
         storages = self.resources_storages
-        total_disk = sum(node["maxdisk"] for node in storages)
+        total_disk = sum(node["maxdisk"] for node in storages if node["plugintype"] != "s3")
         total_disk_usage = sum(node["disk"] for node in storages)
         disk_percent = total_disk_usage / total_disk * 100 if total_disk else 0
 

@@ -22,6 +22,7 @@ class PVENode:
         self.node = node
         self.status = NodeStatus[status.upper()]
         self.cluster = cluster
+        self.version = self.api.nodes(self.node).version.get()
         self.cpu = kwargs.get("cpu", 0)
         self.allocatedcpu = 0
         self.maxcpu = kwargs.get("maxcpu", 0)

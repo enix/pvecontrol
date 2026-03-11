@@ -44,8 +44,10 @@ DEFAULT_VM_CONFIG = {
 }
 
 
-def mock_api_requests(nodes, vms, backup_jobs=None, storage_resources=None, storage_contents=None):
-    routes = generate_routes(nodes, vms, backup_jobs, storage_resources, storage_contents)
+def mock_api_requests(
+    nodes, vms, backup_jobs=None, storage_resources=None, storage_contents=None, ha_rules=None, ha_resources=None
+):
+    routes = generate_routes(nodes, vms, backup_jobs, storage_resources, storage_contents, ha_rules, ha_resources)
 
     def side_effect(method, url, **kwargs):
         content = execute_route(routes, method, url, **kwargs)
@@ -58,8 +60,10 @@ def mock_api_requests(nodes, vms, backup_jobs=None, storage_resources=None, stor
     return side_effect
 
 
-def create_response_wrapper(nodes, vms, backup_jobs=None, storage_resources=None, storage_contents=None):
-    routes = generate_routes(nodes, vms, backup_jobs, storage_resources, storage_contents)
+def create_response_wrapper(
+    nodes, vms, backup_jobs=None, storage_resources=None, storage_contents=None, ha_rules=None, ha_resources=None
+):
+    routes = generate_routes(nodes, vms, backup_jobs, storage_resources, storage_contents, ha_rules, ha_resources)
 
     def wrapper(path, data=None, **kwargs):
         kwargs["params"] = kwargs.get("params", {})
@@ -75,7 +79,9 @@ def create_response_wrapper(nodes, vms, backup_jobs=None, storage_resources=None
     return wrapper
 
 
-def generate_routes(nodes, vms, backup_jobs, storage_resources=None, storage_contents=None):
+def generate_routes(
+    nodes, vms, backup_jobs, storage_resources=None, storage_contents=None, ha_rules=None, ha_resources=None
+):
     storage_resources = storage_resources or []
     routes = {
         "/api2/json/version": {"version": "9.1.4", "release": "9.1", "repoid": "5ac30304265fbd8e"},
@@ -83,10 +89,12 @@ def generate_routes(nodes, vms, backup_jobs, storage_resources=None, storage_con
         "/api2/json/cluster/resources": get_resources(nodes, vms, storage_resources),
         "/api2/json/nodes": get_node_resources(nodes),
         "/api2/json/cluster/tasks": [],
+        "/api2/json/cluster/ha/rules": ha_rules or [],
         "/api2/json/cluster/ha/groups": [],
         "/api2/json/cluster/ha/status/manager_status": [],
-        "/api2/json/cluster/ha/resources": [],
+        "/api2/json/cluster/ha/resources": ha_resources or [],
         "/api2/json/cluster/backup": backup_jobs,
+        **generate_node_version_routes(nodes),
         **generate_vm_routes(nodes, vms),
         **generate_storages_contents_routes(nodes, storage_resources, storage_contents),
     }
@@ -137,6 +145,54 @@ def get_node_qemu_for_vm(vm):
         "pid": 454971,
         "cpus": 1,
     }
+
+
+def generate_node_version_routes(nodes):
+    return {
+        f"/api2/json/nodes/{node['status']['name']}/version": {
+            "version": "9.1.4",
+            "release": "9.1",
+            "repoid": "5ac30304265fbd8e",
+        }
+        for node in nodes
+    }
+
+
+def fake_ha_rule(rule_id, nodes, vm_ids):
+    """Fake HA rule (Proxmox >= 9.1)"""
+    return {
+        "rule": rule_id,
+        "nodes": ",".join(nodes),
+        "resources": ",".join(f"vm:{vmid}" for vmid in vm_ids),
+        "type": "node-affinity",
+        "strict": 0,
+        "order": 1,
+        "digest": "aabbccdd",
+        "comment": f"HA rule {rule_id}",
+    }
+
+
+def fake_ha_group(group_id, nodes):
+    """Fake HA group (Proxmox < 9.1)"""
+    return {
+        "group": group_id,
+        "nodes": ",".join(nodes),
+        "digest": "aabbccdd",
+        "comment": f"HA group {group_id}",
+    }
+
+
+def fake_ha_resource(vmid, group=None):
+    """Fake HA resource (Proxmox < 9.1, group field links to ha group)"""
+    resource = {
+        "sid": f"vm:{vmid}",
+        "type": "vm",
+        "state": "started",
+        "digest": "aabbccdd",
+    }
+    if group:
+        resource["group"] = group
+    return resource
 
 
 def generate_vm_routes(nodes, vms):
