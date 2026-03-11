@@ -49,6 +49,7 @@ class PVEControlTestcase(unittest.TestCase):
             self.nodes, self.vms, self.backup_jobs, self.storage_resources, self.storages_contents
         )
 
+        self.responses_get("/api2/json/version")
         self.responses_get("/api2/json/cluster/status")
         self.responses_get("/api2/json/cluster/resources")
 

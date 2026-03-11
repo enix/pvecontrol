@@ -78,6 +78,7 @@ def create_response_wrapper(nodes, vms, backup_jobs=None, storage_resources=None
 def generate_routes(nodes, vms, backup_jobs, storage_resources=None, storage_contents=None):
     storage_resources = storage_resources or []
     routes = {
+        "/api2/json/version": {"version": "9.1.4", "release": "9.1", "repoid": "5ac30304265fbd8e"},
         "/api2/json/cluster/status": get_status(nodes),
         "/api2/json/cluster/resources": get_resources(nodes, vms, storage_resources),
         "/api2/json/nodes": get_node_resources(nodes),
