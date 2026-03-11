@@ -45,6 +45,7 @@ def status(ctx):
 
     if ctx.obj["args"].output == OutputFormats.TEXT:
         print(f"""\n\
+  Name: {proxmox.cluster_name}
   Version: {cluster_version['version']}
   Status: {cluster_status}
   VMs: {vms - templates}
