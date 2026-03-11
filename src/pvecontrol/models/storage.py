@@ -1,3 +1,4 @@
+import logging
 from enum import Enum
 
 from pvecontrol.models.volume import PVEVolume
@@ -44,6 +45,11 @@ class PVEStorage:
 
         for k, v in self._default_kwargs.items():
             self.__setattr__(k, kwargs.get(k, v))
+        # We exclude s3 storage type sizing informations wich are not relevent.
+        # PVE api see missleading informations depending on s3 tool used to mount the filesystem thru fuse.
+        if self.plugintype == "s3":
+            self.disk = 0
+            self.maxdisk = 0
 
     @property
     def details(self):
@@ -93,9 +99,15 @@ class PVEStorage:
 
     def get_content(self, content_type=None):
         if content_type not in self._content:
-            self._content[content_type] = (
-                self._api.nodes(self.node).storage(self.short_id).content.get(content=content_type)
-            )
+            try:
+                self._content[content_type] = (
+                    self._api.nodes(self.node).storage(self.short_id).content.get(content=content_type)
+                )
+            except Exception:  # pylint: disable=broad-except
+                logging.warning(
+                    "Could not get content '%s' for storage %s on %s", content_type, self.storage, self.node
+                )
+                self._content[content_type] = []
         return self._content[content_type]
 
     def __str__(self):
