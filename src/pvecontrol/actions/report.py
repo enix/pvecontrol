@@ -172,6 +172,9 @@ def _build_report_data(proxmox):
     # Sanity checks must run before storages because get_flattened_grouped_list mutates PVEStorage objects
     sanity_checks = _build_sanity_check_section(proxmox)
 
+    # Sanity checks must run before storages because get_flattened_grouped_list mutates PVEStorage objects
+    sanity_checks = _build_sanity_check_section(proxmox)
+
     # Storage — extract only the columns we need to avoid serialization issues
     storage_columns = ["storage", "nodes", "shared", "usage", "maxdisk", "disk", "plugintype", "status"]
     node_count = len(proxmox.nodes)
