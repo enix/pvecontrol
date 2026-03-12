@@ -231,6 +231,14 @@ def _render_report(data, output=OutputFormats.MARKDOWN):
         lines.append("No HA groups configured.")
     lines.append("")
 
+    lines.append("## High Availability Groups")
+    lines.append("")
+    if data["ha_groups"]:
+        lines.append(render_output(data["ha_groups"], sortby="group", output=output))
+    else:
+        lines.append("No HA groups configured.")
+    lines.append("")
+
     lines.append("## Storage")
     lines.append("")
     if data["storages"]:
