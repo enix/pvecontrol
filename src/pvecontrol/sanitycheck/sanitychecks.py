@@ -9,9 +9,7 @@ from typing import TYPE_CHECKING
 >>>>>>> theirs
 from pvecontrol.sanitycheck.checks import CheckCode
 from pvecontrol.sanitycheck.tests import DEFAULT_CHECKS, DEFAULT_CHECK_IDS
-
-if TYPE_CHECKING:
-    from pvecontrol.models.cluster import PVECluster
+from pvecontrol.models.cluster import PVECluster
 from pvecontrol.models.cluster import PVECluster
 
 
