@@ -52,6 +52,10 @@ class PVEControlTestcase(unittest.TestCase):
         self.responses_get("/api2/json/version")
         self.responses_get("/api2/json/cluster/status")
         self.responses_get("/api2/json/cluster/resources")
+        for node in nodes:
+            name = node["status"]["name"]
+            self.responses_get(f"/api2/json/nodes/{name}/version")
+            self.responses_get(f"/api2/json/nodes/{name}/qemu")
 
         with patch("proxmoxer.backends.https.ProxmoxHTTPAuth") as mock_auth:
             mock_auth_instance = mock_auth.return_value

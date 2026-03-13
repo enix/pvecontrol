@@ -74,7 +74,7 @@ def render_output(table, columns=None, sortby=None, filters=None, output=OutputF
         filters = []
 
     if len(columns) == 0:
-        columns = table[0].keys()
+        columns = list(table[0].keys())
     else:
         table = [reorder_keys(n.__dict__ if hasattr(n, "__dict__") else n, columns) for n in table]
 
