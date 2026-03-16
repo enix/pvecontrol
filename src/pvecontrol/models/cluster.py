@@ -35,6 +35,8 @@ class PVECluster:
         self.version = self.api.version.get()
         self.status = self.api.cluster.status.get()
         self.resources = self.api.cluster.resources.get()
+        cluster_entry = [item for item in self.status if item.get("type") == "cluster"][0]
+        self.cluster_name = str(cluster_entry["name"])
 
         self.nodes = []
         for node in self.resources_nodes:
@@ -152,10 +154,6 @@ class PVECluster:
     @property
     def is_healthy(self):
         return bool([item for item in self.status if item.get("type") == "cluster"][0]["quorate"])
-
-    @property
-    def cluster_name(self):
-        return str([item for item in self.status if item.get("type") == "cluster"][0]["name"])
 
     def get_vm(self, vm_id):
         if isinstance(vm_id, str):

@@ -199,15 +199,20 @@ def _build_report_data(proxmox):
     }
 
 
+def _render_header(data):
+    return [
+        f"# Cluster Report: {data['cluster']}",
+        "",
+        f"- **Generated**: {data['generated_at']}",
+        f"- **Cluster Name**: {data['cluster name']}",
+        f"- **Version**: {data['version']}",
+        f"- **Status**: {data['status']}",
+        "",
+    ]
+
+
 def _render_report(data, output=OutputFormats.MARKDOWN):
-    lines = []
-    lines.append(f"# Cluster Report: {data['cluster']}")
-    lines.append("")
-    lines.append(f"- **Generated**: {data['generated_at']}")
-    lines.append(f"- **Cluster Name**: {data['cluster name']}")
-    lines.append(f"- **Version**: {data['version']}")
-    lines.append(f"- **Status**: {data['status']}")
-    lines.append("")
+    lines = _render_header(data)
 
     lines.append("## Resources Overview")
     lines.append("")
