@@ -34,12 +34,18 @@ To use `pvecontrol`, you must create a YAML configuration in `$HOME/.config/pvec
 
 HTTPS certificate verification is disabled by default, but can be enabled using the `ssl_verify` boolean.
 
-As an example, here's how to set up a dedicated user for `pvecontrol`, with read-only access to the Proxmox API:
+It is strongly recommended to create a dedicated Proxmox user for `pvecontrol` rather than using an existing admin account. This limits the blast radius in case of misconfiguration or credential leak, and makes it easy to audit or revoke access. Here's how to set up a dedicated user and role:
 
 ```shell
+pveum role add PVEControl --privs "Datastore.Audit,Datastore.AllocateSpace,Datastore.AllocateTemplate,Pool.Audit,SDN.Audit,Sys.Audit,VM.Audit,VM.Allocate,VM.Backup,VM.Clone,VM.Config.CDROM,VM.Config.CPU,VM.Config.Cloudinit,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Console,VM.Migrate,VM.Monitor,VM.PowerMgmt,VM.Snapshot,VM.Snapshot.Rollback"
 pveum user add pvecontrol@pve --password my.password.is.weak
-pveum acl modify / --roles PVEAuditor --users pvecontrol@pve
+pveum acl modify / --roles PVEControl --users pvecontrol@pve
 ```
+
+The `PVEControl` role combines:
+- `PVEAuditor`: read-only access to the Proxmox API
+- `PVEVMAdmin`: VM management including migrations
+- `PVEDatastoreUser` extra privileges (`Datastore.AllocateSpace`, `Datastore.AllocateTemplate`): required to list backups on PBS (Proxmox Backup Server) storages
 
 You can then create the following configuration file in `$HOME/.config/pvecontrol/config.yaml`:
 
@@ -56,18 +62,6 @@ And see `pvecontrol` in action right away:
 
 ```shell
 pvecontrol -c fr-par-1 vm list
-```
-
-If you plan to use `pvecontrol` to move VMs around, you should grant it `PVEVMAdmin` permissions:
-
-```shell
-pveum acl modify / --roles PVEVMAdmin --users pvecontrol@pve
-```
-
-If you have PBS (Proxmox Backup Server) storages and want `pvecontrol` to list their backups (e.g. for the `sanitycheck vm_backups` command), you should grant the `PVEDatastoreUser` role on each PBS datastore:
-
-```shell
-pveum acl modify /storage/<datastore-name> --roles PVEDatastoreUser --users pvecontrol@pve
 ```
 
 ### API tokens
