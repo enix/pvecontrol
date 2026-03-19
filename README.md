@@ -64,6 +64,12 @@ If you plan to use `pvecontrol` to move VMs around, you should grant it `PVEVMAd
 pveum acl modify / --roles PVEVMAdmin --users pvecontrol@pve
 ```
 
+If you have PBS (Proxmox Backup Server) storages and want `pvecontrol` to list their backups (e.g. for the `sanitycheck vm_backups` command), you should grant the `PVEDatastoreUser` role on each PBS datastore:
+
+```shell
+pveum acl modify /storage/<datastore-name> --roles PVEDatastoreUser --users pvecontrol@pve
+```
+
 ### API tokens
 
 `pvecontrol` also supports authentication with API tokens. A Proxmox API token is associated to an individual user, and can be given separate permissions and expiration dates. You can learn more about Proxmox tokens in [this section of the Proxmox documentation](https://pve.proxmox.com/pve-docs/pveum-plain.html#pveum_tokens).
