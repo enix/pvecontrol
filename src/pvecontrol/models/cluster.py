@@ -232,7 +232,7 @@ class PVECluster:
     @property
     def disk_metrics(self):
         storages = self.resources_storages
-        total_disk = sum(node["maxdisk"] for node in storages if node["plugintype"] != "s3")
+        total_disk = sum(node["maxdisk"] for node in storages)
         total_disk_usage = sum(node["disk"] for node in storages)
         disk_percent = total_disk_usage / total_disk * 100 if total_disk else 0
 
