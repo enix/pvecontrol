@@ -37,9 +37,9 @@ HTTPS certificate verification is disabled by default, but can be enabled using 
 It is strongly recommended to create a dedicated Proxmox user for `pvecontrol` rather than using an existing admin account. This limits the blast radius in case of misconfiguration or credential leak, and makes it easy to audit or revoke access. Here's how to set up a dedicated user and role:
 
 ```shell
-pveum role add PVEControl --privs "Datastore.Audit,Datastore.AllocateSpace,Datastore.AllocateTemplate,Pool.Audit,SDN.Audit,Sys.Audit,VM.Audit,VM.Allocate,VM.Backup,VM.Clone,VM.Config.CDROM,VM.Config.CPU,VM.Config.Cloudinit,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Console,VM.Migrate,VM.Monitor,VM.PowerMgmt,VM.Snapshot,VM.Snapshot.Rollback"
+pveum role add custom-PVEControl --privs "Datastore.Audit,Datastore.AllocateSpace,Datastore.AllocateTemplate,Pool.Audit,SDN.Audit,Sys.Audit,VM.Audit,VM.Allocate,VM.Backup,VM.Clone,VM.GuestAgent.Audit,VM.Migrate,VM.Replicate,VM.Snapshot,VM.Snapshot.Rollback"
 pveum user add pvecontrol@pve --password my.password.is.weak
-pveum acl modify / --roles PVEControl --users pvecontrol@pve
+pveum acl modify / --roles custom-PVEControl --users pvecontrol@pve
 ```
 
 The `PVEControl` role combines:
