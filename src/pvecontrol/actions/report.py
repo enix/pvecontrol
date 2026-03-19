@@ -217,9 +217,11 @@ def _render_report(data, output=OutputFormats.MARKDOWN):
     lines.append("## Resources Overview")
     lines.append("")
     lines.append("### Compute Resources")
+    lines.append("")
     lines.append(render_output(data["resource_overview"], output=output))
     lines.append("")
     lines.append("### Virtual Machines")
+    lines.append("")
     lines.append(render_output(data["vm_summary"], output=output))
     lines.append("")
 
@@ -273,7 +275,6 @@ def report(ctx):
     """Generate a resource usage report for the cluster"""
     proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
     output = ctx.obj["args"].output
-    data = _build_report_data(proxmox)
 
     supported = [OutputFormats.TEXT, OutputFormats.MARKDOWN]
     if output not in supported:
@@ -282,4 +283,5 @@ def report(ctx):
             f"Output format '{output}' is not supported by this command. Supported formats: {supported_str}"
         )
 
+    data = _build_report_data(proxmox)
     print(_render_report(data, output=output))
