@@ -91,6 +91,17 @@ def _backup_job_vm_selection(job):
     return ", ".join(vmids) if vmids else ""
 
 
+def _build_groups_data(proxmox):
+    return [
+        {
+            "groupid": group.groupid,
+            "comment": group.comment,
+            "members": ", ".join(user.userid for user in group.get_members(proxmox)),
+        }
+        for group in proxmox.groups
+    ]
+
+
 def _build_users_data(proxmox):
     users = []
     for user in proxmox.users:
@@ -215,6 +226,7 @@ def _build_report_data(proxmox):
         "storages": storages_data,
         "backup_jobs": _build_backup_jobs_data(proxmox),
         "users": _build_users_data(proxmox),
+        "groups": _build_groups_data(proxmox),
         "sanity_checks": sanity_checks,
     }
 
@@ -244,10 +256,22 @@ def _render_report(data, output=OutputFormats.MARKDOWN):
     lines.append("")
     lines.append(render_output(data["vm_summary"], output=output))
     lines.append("")
+
+    lines.append("## Access Control")
+    lines.append("")
     lines.append("### Users")
     lines.append("")
     if data["users"]:
         lines.append(render_output(data["users"], sortby="userid", output=output))
+    else:
+        lines.append("No users found.")
+    lines.append("")
+    lines.append("### Groups")
+    lines.append("")
+    if data["groups"]:
+        lines.append(render_output(data["groups"], sortby="groupid", output=output))
+    else:
+        lines.append("No groups found.")
     lines.append("")
 
     lines.append("## Proxmox VE Nodes")

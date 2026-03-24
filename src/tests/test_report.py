@@ -14,13 +14,14 @@ from tests.fixtures.api import (
     fake_ha_rule,
     fake_ha_resource,
     fake_user,
+    fake_group,
 )
 from pvecontrol.actions.report import _build_report_data, _build_ha_vmid_group_mapping, _render_report
 from pvecontrol.models.cluster import PVECluster
 
 
 def _make_cluster(
-    nodes, vms, backup_jobs=None, storage_resources=None, storages_contents=None, ha_rules=None, ha_resources=None, users=None
+    nodes, vms, backup_jobs=None, storage_resources=None, storages_contents=None, ha_rules=None, ha_resources=None, users=None, groups=None
 ):
     """Helper to create a PVECluster with all routes registered in the current responses context."""
     backup_jobs = backup_jobs or []
@@ -36,6 +37,7 @@ def _make_cluster(
         ha_rules=ha_rules,
         ha_resources=ha_resources,
         users=users,
+        groups=groups,
     )
     wrapper("/api2/json/version")
     wrapper("/api2/json/cluster/status")
@@ -55,6 +57,7 @@ def _make_cluster(
     wrapper("/api2/json/cluster/ha/resources")
     wrapper("/api2/json/cluster/backup")
     wrapper("/api2/json/access/users")
+    wrapper("/api2/json/access/groups")
 
     with patch("proxmoxer.backends.https.ProxmoxHTTPAuth") as mock_auth:
         mock_auth_instance = mock_auth.return_value
@@ -95,8 +98,12 @@ class ReportTestcase(unittest.TestCase):
                       firstname="Bob", lastname="Builder", email="bob@example.com", realm_type="pve"),
             fake_user("carol@pve", enable=0),
         ]
+        self.groups = [
+            fake_group("admins", comment="Administrators", users=["admin@pam"]),
+            fake_group("ops", comment="Operations", users=["bob@pve"]),
+        ]
 
-        cluster = _make_cluster(nodes, self.vms, backup_jobs, storage_resources, storages_contents, users=self.users)
+        cluster = _make_cluster(nodes, self.vms, backup_jobs, storage_resources, storages_contents, users=self.users, groups=self.groups)
         # preload ha (lazy) while responses mock is still active
         _ = cluster.ha
         self.data = _build_report_data(cluster)
@@ -114,6 +121,7 @@ class ReportTestcase(unittest.TestCase):
         assert "storages" in self.data
         assert "backup_jobs" in self.data
         assert "users" in self.data
+        assert "groups" in self.data
         assert "sanity_checks" in self.data
 
     def test_build_report_cluster_info(self):
@@ -209,6 +217,31 @@ class ReportTestcase(unittest.TestCase):
         s3 = next(s for s in storages if s["storage"] == "s3")
         assert s3["nodes"] == "All"
 
+    def test_build_report_groups_present(self):
+        assert "groups" in self.data
+
+    def test_build_report_groups_count(self):
+        assert len(self.data["groups"]) == len(self.groups)
+
+    def test_build_report_groups_fields(self):
+        for group in self.data["groups"]:
+            assert "groupid" in group
+            assert "comment" in group
+            assert "members" in group
+
+    def test_build_report_groups_members_resolved(self):
+        by_id = {g["groupid"]: g for g in self.data["groups"]}
+        assert "admin@pam" in by_id["admins"]["members"]
+        assert "bob@pve" in by_id["ops"]["members"]
+
+    def test_build_report_groups_members_only_cluster_users(self):
+        """Members listed must be users that exist in the cluster."""
+        cluster_userids = {u["userid"] for u in self.data["users"]}
+        for group in self.data["groups"]:
+            if group["members"]:
+                for member in group["members"].split(", "):
+                    assert member in cluster_userids
+
     def test_build_report_users_present(self):
         assert "users" in self.data
 
@@ -258,6 +291,7 @@ class ReportTestcase(unittest.TestCase):
         assert "## Virtual Machines" in md
         assert "## Storage" in md
         assert "## Users" in md
+        assert "## Groups" in md
 
     def test_render_report_contains_data(self):
         md = _render_report(self.data)

@@ -45,9 +45,9 @@ DEFAULT_VM_CONFIG = {
 
 
 def mock_api_requests(
-    nodes, vms, backup_jobs=None, storage_resources=None, storage_contents=None, ha_rules=None, ha_resources=None, users=None
+    nodes, vms, backup_jobs=None, storage_resources=None, storage_contents=None, ha_rules=None, ha_resources=None, users=None, groups=None
 ):
-    routes = generate_routes(nodes, vms, backup_jobs, storage_resources, storage_contents, ha_rules, ha_resources, users)
+    routes = generate_routes(nodes, vms, backup_jobs, storage_resources, storage_contents, ha_rules, ha_resources, users, groups)
 
     def side_effect(method, url, **kwargs):
         content = execute_route(routes, method, url, **kwargs)
@@ -61,9 +61,9 @@ def mock_api_requests(
 
 
 def create_response_wrapper(
-    nodes, vms, backup_jobs=None, storage_resources=None, storage_contents=None, ha_rules=None, ha_resources=None, users=None
+    nodes, vms, backup_jobs=None, storage_resources=None, storage_contents=None, ha_rules=None, ha_resources=None, users=None, groups=None
 ):
-    routes = generate_routes(nodes, vms, backup_jobs, storage_resources, storage_contents, ha_rules, ha_resources, users)
+    routes = generate_routes(nodes, vms, backup_jobs, storage_resources, storage_contents, ha_rules, ha_resources, users, groups)
 
     def wrapper(path, data=None, **kwargs):
         kwargs["params"] = kwargs.get("params", {})
@@ -80,7 +80,7 @@ def create_response_wrapper(
 
 
 def generate_routes(
-    nodes, vms, backup_jobs, storage_resources=None, storage_contents=None, ha_rules=None, ha_resources=None, users=None
+    nodes, vms, backup_jobs, storage_resources=None, storage_contents=None, ha_rules=None, ha_resources=None, users=None, groups=None
 ):
     storage_resources = storage_resources or []
     routes = {
@@ -95,6 +95,7 @@ def generate_routes(
         "/api2/json/cluster/ha/resources": ha_resources or [],
         "/api2/json/cluster/backup": backup_jobs,
         "/api2/json/access/users": users or [],
+        "/api2/json/access/groups": groups or [],
         **generate_node_version_routes(nodes),
         **generate_vm_routes(nodes, vms),
         **generate_storages_contents_routes(nodes, storage_resources, storage_contents),
@@ -361,6 +362,13 @@ def fake_backup(storage, vmid, created_at):
         "subtype": "qemu",
     }
     return fake_storage_content(storage, volid, "backup", "backup", int(created_at.timestamp()), "vma.zst", options)
+
+
+def fake_group(groupid, comment="", users=None):
+    group = {"groupid": groupid, "comment": comment}
+    if users:
+        group["users"] = ",".join(users) if isinstance(users, list) else users
+    return group
 
 
 def fake_user(userid, groups=None, expire=0, enable=1, firstname="", lastname="", email="", realm_type="pam"):

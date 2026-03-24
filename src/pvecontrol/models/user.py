@@ -40,5 +40,9 @@ class PVEUser:
         else:
             self.groups = list(groups)
 
+    def get_groups(self, proxmox):
+        """Return PVEGroup objects for each group this user belongs to."""
+        return [group for group in proxmox.groups if group.groupid in self.groups]
+
     def __str__(self):
         return f"PVEUser({self.userid})"
