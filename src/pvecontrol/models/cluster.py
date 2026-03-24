@@ -10,6 +10,7 @@ from pvecontrol.models.node import PVENode
 from pvecontrol.models.storage import PVEStorage
 from pvecontrol.models.task import PVETask
 from pvecontrol.models.backup_job import PVEBackupJob
+from pvecontrol.models.user import PVEUser
 from pvecontrol.models.volume import PVEVolume
 from pvecontrol.config import set_config
 
@@ -29,6 +30,7 @@ class PVECluster:
         self._ha = None
         self._backups = None
         self._backup_jobs = None
+        self._users = None
         self._initstatus()
 
     def _initstatus(self):
@@ -262,6 +264,12 @@ class PVECluster:
                         PVEVolume(backup.pop("volid"), backup.pop("format"), backup.pop("size"), **backup)
                     )
         return self._backups
+
+    @property
+    def users(self):
+        if self._users is None:
+            self._users = [PVEUser(**u) for u in self.api.access.users.get(full=1)]
+        return self._users
 
     @property
     def backup_jobs(self):
