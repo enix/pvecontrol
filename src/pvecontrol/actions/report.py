@@ -91,6 +91,25 @@ def _backup_job_vm_selection(job):
     return ", ".join(vmids) if vmids else ""
 
 
+def _build_users_data(proxmox):
+    users = []
+    for user in proxmox.users:
+        expire_str = datetime.fromtimestamp(user.expire).strftime("%Y-%m-%d") if user.expire else "Never"
+        users.append(
+            {
+                "userid": user.userid,
+                "firstname": user.firstname,
+                "lastname": user.lastname,
+                "email": user.email,
+                "realm-type": user.realm_type,
+                "enabled": "Yes" if user.enable else "No",
+                "expire": expire_str,
+                "groups": ", ".join(user.groups),
+            }
+        )
+    return users
+
+
 def _build_sanity_check_section(proxmox):
     sc = SanityCheck(proxmox, colors=False, unicode=False)
     sc.run(checks=DEFAULT_CHECK_IDS)
@@ -195,6 +214,7 @@ def _build_report_data(proxmox):
         "vm_list": vm_list,
         "storages": storages_data,
         "backup_jobs": _build_backup_jobs_data(proxmox),
+        "users": _build_users_data(proxmox),
         "sanity_checks": sanity_checks,
     }
 
@@ -223,6 +243,11 @@ def _render_report(data, output=OutputFormats.MARKDOWN):
     lines.append("### Virtual Machines")
     lines.append("")
     lines.append(render_output(data["vm_summary"], output=output))
+    lines.append("")
+    lines.append("### Users")
+    lines.append("")
+    if data["users"]:
+        lines.append(render_output(data["users"], sortby="userid", output=output))
     lines.append("")
 
     lines.append("## Proxmox VE Nodes")
