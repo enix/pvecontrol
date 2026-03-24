@@ -371,7 +371,7 @@ def fake_group(groupid, comment="", users=None):
     return group
 
 
-def fake_user(userid, groups=None, expire=0, enable=1, firstname="", lastname="", email="", realm_type="pam"):
+def fake_user(userid, groups=None, expire=0, enable=1, firstname="", lastname="", email="", realm_type="pam", tokens=None):
     user = {
         "userid": userid,
         "enable": enable,
@@ -383,4 +383,6 @@ def fake_user(userid, groups=None, expire=0, enable=1, firstname="", lastname=""
     }
     if groups:
         user["groups"] = ",".join(groups) if isinstance(groups, list) else groups
+    if tokens:
+        user["tokens"] = [{"tokenid": name, "expire": 0, "privsep": 1} for name in tokens]
     return user

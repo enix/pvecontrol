@@ -116,6 +116,7 @@ def _build_users_data(proxmox):
                 "enabled": "Yes" if user.enable else "No",
                 "expire": expire_str,
                 "groups": ", ".join(user.groups),
+                "tokens": ", ".join(user.tokens),
             }
         )
     return users

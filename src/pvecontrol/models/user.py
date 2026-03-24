@@ -1,4 +1,4 @@
-COLUMNS = ["userid", "firstname", "lastname", "email", "realm_type", "enable", "expire", "groups"]
+COLUMNS = ["userid", "firstname", "lastname", "email", "realm_type", "enable", "expire", "groups", "tokens"]
 
 
 class PVEUser:
@@ -39,6 +39,9 @@ class PVEUser:
             self.groups = [g for g in groups.split(",") if g]
         else:
             self.groups = list(groups)
+
+        tokens = kwargs.get("tokens") or []
+        self.tokens = [f"{self.userid}!{t['tokenid']}" for t in tokens if "tokenid" in t]
 
     def get_groups(self, proxmox):
         """Return PVEGroup objects for each group this user belongs to."""

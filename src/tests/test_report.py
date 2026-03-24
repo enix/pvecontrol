@@ -93,7 +93,8 @@ class ReportTestcase(unittest.TestCase):
         storages_contents = {node["status"]["name"]: {"s3": backups} for node in nodes}
         self.users = [
             fake_user("admin@pam", groups=["admins"], expire=0,
-                      firstname="Alice", lastname="Admin", email="alice@example.com", realm_type="pam"),
+                      firstname="Alice", lastname="Admin", email="alice@example.com", realm_type="pam",
+                      tokens=["ci-token", "backup-token"]),
             fake_user("bob@pve", groups=["ops"], expire=1900000000,
                       firstname="Bob", lastname="Builder", email="bob@example.com", realm_type="pve"),
             fake_user("carol@pve", enable=0),
@@ -255,6 +256,13 @@ class ReportTestcase(unittest.TestCase):
             assert "enabled" in user
             assert "expire" in user
             assert "groups" in user
+            assert "tokens" in user
+
+    def test_build_report_users_tokens(self):
+        by_id = {u["userid"]: u for u in self.data["users"]}
+        assert "admin@pam!ci-token" in by_id["admin@pam"]["tokens"]
+        assert "admin@pam!backup-token" in by_id["admin@pam"]["tokens"]
+        assert by_id["bob@pve"]["tokens"] == ""
 
     def test_build_report_users_sorted(self):
         userids = [u["userid"] for u in self.data["users"]]

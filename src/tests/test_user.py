@@ -13,6 +13,7 @@ def test_basic_instantiation():
     assert user.email == ""
     assert user.realm_type == ""
     assert user.groups == []
+    assert user.tokens == []
 
 
 def test_all_fields():
@@ -84,3 +85,23 @@ def test_invalid_expire_negative():
 def test_invalid_expire_string():
     with pytest.raises(ValueError, match="Invalid expire value"):
         PVEUser("admin@pam", expire="never")
+
+
+def test_tokens_from_list():
+    user = PVEUser("admin@pam", tokens=[
+        {"tokenid": "mytoken", "expire": 0, "privsep": 1},
+        {"tokenid": "citoken", "expire": 0, "privsep": 0},
+    ])
+    assert "admin@pam!mytoken" in user.tokens
+    assert "admin@pam!citoken" in user.tokens
+    assert len(user.tokens) == 2
+
+
+def test_tokens_empty_list():
+    user = PVEUser("admin@pam", tokens=[])
+    assert user.tokens == []
+
+
+def test_tokens_absent():
+    user = PVEUser("admin@pam")
+    assert user.tokens == []
