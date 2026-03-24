@@ -102,7 +102,16 @@ def create_response_wrapper(
 
 
 def generate_routes(
-    nodes, vms, backup_jobs, storage_resources=None, storage_contents=None, ha_rules=None, ha_resources=None, users=None, groups=None, acls=None
+    nodes,
+    vms,
+    backup_jobs,
+    storage_resources=None,
+    storage_contents=None,
+    ha_rules=None,
+    ha_resources=None,
+    users=None,
+    groups=None,
+    acls=None,
 ):
     storage_resources = storage_resources or []
     routes = {

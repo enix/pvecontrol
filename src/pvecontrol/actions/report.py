@@ -258,81 +258,55 @@ def _render_header(data):
     ]
 
 
+def _render_section(lines, title, description=None):
+    lines.append("## %s" % (title))
+    lines.append("")
+    if description:
+        lines.append(description)
+        lines.append("")
+
+
+def _render_table(lines, title, data_list, output, sortby=None, empty_msg=None):
+    lines.append("### %s" % (title))
+    lines.append("")
+    if data_list:
+        lines.append(render_output(data_list, sortby=sortby, output=output))
+    elif empty_msg:
+        lines.append(empty_msg)
+    lines.append("")
+
+
 def _render_report(data, output=OutputFormats.MARKDOWN):
     lines = _render_header(data)
 
-    lines.append("## Resources Overview")
-    lines.append("")
-    lines.append("### Compute Resources")
-    lines.append("")
-    lines.append(render_output(data["resource_overview"], output=output))
-    lines.append("")
-    lines.append("### Virtual Machines")
-    lines.append("")
-    lines.append(render_output(data["vm_summary"], output=output))
-    lines.append("")
+    _render_section(lines, "Resources Overview")
+    _render_table(lines, "Compute Resources", data["resource_overview"], output)
+    _render_table(lines, "Virtual Machines", data["vm_summary"], output)
 
-    lines.append("## Access Control")
-    lines.append("")
-    lines.append("### Users")
-    lines.append("")
-    if data["users"]:
-        lines.append(render_output(data["users"], sortby="userid", output=output))
-    else:
-        lines.append("No users found.")
-    lines.append("")
-    lines.append("### Groups")
-    lines.append("")
-    if data["groups"]:
-        lines.append(render_output(data["groups"], sortby="groupid", output=output))
-    else:
-        lines.append("No groups found.")
-    lines.append("")
-    lines.append("### Permissions")
-    lines.append("")
-    if data["acls"]:
-        lines.append(render_output(data["acls"], sortby="path", output=output))
-    else:
-        lines.append("No permissions configured.")
-    lines.append("")
+    _render_section(lines, "Access Control")
+    _render_table(lines, "Users", data["users"], output, sortby="userid", empty_msg="No users found.")
+    _render_table(lines, "Groups", data["groups"], output, sortby="groupid", empty_msg="No groups found.")
+    _render_table(lines, "Permissions", data["acls"], output, sortby="path", empty_msg="No permissions configured.")
 
-    lines.append("## Proxmox VE Nodes")
-    lines.append("")
-    lines.append(render_output(data["nodes"], sortby="node", output=output))
-    lines.append("")
+    _render_section(lines, "Detailled ressources")
+    _render_table(lines, "Nodes", data["nodes"], output, sortby="node")
+    _render_table(
+        lines,
+        "High Availability Groups",
+        data["ha_groups"],
+        output,
+        sortby="group",
+        empty_msg="No HA groups configured.",
+    )
+    _render_table(lines, "Storage", data["storages"], output, empty_msg="No storage data available.")
+    _render_table(lines, "Backup Jobs", data["backup_jobs"], output, empty_msg="No backup jobs configured.")
+    _render_table(lines, "Virtual Machines", data["vm_list"], output)
 
-    lines.append("## High Availability Groups")
-    lines.append("")
-    if data["ha_groups"]:
-        lines.append(render_output(data["ha_groups"], sortby="group", output=output))
-    else:
-        lines.append("No HA groups configured.")
-    lines.append("")
-
-    lines.append("## Storage")
-    lines.append("")
-    if data["storages"]:
-        lines.append(render_output(data["storages"], output=output))
-    else:
-        lines.append("No storage data available.")
-    lines.append("")
-
-    lines.append("## Backup Jobs")
-    lines.append("")
-    if data["backup_jobs"]:
-        lines.append(render_output(data["backup_jobs"], output=output))
-    else:
-        lines.append("No backup jobs configured.")
-    lines.append("")
-
-    lines.append("## Virtual Machines")
-    lines.append("")
-    if data["vm_list"]:
-        lines.append(render_output(data["vm_list"], output=output))
-    lines.append("")
-
-    lines.append("## Sanity Checks")
-    lines.append("")
+    _render_section(
+        lines,
+        "Sanity Checks",
+        description="This section reports various checks done on the Proxmox VE cluster that ensure good practices are used and no ressources are left unused.",
+    )
     lines.append("```")
     lines.append(data["sanity_checks"])
     lines.append("```")

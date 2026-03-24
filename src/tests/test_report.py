@@ -351,15 +351,17 @@ class ReportTestcase(unittest.TestCase):
         assert "**Version**" in md
         assert "**Status**" in md
         assert "## Resources Overview" in md
-        assert "## Proxmox VE Nodes" in md
-        assert "## High Availability Groups" in md
+        assert "## Access Control" in md
+        assert "## Detailled ressources" in md
         assert "## Sanity Checks" in md
-        assert "## Backup Jobs" in md
-        assert "## Virtual Machines" in md
-        assert "## Storage" in md
-        assert "## Users" in md
-        assert "## Groups" in md
-        assert "## Permissions" in md
+        assert "### Nodes" in md
+        assert "### High Availability Groups" in md
+        assert "### Backup Jobs" in md
+        assert "### Virtual Machines" in md
+        assert "### Storage" in md
+        assert "### Users" in md
+        assert "### Groups" in md
+        assert "### Permissions" in md
 
     def test_render_report_contains_data(self):
         md = _render_report(self.data)
@@ -436,7 +438,7 @@ class ReportWithHaRulesTestcase(unittest.TestCase):
 
     def test_render_report_ha_section(self):
         md = _render_report(self.data)
-        assert "## High Availability Groups" in md
+        assert "### High Availability Groups" in md
         assert "group-az1" in md
         assert "group-az2" in md
 
