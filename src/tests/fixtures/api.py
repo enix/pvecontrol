@@ -45,9 +45,20 @@ DEFAULT_VM_CONFIG = {
 
 
 def mock_api_requests(
-    nodes, vms, backup_jobs=None, storage_resources=None, storage_contents=None, ha_rules=None, ha_resources=None, users=None, groups=None, acls=None
+    nodes,
+    vms,
+    backup_jobs=None,
+    storage_resources=None,
+    storage_contents=None,
+    ha_rules=None,
+    ha_resources=None,
+    users=None,
+    groups=None,
+    acls=None,
 ):
-    routes = generate_routes(nodes, vms, backup_jobs, storage_resources, storage_contents, ha_rules, ha_resources, users, groups, acls)
+    routes = generate_routes(
+        nodes, vms, backup_jobs, storage_resources, storage_contents, ha_rules, ha_resources, users, groups, acls
+    )
 
     def side_effect(method, url, **kwargs):
         content = execute_route(routes, method, url, **kwargs)
@@ -61,9 +72,20 @@ def mock_api_requests(
 
 
 def create_response_wrapper(
-    nodes, vms, backup_jobs=None, storage_resources=None, storage_contents=None, ha_rules=None, ha_resources=None, users=None, groups=None, acls=None
+    nodes,
+    vms,
+    backup_jobs=None,
+    storage_resources=None,
+    storage_contents=None,
+    ha_rules=None,
+    ha_resources=None,
+    users=None,
+    groups=None,
+    acls=None,
 ):
-    routes = generate_routes(nodes, vms, backup_jobs, storage_resources, storage_contents, ha_rules, ha_resources, users, groups, acls)
+    routes = generate_routes(
+        nodes, vms, backup_jobs, storage_resources, storage_contents, ha_rules, ha_resources, users, groups, acls
+    )
 
     def wrapper(path, data=None, **kwargs):
         kwargs["params"] = kwargs.get("params", {})
@@ -382,7 +404,9 @@ def fake_group(groupid, comment="", users=None):
     return group
 
 
-def fake_user(userid, groups=None, expire=0, enable=1, firstname="", lastname="", email="", realm_type="pam", tokens=None):
+def fake_user(
+    userid, groups=None, expire=0, enable=1, firstname="", lastname="", email="", realm_type="pam", tokens=None
+):
     user = {
         "userid": userid,
         "enable": enable,

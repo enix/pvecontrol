@@ -88,10 +88,13 @@ def test_invalid_expire_string():
 
 
 def test_tokens_from_list():
-    user = PVEUser("admin@pam", tokens=[
-        {"tokenid": "mytoken", "expire": 0, "privsep": 1},
-        {"tokenid": "citoken", "expire": 0, "privsep": 0},
-    ])
+    user = PVEUser(
+        "admin@pam",
+        tokens=[
+            {"tokenid": "mytoken", "expire": 0, "privsep": 1},
+            {"tokenid": "citoken", "expire": 0, "privsep": 0},
+        ],
+    )
     assert "admin@pam!mytoken" in user.tokens
     assert "admin@pam!citoken" in user.tokens
     assert len(user.tokens) == 2

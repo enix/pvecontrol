@@ -22,7 +22,16 @@ from pvecontrol.models.cluster import PVECluster
 
 
 def _make_cluster(
-    nodes, vms, backup_jobs=None, storage_resources=None, storages_contents=None, ha_rules=None, ha_resources=None, users=None, groups=None, acls=None
+    nodes,
+    vms,
+    backup_jobs=None,
+    storage_resources=None,
+    storages_contents=None,
+    ha_rules=None,
+    ha_resources=None,
+    users=None,
+    groups=None,
+    acls=None,
 ):
     """Helper to create a PVECluster with all routes registered in the current responses context."""
     backup_jobs = backup_jobs or []
@@ -95,11 +104,25 @@ class ReportTestcase(unittest.TestCase):
         backups = [fake_backup("s3", 100, datetime.now() - timedelta(minutes=110))]
         storages_contents = {node["status"]["name"]: {"s3": backups} for node in nodes}
         self.users = [
-            fake_user("admin@pam", groups=["admins"], expire=0,
-                      firstname="Alice", lastname="Admin", email="alice@example.com", realm_type="pam",
-                      tokens=["ci-token", "backup-token"]),
-            fake_user("bob@pve", groups=["ops"], expire=1900000000,
-                      firstname="Bob", lastname="Builder", email="bob@example.com", realm_type="pve"),
+            fake_user(
+                "admin@pam",
+                groups=["admins"],
+                expire=0,
+                firstname="Alice",
+                lastname="Admin",
+                email="alice@example.com",
+                realm_type="pam",
+                tokens=["ci-token", "backup-token"],
+            ),
+            fake_user(
+                "bob@pve",
+                groups=["ops"],
+                expire=1900000000,
+                firstname="Bob",
+                lastname="Builder",
+                email="bob@example.com",
+                realm_type="pve",
+            ),
             fake_user("carol@pve", enable=0),
         ]
         self.groups = [
@@ -111,7 +134,16 @@ class ReportTestcase(unittest.TestCase):
             fake_acl("/vms", "ops", "PVEVMAdmin", acl_type="group", propagate=0),
         ]
 
-        cluster = _make_cluster(nodes, self.vms, backup_jobs, storage_resources, storages_contents, users=self.users, groups=self.groups, acls=self.acls)
+        cluster = _make_cluster(
+            nodes,
+            self.vms,
+            backup_jobs,
+            storage_resources,
+            storages_contents,
+            users=self.users,
+            groups=self.groups,
+            acls=self.acls,
+        )
         # preload ha (lazy) while responses mock is still active
         _ = cluster.ha
         self.data = _build_report_data(cluster)
