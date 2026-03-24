@@ -9,6 +9,7 @@ from pvecontrol.utils import defaulter, run_auth_commands
 from pvecontrol.models.node import PVENode
 from pvecontrol.models.storage import PVEStorage
 from pvecontrol.models.task import PVETask
+from pvecontrol.models.acl import PVEAcl
 from pvecontrol.models.backup_job import PVEBackupJob
 from pvecontrol.models.group import PVEGroup
 from pvecontrol.models.user import PVEUser
@@ -33,6 +34,7 @@ class PVECluster:
         self._backup_jobs = None
         self._users = None
         self._groups = None
+        self._acls = None
         self._initstatus()
 
     def _initstatus(self):
@@ -266,6 +268,12 @@ class PVECluster:
                         PVEVolume(backup.pop("volid"), backup.pop("format"), backup.pop("size"), **backup)
                     )
         return self._backups
+
+    @property
+    def acls(self):
+        if self._acls is None:
+            self._acls = [PVEAcl(**entry) for entry in self.api.access.acl.get()]
+        return self._acls
 
     @property
     def groups(self):

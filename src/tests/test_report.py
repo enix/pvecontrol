@@ -15,13 +15,14 @@ from tests.fixtures.api import (
     fake_ha_resource,
     fake_user,
     fake_group,
+    fake_acl,
 )
 from pvecontrol.actions.report import _build_report_data, _build_ha_vmid_group_mapping, _render_report
 from pvecontrol.models.cluster import PVECluster
 
 
 def _make_cluster(
-    nodes, vms, backup_jobs=None, storage_resources=None, storages_contents=None, ha_rules=None, ha_resources=None, users=None, groups=None
+    nodes, vms, backup_jobs=None, storage_resources=None, storages_contents=None, ha_rules=None, ha_resources=None, users=None, groups=None, acls=None
 ):
     """Helper to create a PVECluster with all routes registered in the current responses context."""
     backup_jobs = backup_jobs or []
@@ -38,6 +39,7 @@ def _make_cluster(
         ha_resources=ha_resources,
         users=users,
         groups=groups,
+        acls=acls,
     )
     wrapper("/api2/json/version")
     wrapper("/api2/json/cluster/status")
@@ -58,6 +60,7 @@ def _make_cluster(
     wrapper("/api2/json/cluster/backup")
     wrapper("/api2/json/access/users")
     wrapper("/api2/json/access/groups")
+    wrapper("/api2/json/access/acl")
 
     with patch("proxmoxer.backends.https.ProxmoxHTTPAuth") as mock_auth:
         mock_auth_instance = mock_auth.return_value
@@ -103,8 +106,12 @@ class ReportTestcase(unittest.TestCase):
             fake_group("admins", comment="Administrators", users=["admin@pam"]),
             fake_group("ops", comment="Operations", users=["bob@pve"]),
         ]
+        self.acls = [
+            fake_acl("/", "admin@pam", "Administrator", acl_type="user", propagate=1),
+            fake_acl("/vms", "ops", "PVEVMAdmin", acl_type="group", propagate=0),
+        ]
 
-        cluster = _make_cluster(nodes, self.vms, backup_jobs, storage_resources, storages_contents, users=self.users, groups=self.groups)
+        cluster = _make_cluster(nodes, self.vms, backup_jobs, storage_resources, storages_contents, users=self.users, groups=self.groups, acls=self.acls)
         # preload ha (lazy) while responses mock is still active
         _ = cluster.ha
         self.data = _build_report_data(cluster)
@@ -123,6 +130,7 @@ class ReportTestcase(unittest.TestCase):
         assert "backup_jobs" in self.data
         assert "users" in self.data
         assert "groups" in self.data
+        assert "acls" in self.data
         assert "sanity_checks" in self.data
 
     def test_build_report_cluster_info(self):
@@ -218,6 +226,25 @@ class ReportTestcase(unittest.TestCase):
         s3 = next(s for s in storages if s["storage"] == "s3")
         assert s3["nodes"] == "All"
 
+    def test_build_report_acls_present(self):
+        assert "acls" in self.data
+
+    def test_build_report_acls_count(self):
+        assert len(self.data["acls"]) == len(self.acls)
+
+    def test_build_report_acls_fields(self):
+        for acl in self.data["acls"]:
+            assert "path" in acl
+            assert "type" in acl
+            assert "ugid" in acl
+            assert "roleid" in acl
+            assert "propagate" in acl
+
+    def test_build_report_acls_propagate_display(self):
+        by_path_ugid = {(a["path"], a["ugid"]): a for a in self.data["acls"]}
+        assert by_path_ugid[("/", "admin@pam")]["propagate"] == "Yes"
+        assert by_path_ugid[("/vms", "ops")]["propagate"] == "No"
+
     def test_build_report_groups_present(self):
         assert "groups" in self.data
 
@@ -300,6 +327,7 @@ class ReportTestcase(unittest.TestCase):
         assert "## Storage" in md
         assert "## Users" in md
         assert "## Groups" in md
+        assert "## Permissions" in md
 
     def test_render_report_contains_data(self):
         md = _render_report(self.data)

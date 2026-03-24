@@ -91,6 +91,19 @@ def _backup_job_vm_selection(job):
     return ", ".join(vmids) if vmids else ""
 
 
+def _build_acls_data(proxmox):
+    return [
+        {
+            "path": acl.path,
+            "type": acl.type,
+            "ugid": acl.ugid,
+            "roleid": acl.roleid,
+            "propagate": "Yes" if acl.propagate else "No",
+        }
+        for acl in proxmox.acls
+    ]
+
+
 def _build_groups_data(proxmox):
     return [
         {
@@ -228,6 +241,7 @@ def _build_report_data(proxmox):
         "backup_jobs": _build_backup_jobs_data(proxmox),
         "users": _build_users_data(proxmox),
         "groups": _build_groups_data(proxmox),
+        "acls": _build_acls_data(proxmox),
         "sanity_checks": sanity_checks,
     }
 
@@ -273,6 +287,13 @@ def _render_report(data, output=OutputFormats.MARKDOWN):
         lines.append(render_output(data["groups"], sortby="groupid", output=output))
     else:
         lines.append("No groups found.")
+    lines.append("")
+    lines.append("### Permissions")
+    lines.append("")
+    if data["acls"]:
+        lines.append(render_output(data["acls"], sortby="path", output=output))
+    else:
+        lines.append("No permissions configured.")
     lines.append("")
 
     lines.append("## Proxmox VE Nodes")
