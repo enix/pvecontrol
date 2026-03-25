@@ -24,7 +24,7 @@ def test_all_fields():
         firstname="Bob",
         lastname="Builder",
         email="bob@example.com",
-        **{"realm-type": "pve"},
+        **{"realm_type": "pve"},
         groups="ops,devs",
     )
     assert user.userid == "bob@pve"

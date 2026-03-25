@@ -10,7 +10,7 @@ class PVEUser:
         "firstname": "",
         "lastname": "",
         "email": "",
-        "realm-type": "",
+        "realm_type": "",
         "groups": "",
     }
 
@@ -19,26 +19,22 @@ class PVEUser:
             raise ValueError(f"Invalid userid '{userid}': must be in the form 'username@realm'")
         self.userid = userid
 
-        enable = kwargs.get("enable", self._default_kwargs["enable"])
-        if enable not in (0, 1):
-            raise ValueError(f"Invalid enable value '{enable}' for user '{userid}': must be 0 or 1")
-        self.enable = bool(enable)
+        for k, v in self._default_kwargs.items():
+            self.__setattr__(k, kwargs.get(k, v))
 
-        expire = kwargs.get("expire", self._default_kwargs["expire"])
-        if not isinstance(expire, int) or expire < 0:
-            raise ValueError(f"Invalid expire value '{expire}' for user '{userid}': must be a non-negative integer")
-        self.expire = expire
+        if self.enable not in (0, 1):
+            raise ValueError(f"Invalid enable value '{self.enable}' for user '{userid}': must be 0 or 1")
+        self.enable = bool(self.enable)
 
-        self.firstname = kwargs.get("firstname", "")
-        self.lastname = kwargs.get("lastname", "")
-        self.email = kwargs.get("email", "")
-        self.realm_type = kwargs.get("realm-type", "")
+        if not isinstance(self.expire, int) or self.expire < 0:
+            raise ValueError(
+                f"Invalid expire value '{self.expire}' for user '{userid}': must be a non-negative integer"
+            )
 
-        groups = kwargs.get("groups", "")
-        if isinstance(groups, str):
-            self.groups = [g for g in groups.split(",") if g]
+        if isinstance(self.groups, str):
+            self.groups = [g for g in self.groups.split(",") if g]
         else:
-            self.groups = list(groups)
+            self.groups = list(self.groups)
 
         tokens = kwargs.get("tokens") or []
         self.tokens = [f"{self.userid}!{t['tokenid']}" for t in tokens if "tokenid" in t]
