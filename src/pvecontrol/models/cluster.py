@@ -17,6 +17,8 @@ from pvecontrol.models.volume import PVEVolume
 from pvecontrol.config import set_config
 
 
+# FIXME: remove pylint disable annotations
+# pylint: disable=too-many-public-methods
 class PVECluster:
     """Proxmox VE Cluster"""
 

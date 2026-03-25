@@ -259,7 +259,7 @@ def _render_header(data):
 
 
 def _render_section(lines, title, description=None):
-    lines.append("## %s" % (title))
+    lines.append(f"## {title}")
     lines.append("")
     if description:
         lines.append(description)
@@ -267,7 +267,7 @@ def _render_section(lines, title, description=None):
 
 
 def _render_table(lines, title, data_list, output, sortby=None, empty_msg=None):
-    lines.append("### %s" % (title))
+    lines.append(f"### {title}")
     lines.append("")
     if data_list:
         lines.append(render_output(data_list, sortby=sortby, output=output))
@@ -305,7 +305,8 @@ def _render_report(data, output=OutputFormats.MARKDOWN):
     _render_section(
         lines,
         "Sanity Checks",
-        description="This section reports various checks done on the Proxmox VE cluster that ensure good practices are used and no ressources are left unused.",
+        description="This section reports various checks done on the Proxmox VE cluster that ensure good \
+            practices are used and no ressources are left unused.",
     )
     lines.append("```")
     lines.append(data["sanity_checks"])

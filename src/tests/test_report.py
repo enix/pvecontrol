@@ -21,6 +21,8 @@ from pvecontrol.actions.report import _build_report_data, _build_ha_vmid_group_m
 from pvecontrol.models.cluster import PVECluster
 
 
+# FIXME: remove pylint disable annotations
+# pylint: disable=too-many-locals
 def _make_cluster(
     nodes,
     vms,
@@ -85,6 +87,8 @@ def _make_cluster(
     return cluster
 
 
+# FIXME: remove pylint disable annotations
+# pylint: disable=too-many-public-methods
 class ReportTestcase(unittest.TestCase):
     """Tests for report generation with no HA groups configured."""
 

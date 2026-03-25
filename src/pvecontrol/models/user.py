@@ -14,6 +14,7 @@ class PVEUser:
         "groups": "",
     }
 
+    # pylint: disable=access-member-before-definition
     def __init__(self, userid, **kwargs):
         if not userid or "@" not in userid:
             raise ValueError(f"Invalid userid '{userid}': must be in the form 'username@realm'")
