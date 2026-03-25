@@ -13,13 +13,27 @@ from tests.fixtures.api import (
     fake_storage_resource,
     fake_ha_rule,
     fake_ha_resource,
+    fake_user,
+    fake_group,
+    fake_acl,
 )
 from pvecontrol.actions.report import _build_report_data, _build_ha_vmid_group_mapping, _render_report
 from pvecontrol.models.cluster import PVECluster
 
 
+# FIXME: remove pylint disable annotations
+# pylint: disable=too-many-locals
 def _make_cluster(
-    nodes, vms, backup_jobs=None, storage_resources=None, storages_contents=None, ha_rules=None, ha_resources=None
+    nodes,
+    vms,
+    backup_jobs=None,
+    storage_resources=None,
+    storages_contents=None,
+    ha_rules=None,
+    ha_resources=None,
+    users=None,
+    groups=None,
+    acls=None,
 ):
     """Helper to create a PVECluster with all routes registered in the current responses context."""
     backup_jobs = backup_jobs or []
@@ -34,6 +48,9 @@ def _make_cluster(
         storages_contents,
         ha_rules=ha_rules,
         ha_resources=ha_resources,
+        users=users,
+        groups=groups,
+        acls=acls,
     )
     wrapper("/api2/json/version")
     wrapper("/api2/json/cluster/status")
@@ -52,6 +69,9 @@ def _make_cluster(
     wrapper("/api2/json/cluster/ha/status/manager_status")
     wrapper("/api2/json/cluster/ha/resources")
     wrapper("/api2/json/cluster/backup")
+    wrapper("/api2/json/access/users")
+    wrapper("/api2/json/access/groups")
+    wrapper("/api2/json/access/acl")
 
     with patch("proxmoxer.backends.https.ProxmoxHTTPAuth") as mock_auth:
         mock_auth_instance = mock_auth.return_value
@@ -67,6 +87,8 @@ def _make_cluster(
     return cluster
 
 
+# FIXME: remove pylint disable annotations
+# pylint: disable=too-many-public-methods
 class ReportTestcase(unittest.TestCase):
     """Tests for report generation with no HA groups configured."""
 
@@ -85,8 +107,47 @@ class ReportTestcase(unittest.TestCase):
         storage_resources = [fake_storage_resource("s3", n["status"]["name"]) for n in nodes]
         backups = [fake_backup("s3", 100, datetime.now() - timedelta(minutes=110))]
         storages_contents = {node["status"]["name"]: {"s3": backups} for node in nodes}
+        self.users = [
+            fake_user(
+                "admin@pam",
+                groups=["admins"],
+                expire=0,
+                firstname="Alice",
+                lastname="Admin",
+                email="alice@example.com",
+                realm_type="pam",
+                tokens=["ci-token", "backup-token"],
+            ),
+            fake_user(
+                "bob@pve",
+                groups=["ops"],
+                expire=1900000000,
+                firstname="Bob",
+                lastname="Builder",
+                email="bob@example.com",
+                realm_type="pve",
+            ),
+            fake_user("carol@pve", enable=0),
+        ]
+        self.groups = [
+            fake_group("admins", comment="Administrators", users=["admin@pam"]),
+            fake_group("ops", comment="Operations", users=["bob@pve"]),
+        ]
+        self.acls = [
+            fake_acl("/", "admin@pam", "Administrator", acl_type="user", propagate=1),
+            fake_acl("/vms", "ops", "PVEVMAdmin", acl_type="group", propagate=0),
+        ]
 
-        cluster = _make_cluster(nodes, self.vms, backup_jobs, storage_resources, storages_contents)
+        cluster = _make_cluster(
+            nodes,
+            self.vms,
+            backup_jobs,
+            storage_resources,
+            storages_contents,
+            users=self.users,
+            groups=self.groups,
+            acls=self.acls,
+        )
         # preload ha (lazy) while responses mock is still active
         _ = cluster.ha
         self.data = _build_report_data(cluster)
@@ -103,6 +164,9 @@ class ReportTestcase(unittest.TestCase):
         assert "vm_list" in self.data
         assert "storages" in self.data
         assert "backup_jobs" in self.data
+        assert "users" in self.data
+        assert "groups" in self.data
+        assert "acls" in self.data
         assert "sanity_checks" in self.data
 
     def test_build_report_cluster_info(self):
@@ -198,6 +262,92 @@ class ReportTestcase(unittest.TestCase):
         s3 = next(s for s in storages if s["storage"] == "s3")
         assert s3["nodes"] == "All"
 
+    def test_build_report_acls_present(self):
+        assert "acls" in self.data
+
+    def test_build_report_acls_count(self):
+        assert len(self.data["acls"]) == len(self.acls)
+
+    def test_build_report_acls_fields(self):
+        for acl in self.data["acls"]:
+            assert "path" in acl
+            assert "type" in acl
+            assert "ugid" in acl
+            assert "roleid" in acl
+            assert "propagate" in acl
+
+    def test_build_report_acls_propagate_display(self):
+        by_path_ugid = {(a["path"], a["ugid"]): a for a in self.data["acls"]}
+        assert by_path_ugid[("/", "admin@pam")]["propagate"] == "Yes"
+        assert by_path_ugid[("/vms", "ops")]["propagate"] == "No"
+
+    def test_build_report_groups_present(self):
+        assert "groups" in self.data
+
+    def test_build_report_groups_count(self):
+        assert len(self.data["groups"]) == len(self.groups)
+
+    def test_build_report_groups_fields(self):
+        for group in self.data["groups"]:
+            assert "groupid" in group
+            assert "comment" in group
+            assert "members" in group
+
+    def test_build_report_groups_members_resolved(self):
+        by_id = {g["groupid"]: g for g in self.data["groups"]}
+        assert "admin@pam" in by_id["admins"]["members"]
+        assert "bob@pve" in by_id["ops"]["members"]
+
+    def test_build_report_groups_members_only_cluster_users(self):
+        """Members listed must be users that exist in the cluster."""
+        cluster_userids = {u["userid"] for u in self.data["users"]}
+        for group in self.data["groups"]:
+            if group["members"]:
+                for member in group["members"].split(", "):
+                    assert member in cluster_userids
+
+    def test_build_report_users_present(self):
+        assert "users" in self.data
+
+    def test_build_report_users_fields(self):
+        for user in self.data["users"]:
+            assert "userid" in user
+            assert "firstname" in user
+            assert "lastname" in user
+            assert "email" in user
+            assert "realm-type" in user
+            assert "enabled" in user
+            assert "expire" in user
+            assert "groups" in user
+            assert "tokens" in user
+
+    def test_build_report_users_tokens(self):
+        by_id = {u["userid"]: u for u in self.data["users"]}
+        assert "admin@pam!ci-token" in by_id["admin@pam"]["tokens"]
+        assert "admin@pam!backup-token" in by_id["admin@pam"]["tokens"]
+        assert by_id["bob@pve"]["tokens"] == ""
+
+    def test_build_report_users_sorted(self):
+        userids = [u["userid"] for u in self.data["users"]]
+        assert userids == sorted(userids)
+
+    def test_build_report_users_expire_never(self):
+        by_id = {u["userid"]: u for u in self.data["users"]}
+        assert by_id["admin@pam"]["expire"] == "Never"
+
+    def test_build_report_users_expire_date(self):
+        by_id = {u["userid"]: u for u in self.data["users"]}
+        assert by_id["bob@pve"]["expire"] != "Never"
+
+    def test_build_report_users_enabled(self):
+        by_id = {u["userid"]: u for u in self.data["users"]}
+        assert by_id["admin@pam"]["enabled"] == "Yes"
+        assert by_id["carol@pve"]["enabled"] == "No"
+
+    def test_build_report_users_groups(self):
+        by_id = {u["userid"]: u for u in self.data["users"]}
+        assert "admins" in by_id["admin@pam"]["groups"]
+
     def test_render_report_sections(self):
         md = _render_report(self.data)
         assert f"# Cluster Report: {self.data['cluster']}" in md
@@ -205,12 +355,17 @@ class ReportTestcase(unittest.TestCase):
         assert "**Version**" in md
         assert "**Status**" in md
         assert "## Resources Overview" in md
-        assert "## Proxmox VE Nodes" in md
-        assert "## High Availability Groups" in md
+        assert "## Access Control" in md
+        assert "## Detailled ressources" in md
         assert "## Sanity Checks" in md
-        assert "## Backup Jobs" in md
-        assert "## Virtual Machines" in md
-        assert "## Storage" in md
+        assert "### Nodes" in md
+        assert "### High Availability Groups" in md
+        assert "### Backup Jobs" in md
+        assert "### Virtual Machines" in md
+        assert "### Storage" in md
+        assert "### Users" in md
+        assert "### Groups" in md
+        assert "### Permissions" in md
 
     def test_render_report_contains_data(self):
         md = _render_report(self.data)
@@ -287,7 +442,7 @@ class ReportWithHaRulesTestcase(unittest.TestCase):
 
     def test_render_report_ha_section(self):
         md = _render_report(self.data)
-        assert "## High Availability Groups" in md
+        assert "### High Availability Groups" in md
         assert "group-az1" in md
         assert "group-az2" in md
 

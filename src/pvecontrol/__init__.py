@@ -152,6 +152,9 @@ pvecontrol.add_command(cmd=actions.report.report, name="report")
 pvecontrol.add_command(cmd=actions.node.root, name="node")
 pvecontrol.add_command(cmd=actions.storage.root, name="storage")
 pvecontrol.add_command(cmd=actions.task.root, name="task")
+pvecontrol.add_command(cmd=actions.acl.root, name="acl")
+pvecontrol.add_command(cmd=actions.group.root, name="group")
+pvecontrol.add_command(cmd=actions.user.root, name="user")
 pvecontrol.add_command(cmd=actions.vm.root, name="vm")
 
 

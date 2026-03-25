@@ -91,6 +91,50 @@ def _backup_job_vm_selection(job):
     return ", ".join(vmids) if vmids else ""
 
 
+def _build_acls_data(proxmox):
+    return [
+        {
+            "path": acl.path,
+            "type": acl.type,
+            "ugid": acl.ugid,
+            "roleid": acl.roleid,
+            "propagate": "Yes" if acl.propagate else "No",
+        }
+        for acl in proxmox.acls
+    ]
+
+
+def _build_groups_data(proxmox):
+    return [
+        {
+            "groupid": group.groupid,
+            "comment": group.comment,
+            "members": ", ".join(user.userid for user in group.get_members(proxmox)),
+        }
+        for group in proxmox.groups
+    ]
+
+
+def _build_users_data(proxmox):
+    users = []
+    for user in proxmox.users:
+        expire_str = datetime.fromtimestamp(user.expire).strftime("%Y-%m-%d") if user.expire else "Never"
+        users.append(
+            {
+                "userid": user.userid,
+                "firstname": user.firstname,
+                "lastname": user.lastname,
+                "email": user.email,
+                "realm-type": user.realm_type,
+                "enabled": "Yes" if user.enable else "No",
+                "expire": expire_str,
+                "groups": ", ".join(user.groups),
+                "tokens": ", ".join(user.tokens),
+            }
+        )
+    return users
+
+
 def _build_sanity_check_section(proxmox):
     sc = SanityCheck(proxmox, colors=False, unicode=False)
     sc.run(checks=DEFAULT_CHECK_IDS)
@@ -195,6 +239,9 @@ def _build_report_data(proxmox):
         "vm_list": vm_list,
         "storages": storages_data,
         "backup_jobs": _build_backup_jobs_data(proxmox),
+        "users": _build_users_data(proxmox),
+        "groups": _build_groups_data(proxmox),
+        "acls": _build_acls_data(proxmox),
         "sanity_checks": sanity_checks,
     }
 
@@ -211,57 +258,56 @@ def _render_header(data):
     ]
 
 
+def _render_section(lines, title, description=None):
+    lines.append(f"## {title}")
+    lines.append("")
+    if description:
+        lines.append(description)
+        lines.append("")
+
+
+def _render_table(lines, title, data_list, output, sortby=None, empty_msg=None):
+    lines.append(f"### {title}")
+    lines.append("")
+    if data_list:
+        lines.append(render_output(data_list, sortby=sortby, output=output))
+    elif empty_msg:
+        lines.append(empty_msg)
+    lines.append("")
+
+
 def _render_report(data, output=OutputFormats.MARKDOWN):
     lines = _render_header(data)
 
-    lines.append("## Resources Overview")
-    lines.append("")
-    lines.append("### Compute Resources")
-    lines.append("")
-    lines.append(render_output(data["resource_overview"], output=output))
-    lines.append("")
-    lines.append("### Virtual Machines")
-    lines.append("")
-    lines.append(render_output(data["vm_summary"], output=output))
-    lines.append("")
+    _render_section(lines, "Resources Overview")
+    _render_table(lines, "Compute Resources", data["resource_overview"], output)
+    _render_table(lines, "Virtual Machines", data["vm_summary"], output)
 
-    lines.append("## Proxmox VE Nodes")
-    lines.append("")
-    lines.append(render_output(data["nodes"], sortby="node", output=output))
-    lines.append("")
+    _render_section(lines, "Access Control")
+    _render_table(lines, "Users", data["users"], output, sortby="userid", empty_msg="No users found.")
+    _render_table(lines, "Groups", data["groups"], output, sortby="groupid", empty_msg="No groups found.")
+    _render_table(lines, "Permissions", data["acls"], output, sortby="path", empty_msg="No permissions configured.")
 
-    lines.append("## High Availability Groups")
-    lines.append("")
-    if data["ha_groups"]:
-        lines.append(render_output(data["ha_groups"], sortby="group", output=output))
-    else:
-        lines.append("No HA groups configured.")
-    lines.append("")
+    _render_section(lines, "Detailled ressources")
+    _render_table(lines, "Nodes", data["nodes"], output, sortby="node")
+    _render_table(
+        lines,
+        "High Availability Groups",
+        data["ha_groups"],
+        output,
+        sortby="group",
+        empty_msg="No HA groups configured.",
+    )
+    _render_table(lines, "Storage", data["storages"], output, empty_msg="No storage data available.")
+    _render_table(lines, "Backup Jobs", data["backup_jobs"], output, empty_msg="No backup jobs configured.")
+    _render_table(lines, "Virtual Machines", data["vm_list"], output)
 
-    lines.append("## Storage")
-    lines.append("")
-    if data["storages"]:
-        lines.append(render_output(data["storages"], output=output))
-    else:
-        lines.append("No storage data available.")
-    lines.append("")
-
-    lines.append("## Backup Jobs")
-    lines.append("")
-    if data["backup_jobs"]:
-        lines.append(render_output(data["backup_jobs"], output=output))
-    else:
-        lines.append("No backup jobs configured.")
-    lines.append("")
-
-    lines.append("## Virtual Machines")
-    lines.append("")
-    if data["vm_list"]:
-        lines.append(render_output(data["vm_list"], output=output))
-    lines.append("")
-
-    lines.append("## Sanity Checks")
-    lines.append("")
+    _render_section(
+        lines,
+        "Sanity Checks",
+        description="This section reports various checks done on the Proxmox VE cluster that ensure good \
+            practices are used and no ressources are left unused.",
+    )
     lines.append("```")
     lines.append(data["sanity_checks"])
     lines.append("```")

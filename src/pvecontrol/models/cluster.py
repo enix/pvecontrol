@@ -9,11 +9,16 @@ from pvecontrol.utils import defaulter, run_auth_commands
 from pvecontrol.models.node import PVENode
 from pvecontrol.models.storage import PVEStorage
 from pvecontrol.models.task import PVETask
+from pvecontrol.models.acl import PVEAcl
 from pvecontrol.models.backup_job import PVEBackupJob
+from pvecontrol.models.group import PVEGroup
+from pvecontrol.models.user import PVEUser
 from pvecontrol.models.volume import PVEVolume
 from pvecontrol.config import set_config
 
 
+# FIXME: remove pylint disable annotations
+# pylint: disable=too-many-public-methods
 class PVECluster:
     """Proxmox VE Cluster"""
 
@@ -29,6 +34,9 @@ class PVECluster:
         self._ha = None
         self._backups = None
         self._backup_jobs = None
+        self._users = None
+        self._groups = None
+        self._acls = None
         self._initstatus()
 
     def _initstatus(self):
@@ -262,6 +270,24 @@ class PVECluster:
                         PVEVolume(backup.pop("volid"), backup.pop("format"), backup.pop("size"), **backup)
                     )
         return self._backups
+
+    @property
+    def acls(self):
+        if self._acls is None:
+            self._acls = [PVEAcl(**entry) for entry in self.api.access.acl.get()]
+        return self._acls
+
+    @property
+    def groups(self):
+        if self._groups is None:
+            self._groups = [PVEGroup(**g) for g in self.api.access.groups.get()]
+        return self._groups
+
+    @property
+    def users(self):
+        if self._users is None:
+            self._users = [PVEUser(**u) for u in self.api.access.users.get(full=1)]
+        return self._users
 
     @property
     def backup_jobs(self):
