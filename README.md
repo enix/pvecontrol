@@ -226,8 +226,8 @@ $ pvecontrol task get --help
 Usage: pvecontrol task get [OPTIONS] UPID
 
 Options:
-  -f, --follow  Wait task end
-  -w, --wait    Follow task log output
+  -f, --follow  Follow task log output
+  -w, --wait    Wait task end
   --help        Show this message and exit.
 ```
 
