@@ -277,6 +277,120 @@ _PVECONTROL_COMPLETE=zsh_source pvecontrol > "${HOME}/.zsh/completions/_pvecontr
 _PVECONTROL_COMPLETE=fish_source pvecontrol > {$HOME}/.config/fish/completions/pvecontrol.fish
 ```
 
+---
+
+# Proxmox Backup Server Control
+
+`pbscontrol` is a companion CLI tool to manage Proxmox Backup Server (PBS) instances via their API. It follows the same conventions and configuration style as `pvecontrol`.
+
+## Installation
+
+`pbscontrol` is bundled in the same package as `pvecontrol` and installed alongside it:
+
+```shell
+pipx install pvecontrol
+```
+
+## Configuration
+
+`pbscontrol` reads its configuration from `$HOME/.config/pbscontrol/config.yaml`. The structure mirrors `pvecontrol`'s configuration, with a `servers` list instead of `clusters`.
+
+```yaml
+servers:
+  - name: my-pbs
+    host: pbs.example.com
+    user: root@pam
+    password: my.password.is.weak
+    ssl_verify: false
+```
+
+### API tokens
+
+Authentication via API tokens is also supported:
+
+```yaml
+servers:
+  - name: my-pbs
+    host: pbs.example.com
+    user: pbscontrol@pbs
+    token_name: mytoken
+    token_value: randomtokenvalue
+```
+
+### Better security
+
+As with `pvecontrol`, the shell command substitution syntax `$(...)` is supported in the `user`, `password`, `token_name`, and `token_value` fields:
+
+```yaml
+servers:
+  - name: my-pbs
+    host: pbs.example.com
+    user: root@pam
+    password: $(pass show pbs/my-pbs)
+```
+
+### Connection options
+
+| Option | Default | Description |
+|---|---|---|
+| `port` | `8007` | PBS API port |
+| `timeout` | `60` | Request timeout in seconds |
+| `ssl_verify` | `false` | Verify TLS certificate |
+
+## Usage
+
+```shell
+$ pbscontrol --help
+Usage: pbscontrol [OPTIONS] COMMAND [ARGS]...
+
+  Proxmox Backup Server control CLI, version: x.y.z
+
+Options:
+  -d, --debug
+  -o, --output [text|json|csv|yaml|md]
+                                  [default: text]
+  -s, --server NAME               Proxmox Backup Server name as defined in
+                                  configuration  [required]
+  --unicode / --no-unicode        Use unicode characters for output
+  --color / --no-color            Use colorized output
+  --help                          Show this message and exit.
+
+Commands:
+  status  Show Proxmox Backup Server status
+
+  Made with love by Enix.io
+```
+
+The simplest command to verify that `pbscontrol` is correctly configured is `status`:
+
+```shell
+$ pbscontrol --server my-pbs status
+
+  Name: my-pbs
+  Version: 4.1.1
+  Datastores:
+    datastore1: 372.53 GiB/931.32 GiB (40.0%), available: 558.79 GiB, gc: ok
+    datastore2: 1.64 TiB/1.82 TiB (90.0%), available: 186.26 GiB, gc: ok
+```
+
+## Environment variables
+
+`pbscontrol` supports the following environment variables:
+- `PBSCONTROL_SERVER`: the default server to use when no `-s` or `--server` option is specified.
+- `PBSCONTROL_COLOR`: if set to `False`, it will disable all colorized output.
+- `PBSCONTROL_UNICODE`: if set to `False`, it will disable all unicode output.
+
+## Shell completion
+
+```shell
+# bash
+_PBSCONTROL_COMPLETE=bash_source pbscontrol > "${BASH_COMPLETION_USER_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion}/completions/pbscontrol"
+# zsh
+_PBSCONTROL_COMPLETE=zsh_source pbscontrol > "${HOME}/.zsh/completions/_pbscontrol"
+# fish
+_PBSCONTROL_COMPLETE=fish_source pbscontrol > {$HOME}/.config/fish/completions/pbscontrol.fish
+```
+
 ## Development
 
 If you want to tinker with the code, all the required dependencies are listed in `requirements.txt`, and you can install them e.g. with pip:
