@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 from unittest.mock import patch
 from pvecontrol.models.cluster import PVECluster
 from pvecontrol.sanitycheck.tests.vm import DiskUnused

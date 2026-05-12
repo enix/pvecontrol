@@ -11,6 +11,7 @@ import click
 import urllib3
 
 from pvecontrol import actions
+from pvecontrol.config import config, list_clusters
 from pvecontrol.utils import OutputFormats
 
 
@@ -57,8 +58,8 @@ class IgnoreRequiredForHelp(click.Group):
             return False
 
     def parse_args(self, ctx, args):
-        if self._is_defaulting_to_help(ctx, args):
-            self.ignoring = True
+        self.ignoring = self._is_defaulting_to_help(ctx, args)
+        if self.ignoring:
             for param in self.params:
                 param.required = False
 
@@ -113,7 +114,7 @@ class IgnoreRequiredForHelp(click.Group):
     "--cluster",
     metavar="NAME",
     envvar="CLUSTER",
-    required=True,
+    default=None,
     help="Proxmox cluster name as defined in configuration",
 )
 @click.option(
@@ -135,11 +136,32 @@ def pvecontrol(ctx, debug, output, cluster, unicode, color):
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     if not ctx.command.ignoring:
-        # get cli arguments
-        args = SimpleNamespace(output=output, cluster=cluster, unicode=unicode, color=color)
-
         # configure logging
         logging.basicConfig(encoding="utf-8", level=logging.DEBUG if debug else logging.INFO)
+
+        if cluster is None:
+            clusters = list_clusters()
+            logging.debug("No cluster specified, found %d cluster(s) in config: %s", len(clusters), clusters)
+            if len(clusters) == 1:
+                cluster = clusters[0]
+                logging.debug("Auto-selected single cluster: %s", cluster)
+            elif len(clusters) == 0:
+                logging.error("No cluster configured. Please add a cluster to your configuration file.")
+                logging.error("Configuration file: %s", config.user_config_path())
+                ctx.exit(1)
+            else:
+                available = "\n".join(f"  {name}" for name in clusters)
+                logging.error(
+                    "No cluster specified. Available clusters:\n%s\n\n"
+                    "Use -c / --cluster NAME or set the PVECONTROL_CLUSTER environment variable.",
+                    available,
+                )
+                ctx.exit(1)
+        else:
+            logging.debug("Cluster specified: %s", cluster)
+
+        # get cli arguments
+        args = SimpleNamespace(output=output, cluster=cluster, unicode=unicode, color=color)
         logging.debug("Arguments: %s", args)
 
         ctx.ensure_object(dict)

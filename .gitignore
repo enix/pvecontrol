@@ -42,3 +42,4 @@ pip-delete-this-directory.txt
 .vscode/
 
 .pytest*
+CLAUDE.md

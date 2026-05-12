@@ -48,19 +48,40 @@ configtemplate = {
 config = confuse.LazyConfig("pvecontrol", __name__)
 
 
+def _load_config():
+    try:
+        validconfig = config.get(configtemplate)
+    except confuse.ConfigReadError as e:
+        logging.error("Cannot read configuration file: %s", e)
+        sys.exit(1)
+    except confuse.NotFoundError as e:
+        logging.error("Missing required configuration key: %s", e)
+        sys.exit(1)
+    except confuse.ConfigError as e:
+        logging.error("Invalid configuration: %s", e)
+        sys.exit(1)
+    return validconfig
+
+
+def list_clusters():
+    validconfig = _load_config()
+    return [c.name for c in validconfig.clusters]
+
+
 def set_config(cluster_name):
-    validconfig = config.get(configtemplate)
+    validconfig = _load_config()
     logging.debug("configuration is %s", validconfig)
 
     # FIXME trouver une methode plus clean pour recuperer la configuration du bon cluster
     # Peut etre rework la configuration completement avec un dict
-    clusterconfig = False
-    for c in validconfig.clusters:
-        if c.name == cluster_name:
-            clusterconfig = c
-    if not clusterconfig:
+    matches = [c for c in validconfig.clusters if c.name.lower() == cluster_name.lower()]
+    if not matches:
         logging.error('No such cluster "%s"', cluster_name)
         sys.exit(1)
+    if len(matches) > 1:
+        logging.error('Ambiguous cluster name "%s": matches %s', cluster_name, [c.name for c in matches])
+        sys.exit(1)
+    clusterconfig = matches[0]
     logging.debug("clusterconfig is %s", clusterconfig)
 
     for k, v in validconfig.node.items():
