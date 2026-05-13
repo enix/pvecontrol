@@ -5,17 +5,18 @@ from tests.fixtures.api import (
     fake_user,
     fake_group,
     fake_acl,
+    fake_storage_resource,
 )
-from pvecontrol.actions.report import _build_report_data, _build_ha_vmid_group_mapping, _render_report
 from tests.testcase import PVEControlTestcase
+from pvecontrol.actions.report import _build_report_data, _build_ha_vmid_group_mapping, _render_report
 
 
-# FIXME: remove pylint disable annotations
 # pylint: disable=too-many-public-methods
 class ReportTestcase(PVEControlTestcase):
     """Tests for report generation with no HA groups configured."""
 
-    def _extra_fixtures(self):
+    def _build_fixtures(self):
+        super()._build_fixtures()
         # vm 102 must have no backup job (see test_vm_list_backup_jobs_association)
         self.backup_jobs = [fake_backup_job(1, "100"), fake_backup_job(2, "101")]
         self.users = [
@@ -48,9 +49,8 @@ class ReportTestcase(PVEControlTestcase):
             fake_acl("/", "admin@pam", "Administrator", acl_type="user", propagate=1),
             fake_acl("/vms", "ops", "PVEVMAdmin", acl_type="group", propagate=0),
         ]
-
-    def _extra_routes(self):
-        self._register_full_routes()
+        self.storage_resources = [fake_storage_resource("s3", n["status"]["name"]) for n in self.nodes]
+        self.storages_contents = {node["status"]["name"]: {"s3": self.backups} for node in self.nodes}
 
     def _cluster_config(self):
         return {"node": {"cpufactor": 2.5, "memoryminimum": 0}, "vm": {"max_last_backup": 100}}
@@ -296,14 +296,12 @@ class ReportTestcase(PVEControlTestcase):
 class ReportWithHaRulesTestcase(PVEControlTestcase):
     """Tests for HA data using new Proxmox >= 9.1 rules API."""
 
-    def _extra_fixtures(self):
+    def _build_fixtures(self):
+        super()._build_fixtures()
         self.ha_rules = [
             fake_ha_rule("group-az1", ["pve-devel-1", "pve-devel-2"], [100, 101]),
             fake_ha_rule("group-az2", ["pve-devel-2"], [102]),
         ]
-
-    def _extra_routes(self):
-        self._register_full_routes()
 
     def _post_setup(self):
         _ = self.cluster.ha
@@ -351,14 +349,12 @@ class ReportWithHaRulesTestcase(PVEControlTestcase):
 class ReportWithHaGroupsTestcase(PVEControlTestcase):
     """Tests for HA data using old Proxmox < 9.1 groups API (group field on resources)."""
 
-    def _extra_fixtures(self):
+    def _build_fixtures(self):
+        super()._build_fixtures()
         self.ha_resources = [
             fake_ha_resource(100, group="legacy-group"),
             fake_ha_resource(101, group="legacy-group"),
         ]
-
-    def _extra_routes(self):
-        self._register_full_routes()
 
     def _post_setup(self):
         _ = self.cluster.ha
