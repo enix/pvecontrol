@@ -1,10 +1,16 @@
 import importlib
+import os
+import tempfile
 import unittest
 from unittest.mock import MagicMock, patch
 
 import confuse
+import yaml
+from click.testing import CliRunner
 
-from pvecontrol.config import list_clusters, set_config
+import pvecontrol as pvecontrol_module
+from pvecontrol import pvecontrol
+from pvecontrol.config import configtemplate, list_clusters, set_config
 
 # pvecontrol/__init__.py does `from pvecontrol.config import config`, which
 # overwrites the `config` attribute on the pvecontrol package with the LazyConfig
@@ -115,3 +121,95 @@ class TestSetConfig(unittest.TestCase):
                 with self.assertRaises(SystemExit):
                     set_config("prod")
             self.assertTrue(any("prod" in msg and "PROD" in msg for msg in log.output))
+
+
+def _make_temp_config(overrides=None):
+    content = {
+        "clusters": [{"name": "test", "host": "127.0.0.1", "user": "root@pam", "password": "secret"}],
+        "node": {"cpufactor": 2.5, "memoryminimum": 8589934592},
+        "vm": {"max_last_backup": 1500},
+    }
+    if overrides:
+        content.update(overrides)
+    f = tempfile.NamedTemporaryFile(suffix=".yaml", mode="w", delete=False)
+    yaml.dump(content, f)
+    f.close()
+    return f.name
+
+
+class TestConfigFileOption(unittest.TestCase):
+
+    def setUp(self):
+        # test_pvecontrol.py::test_get_leaf_command calls make_context with --help args,
+        # which sets ignoring=True on the shared pvecontrol group instance and never resets it.
+        pvecontrol.ignoring = False
+
+    def test_config_option_calls_set_file(self):
+        config_path = _make_temp_config()
+        try:
+            runner = CliRunner()
+            with (
+                patch.object(pvecontrol_module, "config") as mock_config,
+                patch("pvecontrol.actions.cluster.PVECluster.create_from_config", side_effect=SystemExit(0)),
+            ):
+                runner.invoke(pvecontrol, ["--config", config_path, "--cluster", "test", "status"])
+            mock_config.set_file.assert_called_once_with(config_path)
+        finally:
+            os.unlink(config_path)
+
+    def test_config_option_skips_user_config(self):
+        # The given file must be layered on the packaged defaults only (user=False),
+        # otherwise confuse merges the user config underneath and keys absent from the
+        # given file leak in from ~/.config/pvecontrol/config.yaml.
+        config_path = _make_temp_config()
+        try:
+            runner = CliRunner()
+            with (
+                patch.object(pvecontrol_module, "config") as mock_config,
+                patch("pvecontrol.actions.cluster.PVECluster.create_from_config", side_effect=SystemExit(0)),
+            ):
+                runner.invoke(pvecontrol, ["--config", config_path, "--cluster", "test", "status"])
+            mock_config.read.assert_called_once_with(user=False, defaults=True)
+        finally:
+            os.unlink(config_path)
+
+    def test_no_config_option_skips_set_file(self):
+        runner = CliRunner()
+        with (
+            patch.object(pvecontrol_module, "config") as mock_config,
+            patch("pvecontrol.actions.cluster.PVECluster.create_from_config", side_effect=SystemExit(0)),
+        ):
+            runner.invoke(pvecontrol, ["--cluster", "test", "status"])
+        mock_config.set_file.assert_not_called()
+        mock_config.read.assert_not_called()
+
+    def test_autodetect_no_cluster_error_references_custom_config(self):
+        # When autodetection finds no cluster, the error must point at the file
+        # passed with --config, not at the default user config path.
+        config_path = _make_temp_config({"clusters": []})
+        try:
+            runner = CliRunner()
+            with self.assertLogs("root", level="ERROR") as log:
+                runner.invoke(pvecontrol, ["--config", config_path, "status"], env={"PVECONTROL_CLUSTER": None})
+            assert any(config_path in msg for msg in log.output)
+        finally:
+            os.unlink(config_path)
+
+    def test_custom_config_file_has_highest_priority(self):
+        config_path = _make_temp_config()
+        try:
+            cfg = confuse.Configuration("pvecontrol_test", read=False)
+            cfg.set_file(config_path)
+            assert cfg.sources[0].filename == config_path
+        finally:
+            os.unlink(config_path)
+
+    def test_custom_config_values_are_loaded(self):
+        config_path = _make_temp_config({"node": {"cpufactor": 99.0, "memoryminimum": 8589934592}})
+        try:
+            cfg = confuse.Configuration("pvecontrol_test", read=False)
+            cfg.set_file(config_path)
+            result = cfg.get(configtemplate)
+            assert result.node["cpufactor"] == 99.0
+        finally:
+            os.unlink(config_path)

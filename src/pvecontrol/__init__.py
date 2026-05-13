@@ -129,13 +129,33 @@ class IgnoreRequiredForHelp(click.Group):
     default=True,
     help="Use colorized output",
 )
+@click.option(
+    "--config",
+    "config_file",
+    metavar="PATH",
+    envvar="CONFIG",
+    type=click.Path(exists=True, dir_okay=False, readable=True),
+    default=None,
+    help=f"Path to configuration file (overrides default {config.user_config_path()})",
+)
 @click.pass_context
-def pvecontrol(ctx, debug, output, cluster, unicode, color):
+def pvecontrol(ctx, debug, output, cluster, unicode, color, config_file):
     signal.signal(signal.SIGINT, lambda *_: sys.exit(130))
     # Disable urllib3 warnings about invalid certs
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     if not ctx.command.ignoring:
+        if config_file:
+            # Use the given file authoritatively: layer it on top of the packaged
+            # defaults only, skipping the user config (~/.config/pvecontrol/config.yaml).
+            # confuse merges sources key-by-key, so without this any key absent from
+            # the given file (proxy_certificate, timeout, extra clusters, ...) would
+            # leak in from the user config. And since the config is a list and not
+            # a dict, items of the list will be merged based on their index in the
+            # config file, producing very weird behaviors.
+            config.read(user=False, defaults=True)
+            config.set_file(config_file)
+
         # configure logging
         logging.basicConfig(encoding="utf-8", level=logging.DEBUG if debug else logging.INFO)
 
@@ -147,7 +167,7 @@ def pvecontrol(ctx, debug, output, cluster, unicode, color):
                 logging.debug("Auto-selected single cluster: %s", cluster)
             elif len(clusters) == 0:
                 logging.error("No cluster configured. Please add a cluster to your configuration file.")
-                logging.error("Configuration file: %s", config.user_config_path())
+                logging.error("Configuration file: %s", config_file or config.user_config_path())
                 ctx.exit(1)
             else:
                 available = "\n".join(f"  {name}" for name in clusters)

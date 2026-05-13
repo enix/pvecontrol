@@ -70,6 +70,9 @@ def list_clusters():
 
 def set_config(cluster_name):
     validconfig = _load_config()
+    for source in config.sources:
+        if source.filename:
+            logging.debug("configuration file: %s", source.filename)
     logging.debug("configuration is %s", validconfig)
 
     # FIXME trouver une methode plus clean pour recuperer la configuration du bon cluster
