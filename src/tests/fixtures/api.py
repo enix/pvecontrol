@@ -49,7 +49,7 @@ def mock_api_requests(
     vms,
     backup_jobs=None,
     storage_resources=None,
-    storage_contents=None,
+    storages_contents=None,
     ha_rules=None,
     ha_resources=None,
     users=None,
@@ -57,7 +57,7 @@ def mock_api_requests(
     acls=None,
 ):
     routes = generate_routes(
-        nodes, vms, backup_jobs, storage_resources, storage_contents, ha_rules, ha_resources, users, groups, acls
+        nodes, vms, backup_jobs, storage_resources, storages_contents, ha_rules, ha_resources, users, groups, acls
     )
 
     def side_effect(method, url, **kwargs):
@@ -76,7 +76,7 @@ def create_response_wrapper(
     vms,
     backup_jobs=None,
     storage_resources=None,
-    storage_contents=None,
+    storages_contents=None,
     ha_rules=None,
     ha_resources=None,
     users=None,
@@ -84,7 +84,7 @@ def create_response_wrapper(
     acls=None,
 ):
     routes = generate_routes(
-        nodes, vms, backup_jobs, storage_resources, storage_contents, ha_rules, ha_resources, users, groups, acls
+        nodes, vms, backup_jobs, storage_resources, storages_contents, ha_rules, ha_resources, users, groups, acls
     )
 
     def wrapper(path, data=None, **kwargs):
@@ -106,7 +106,7 @@ def generate_routes(
     vms,
     backup_jobs,
     storage_resources=None,
-    storage_contents=None,
+    storages_contents=None,
     ha_rules=None,
     ha_resources=None,
     users=None,
@@ -130,7 +130,7 @@ def generate_routes(
         "/api2/json/access/acl": acls or [],
         **generate_node_version_routes(nodes),
         **generate_vm_routes(nodes, vms),
-        **generate_storages_contents_routes(nodes, storage_resources, storage_contents),
+        **generate_storages_contents_routes(nodes, storage_resources, storages_contents),
     }
 
     print("ROUTES:")
