@@ -1,16 +1,5 @@
-import unittest
-from datetime import datetime, timedelta
-from unittest.mock import patch
-
-import responses
-
 from tests.fixtures.api import (
-    create_response_wrapper,
-    fake_node,
-    fake_vm,
-    fake_backup,
     fake_backup_job,
-    fake_storage_resource,
     fake_ha_rule,
     fake_ha_resource,
     fake_user,
@@ -18,95 +7,17 @@ from tests.fixtures.api import (
     fake_acl,
 )
 from pvecontrol.actions.report import _build_report_data, _build_ha_vmid_group_mapping, _render_report
-from pvecontrol.models.cluster import PVECluster
-
-
-# FIXME: remove pylint disable annotations
-# pylint: disable=too-many-locals
-def _make_cluster(
-    nodes,
-    vms,
-    backup_jobs=None,
-    storage_resources=None,
-    storages_contents=None,
-    ha_rules=None,
-    ha_resources=None,
-    users=None,
-    groups=None,
-    acls=None,
-):
-    """Helper to create a PVECluster with all routes registered in the current responses context."""
-    backup_jobs = backup_jobs or []
-    storage_resources = storage_resources or []
-    storages_contents = storages_contents or {node["status"]["name"]: {} for node in nodes}
-
-    wrapper = create_response_wrapper(
-        nodes,
-        vms,
-        backup_jobs,
-        storage_resources,
-        storages_contents,
-        ha_rules=ha_rules,
-        ha_resources=ha_resources,
-        users=users,
-        groups=groups,
-        acls=acls,
-    )
-    wrapper("/api2/json/version")
-    wrapper("/api2/json/cluster/status")
-    wrapper("/api2/json/cluster/resources")
-    for node in nodes:
-        name = node["status"]["name"]
-        wrapper(f"/api2/json/nodes/{name}/version")
-        wrapper(f"/api2/json/nodes/{name}/qemu")
-    for vm in vms:
-        wrapper(f"/api2/json/nodes/{vm['node']}/qemu/{vm['vmid']}/config")
-    for node in nodes:
-        name = node["status"]["name"]
-        for storage in storage_resources or []:
-            wrapper(f"/api2/json/nodes/{name}/storage/{storage['storage']}/content", params={"content": "backup"})
-    wrapper("/api2/json/cluster/ha/rules")
-    wrapper("/api2/json/cluster/ha/status/manager_status")
-    wrapper("/api2/json/cluster/ha/resources")
-    wrapper("/api2/json/cluster/backup")
-    wrapper("/api2/json/access/users")
-    wrapper("/api2/json/access/groups")
-    wrapper("/api2/json/access/acl")
-
-    with patch("proxmoxer.backends.https.ProxmoxHTTPAuth") as mock_auth:
-        mock_auth_instance = mock_auth.return_value
-        mock_auth_instance.timeout = 1
-        cluster = PVECluster(
-            "name",
-            "host",
-            config={"node": {"cpufactor": 2.5, "memoryminimum": 0}, "vm": {"max_last_backup": 100}},
-            verify_ssl=False,
-            **{"user": "user", "password": "password"},
-            timeout=mock_auth_instance.timeout,
-        )
-    return cluster
+from tests.testcase import PVEControlTestcase
 
 
 # FIXME: remove pylint disable annotations
 # pylint: disable=too-many-public-methods
-class ReportTestcase(unittest.TestCase):
+class ReportTestcase(PVEControlTestcase):
     """Tests for report generation with no HA groups configured."""
 
-    @responses.activate
-    def setUp(self):
-        nodes = [fake_node(1, True), fake_node(2, True), fake_node(3, True)]
-        self.nodes = nodes
-        self.vms = [
-            fake_vm(100, nodes[0]),
-            fake_vm(101, nodes[0]),
-            fake_vm(102, nodes[1]),
-            fake_vm(103, nodes[1]),
-            fake_vm(104, nodes[2]),
-        ]
-        backup_jobs = [fake_backup_job(1, "100"), fake_backup_job(2, "101")]
-        storage_resources = [fake_storage_resource("s3", n["status"]["name"]) for n in nodes]
-        backups = [fake_backup("s3", 100, datetime.now() - timedelta(minutes=110))]
-        storages_contents = {node["status"]["name"]: {"s3": backups} for node in nodes}
+    def _extra_fixtures(self):
+        # vm 102 must have no backup job (see test_vm_list_backup_jobs_association)
+        self.backup_jobs = [fake_backup_job(1, "100"), fake_backup_job(2, "101")]
         self.users = [
             fake_user(
                 "admin@pam",
@@ -138,19 +49,15 @@ class ReportTestcase(unittest.TestCase):
             fake_acl("/vms", "ops", "PVEVMAdmin", acl_type="group", propagate=0),
         ]
 
-        cluster = _make_cluster(
-            nodes,
-            self.vms,
-            backup_jobs,
-            storage_resources,
-            storages_contents,
-            users=self.users,
-            groups=self.groups,
-            acls=self.acls,
-        )
-        # preload ha (lazy) while responses mock is still active
-        _ = cluster.ha
-        self.data = _build_report_data(cluster)
+    def _extra_routes(self):
+        self._register_full_routes()
+
+    def _cluster_config(self):
+        return {"node": {"cpufactor": 2.5, "memoryminimum": 0}, "vm": {"max_last_backup": 100}}
+
+    def _post_setup(self):
+        _ = self.cluster.ha
+        self.data = _build_report_data(self.cluster)
 
     def test_build_report_data_structure(self):
         assert "generated_at" in self.data
@@ -386,27 +293,21 @@ class ReportTestcase(unittest.TestCase):
             assert vm["ha group"] == ""
 
 
-class ReportWithHaRulesTestcase(unittest.TestCase):
+class ReportWithHaRulesTestcase(PVEControlTestcase):
     """Tests for HA data using new Proxmox >= 9.1 rules API."""
 
-    @responses.activate
-    def setUp(self):
-        nodes = [fake_node(1, True), fake_node(2, True)]
-        self.nodes = nodes
-        self.vms = [
-            fake_vm(100, nodes[0]),
-            fake_vm(101, nodes[0]),
-            fake_vm(102, nodes[1]),
-        ]
+    def _extra_fixtures(self):
         self.ha_rules = [
             fake_ha_rule("group-az1", ["pve-devel-1", "pve-devel-2"], [100, 101]),
             fake_ha_rule("group-az2", ["pve-devel-2"], [102]),
         ]
 
-        cluster = _make_cluster(nodes, self.vms, ha_rules=self.ha_rules)
-        _ = cluster.ha
-        self.cluster = cluster
-        self.data = _build_report_data(cluster)
+    def _extra_routes(self):
+        self._register_full_routes()
+
+    def _post_setup(self):
+        _ = self.cluster.ha
+        self.data = _build_report_data(self.cluster)
 
     def test_ha_groups_count(self):
         assert len(self.data["ha_groups"]) == 2
@@ -447,21 +348,20 @@ class ReportWithHaRulesTestcase(unittest.TestCase):
         assert "group-az2" in md
 
 
-class ReportWithHaGroupsTestcase(unittest.TestCase):
+class ReportWithHaGroupsTestcase(PVEControlTestcase):
     """Tests for HA data using old Proxmox < 9.1 groups API (group field on resources)."""
 
-    @responses.activate
-    def setUp(self):
-        nodes = [fake_node(1, True), fake_node(2, True)]
-        self.vms = [fake_vm(100, nodes[0]), fake_vm(101, nodes[1])]
+    def _extra_fixtures(self):
         self.ha_resources = [
             fake_ha_resource(100, group="legacy-group"),
             fake_ha_resource(101, group="legacy-group"),
         ]
 
-        cluster = _make_cluster(nodes, self.vms, ha_resources=self.ha_resources)
-        _ = cluster.ha
-        self.cluster = cluster
+    def _extra_routes(self):
+        self._register_full_routes()
+
+    def _post_setup(self):
+        _ = self.cluster.ha
 
     def test_vmid_group_mapping_old_api(self):
         mapping = _build_ha_vmid_group_mapping(self.cluster)
