@@ -78,7 +78,7 @@ def test_sanitycheck_local_storage_vm_deleted(request, _proxmox_http_auth):
     }
 
     request.side_effect = mock_api_requests(
-        nodes, vms, storage_resources=storage_resources, storage_contents=storage_contents
+        nodes, vms, storage_resources=storage_resources, storages_contents=storage_contents
     )
 
     proxmox = PVECluster(
@@ -140,7 +140,7 @@ def test_sanitycheck_shared_storage_vm_deleted(request, _proxmox_http_auth):
     }
 
     request.side_effect = mock_api_requests(
-        nodes, vms, storage_resources=storage_resources, storage_contents=storage_contents
+        nodes, vms, storage_resources=storage_resources, storages_contents=storage_contents
     )
 
     proxmox = PVECluster(
