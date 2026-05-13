@@ -1,4 +1,5 @@
 from unittest.mock import patch
+from datetime import datetime, timedelta
 
 import responses
 
@@ -9,7 +10,25 @@ from tests.sanitycheck.utils import assert_message
 from tests.testcase import PVEControlTestcase
 
 
+from tests.fixtures.api import (
+    fake_backup,
+    fake_backup_job,
+)
+
+
 class PVEClusterTestcase(PVEControlTestcase):
+
+    def _build_fixtures(self):
+        self.backup_jobs = [
+            fake_backup_job(1, "100"),
+            fake_backup_job(2, "101"),
+            fake_backup_job(3, "102"),
+        ]
+        self.backups = [
+            fake_backup("s3", 100, datetime.now() - timedelta(minutes=110)),
+            fake_backup("s3", 101, datetime.now() - timedelta(minutes=90)),
+        ]
+        super()._build_fixtures()
 
     @responses.activate
     def test_check(self):
