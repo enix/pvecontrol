@@ -262,7 +262,7 @@ If this works, we're good to go!
 - `PVECONTROL_CLUSTER`: the default cluster to use when no `-c` or `--cluster` option is specified.
 - `PVECONTROL_COLOR`: if set to `False`, it will disable all colorized output.
 - `PVECONTROL_UNICODE`: if set to `False`, it will disable all unicode output.
-- `PVECONTROL_CONFIG`: path to the configuration file to use instead of the default `~/.config/pvecontrol/config.yaml`. The specified file is merged with the defaults, not a full replacement.
+- `PVECONTROL_CONFIG`: path to the configuration file to use instead of the default `~/.config/pvecontrol/config.yaml`.
 
 
 ## Shell completion
