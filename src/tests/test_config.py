@@ -131,10 +131,9 @@ def _make_temp_config(overrides=None):
     }
     if overrides:
         content.update(overrides)
-    f = tempfile.NamedTemporaryFile(suffix=".yaml", mode="w", delete=False)
-    yaml.dump(content, f)
-    f.close()
-    return f.name
+    with tempfile.NamedTemporaryFile(suffix=".yaml", mode="w", delete=False) as f:
+        yaml.dump(content, f)
+        return f.name
 
 
 class TestConfigFileOption(unittest.TestCase):

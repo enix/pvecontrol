@@ -76,7 +76,6 @@ def migrate(ctx, vmid, target, online, follow, wait, dry_run):
         # Lancer tache de migration
         upid = proxmox.api.nodes(node.node).qemu(vmid).migrate.post(**options)
         # Suivre la task cree
-        # pylint: disable=duplicate-code
         proxmox.refresh()
         print_task(proxmox, upid, follow, wait)
     else:
