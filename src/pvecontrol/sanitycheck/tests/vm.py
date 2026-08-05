@@ -1,5 +1,5 @@
 from pvecontrol.models.vm import VmStatus
-from pvecontrol.models.storage import PVEStorage, STORAGE_SHARED_ENUM
+from pvecontrol.models.storage import PVEStorage, StorageShared
 from pvecontrol.sanitycheck.checks import Check, CheckCode, CheckType, CheckMessage
 
 
@@ -59,9 +59,9 @@ class DiskUnused(Check):
             if not self.proxmox.is_node_online(storage.node):
                 continue
 
-            if storage.shared == STORAGE_SHARED_ENUM[1]:
+            if storage.shared == StorageShared.SHARED:
                 self._check_shared_storage_disk_is_unused(storage)
-            elif storage.shared == STORAGE_SHARED_ENUM[0]:
+            elif storage.shared == StorageShared.LOCAL:
                 self._check_local_storage_disk_is_unused(storage)
 
         self.add_messages(_offline_nodes_messages(self.proxmox, self.proxmox.vms, storages))
