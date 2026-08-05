@@ -1,5 +1,7 @@
 import logging
+from dataclasses import dataclass, field, fields
 from enum import Enum
+from typing import Optional
 
 from pvecontrol.models.volume import PVEVolume
 
@@ -21,29 +23,33 @@ class StorageShared(Enum):
     SHARED = 1
 
 
-class PVEStorage:
+@dataclass
+class PVEStorageData:
+    api: object = None
+    node: str = field(default="")
+    id: str = field(default="")
+    shared: Optional["StorageShared"] = None
+    type: str = field(default="")
+    storage: str = field(default="")
+    maxdisk: int = field(default=0)
+    disk: int = field(default=0)
+    plugintype: str = field(default="")
+    status: str = field(default="")
+    content: str = field(default="")
+
+
+class PVEStorage(PVEStorageData):
     """Proxmox VE Storage"""
 
-    _default_kwargs = {
-        "storage": None,
-        "maxdisk": None,
-        "disk": None,
-        "plugintype": None,
-        "status": None,
-        "test": None,
-    }
+    _api = None
 
-    def __init__(self, api, node, storage_id, shared, **kwargs):
-        self.id = storage_id
-        self.short_id = storage_id.split("/")[-1]
-        self.node = node
+    def __init__(self, api, **kwargs):
+        super().__init__(**kwargs)
+        if isinstance(self.id, str):
+            self.short_id = self.id.rsplit("/", maxsplit=1)[-1]
         self._api = api
         self._content = {}
-
-        self.shared = STORAGE_SHARED_ENUM[shared]
-
-        for k, v in self._default_kwargs.items():
-            self.__setattr__(k, kwargs.get(k, v))
+        self.shared = StorageShared(self.shared)
         # We exclude s3 storage type sizing informations wich are not relevent.
         # PVE api see missleading informations depending on s3 tool used to mount the filesystem thru fuse.
         if self.plugintype == "s3":
@@ -57,7 +63,7 @@ class PVEStorage:
             if online_only and not proxmox.is_node_online(storage.node):
                 continue
             value = {"storage": storage, "nodes": [], "usage": f"{storage.percentage:.1f}%"}
-            if StorageShared[storage.shared.upper()] == StorageShared.SHARED:
+            if storage.shared == StorageShared.SHARED:
                 group = storages.setdefault(storage.storage, value)
                 # The entry of a node that is not online holds stale or missing usage data
                 if not proxmox.is_node_online(group["storage"].node) and proxmox.is_node_online(storage.node):
@@ -84,11 +90,10 @@ class PVEStorage:
         rows = []
         for item in PVEStorage.get_grouped_list(proxmox):
             storage = item["storage"]
-            row = {key: getattr(storage, key) for key in PVEStorage._default_kwargs}
+            row = {f.name: getattr(storage, f.name) for f in fields(PVEStorageData) if f.name != "api"}
             row.update(
                 {
-                    "id": storage.id,
-                    "shared": storage.shared,
+                    "shared": STORAGE_SHARED_ENUM[storage.shared.value],
                     "nodes": ", ".join(item["nodes"]),
                     "usage": item["usage"],
                 }
@@ -106,10 +111,7 @@ class PVEStorage:
 
     @property
     def images(self):
-        images = []
-        for image in self.get_content("images"):
-            images.append(PVEVolume(image.pop("volid"), image.pop("format"), image.pop("size"), **image))
-        return images
+        return [PVEVolume(**image) for image in self.get_content("images")]
 
     def get_content(self, content_type=None):
         if content_type not in self._content:

@@ -53,24 +53,8 @@ class PVECluster:
         cluster_entry = [item for item in self.status if item.get("type") == "cluster"][0]
         self.cluster_name = str(cluster_entry["name"])
 
-        self.nodes = []
-        for node in self.resources_nodes:
-            self.nodes.append(
-                PVENode(
-                    self,
-                    node["node"],
-                    node["status"],
-                    kwargs=node,
-                )
-            )
-
-        self.storages = []
-        for resource in self.resources_storages:
-            # Work on a copy: the cluster/resources entry keeps its node, id and shared keys
-            storage = dict(resource)
-            self.storages.append(
-                PVEStorage(self.api, storage.pop("node"), storage.pop("id"), storage.pop("shared"), **storage)
-            )
+        self.nodes = [PVENode(self, **node) for node in self.resources_nodes]
+        self.storages = [PVEStorage(self.api, **storage) for storage in self.resources_storages]
 
     @staticmethod
     def create_from_config(cluster_name):
@@ -274,9 +258,7 @@ class PVECluster:
                 logging.debug("Find storage: %s", (str(item)))
                 for backup in item["storage"].get_content("backup"):
                     logging.debug("New vm backup: %s", (str(backup)))
-                    self._backups.append(
-                        PVEVolume(backup.pop("volid"), backup.pop("format"), backup.pop("size"), **backup)
-                    )
+                    self._backups.append(PVEVolume(**backup))
         return self._backups
 
     @property
