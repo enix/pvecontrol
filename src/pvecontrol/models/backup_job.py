@@ -1,25 +1,25 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import List, Optional
 
-from pvecontrol.models.storage import StorageShared
+from pvecontrol.models import api_kwargs, format_fields
 
 
 @dataclass
 class PVEBackupJobData:
     all: int = field(default=0)
-    compress: object = None
-    enabled: object = None
+    compress: Optional[str] = None
+    enabled: Optional[int] = None
     exclude: str = field(default="")
-    fleecing: object = None
-    mode: str = field(default="")
-    next_run: int = field(default=0)
-    node: str = field(default="")
-    notes_template: str = field(default="")
-    pool: str = field(default="")
-    prune_backups: object = (None,)
-    schedule: str = field(default="")
-    storage: Optional["StorageShared"] = None
-    type: str = field(default="")
+    fleecing: Optional[dict] = None
+    mode: Optional[str] = None
+    next_run: Optional[int] = None
+    node: Optional[str] = None
+    notes_template: Optional[str] = None
+    pool: Optional[str] = None
+    prune_backups: Optional[dict] = None
+    schedule: Optional[str] = None
+    storage: Optional[str] = None
+    type: Optional[str] = None
     vmid: str = field(default="")
 
 
@@ -28,17 +28,22 @@ class PVEBackupJob(PVEBackupJobData):
 
     def __init__(self, backup_id, **kwargs):
         self.id = backup_id
-        _values = {k: v for k, v in kwargs.items() if hasattr(PVEBackupJobData, k)}
-        super().__init__(**_values)
+        super().__init__(**api_kwargs(PVEBackupJobData, kwargs))
 
         self.all = self.all == 1
-        if isinstance(self.vmid, str):
-            self.vmid = list(self.vmid.split(","))
-        if isinstance(self.exclude, str):
-            self.exclude = self.exclude.split(",")
+        self.vmid = self._split(self.vmid)
+        self.exclude = self._split(self.exclude)
+
+    @staticmethod
+    def _split(value) -> List[str]:
+        if isinstance(value, str):
+            return value.split(",")
+        if value is None:
+            return []
+        return [str(value)]
 
     def __str__(self):
-        return "\n".join([f"{k.capitalize()}: {v}" for k, v in self.__dict__.items()])
+        return f"Vm(s): {self.vmid}\nId: {self.id}\n" + format_fields(self)
 
     def is_selection_matching(self, vm):
         if self.node is not None and self.node != vm.node:

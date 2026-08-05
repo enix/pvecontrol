@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
+from pvecontrol.models import api_kwargs, format_fields
 from pvecontrol.models.volume import PVEVolume
 
 STORAGE_SHARED_ENUM = ["local", "shared"]
@@ -22,13 +23,15 @@ class StorageShared(Enum):
     LOCAL = 0
     SHARED = 1
 
+    def __str__(self):
+        return STORAGE_SHARED_ENUM[self.value]
+
 
 @dataclass
 class PVEStorageData:
-    api: object = None
     node: str = field(default="")
     id: str = field(default="")
-    shared: Optional["StorageShared"] = None
+    shared: Optional[StorageShared] = None
     type: str = field(default="")
     storage: str = field(default="")
     maxdisk: int = field(default=0)
@@ -44,13 +47,12 @@ class PVEStorage(PVEStorageData):
     _api = None
 
     def __init__(self, api, **kwargs):
-        super().__init__(**kwargs)
-        if isinstance(self.id, str):
-            self.short_id = self.id.rsplit("/", maxsplit=1)[-1]
+        super().__init__(**api_kwargs(PVEStorageData, kwargs))
+        self.short_id = self.id.rsplit("/", maxsplit=1)[-1]
         self._api = api
         self._content = {}
         self._details = {}
-        self.shared = StorageShared[STORAGE_SHARED_ENUM[self.shared].upper()]
+        self.shared = StorageShared(int(self.shared or 0))
         # We exclude s3 storage type sizing informations wich are not relevent.
         # PVE api see missleading informations depending on s3 tool used to mount the filesystem thru fuse.
         if self.plugintype == "s3":
@@ -114,7 +116,4 @@ class PVEStorage(PVEStorageData):
         return self._content[content_type]
 
     def __str__(self):
-        output = f"Node: {self.node}\n" + f"Id: {self.id}\n"
-        for key in self._default_kwargs:
-            output += f"{key.capitalize()}: {self.__getattribute__(key)}\n"
-        return output
+        return format_fields(self)

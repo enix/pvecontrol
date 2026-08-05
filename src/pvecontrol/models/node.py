@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Any, List, Optional
 
 from pvecontrol.utils import defaulter
+from pvecontrol.models import api_kwargs
 from pvecontrol.models.vm import PVEVm, VmStatus
 
 COLUMNS = ["node", "status", "allocatedcpu", "maxcpu", "mem", "allocatedmem", "maxmem"]
@@ -17,7 +18,7 @@ class NodeStatus(Enum):
 @dataclass
 class PVENodeData:
     node: str = field(default="")
-    status: Optional["NodeStatus"] = None
+    status: Optional[NodeStatus] = None
     cluster: Any = None
     cpu: int = field(default=0)
     allocatedcpu: int = field(default=0)
@@ -34,8 +35,7 @@ class PVENode(PVENodeData):
     """A proxmox VE Node"""
 
     def __init__(self, cluster, **kwargs):
-        _values = {k: v for k, v in kwargs.items() if hasattr(PVENodeData, k)}
-        super().__init__(**_values)
+        super().__init__(**api_kwargs(PVENodeData, kwargs))
         if isinstance(self.status, str):
             self.status = NodeStatus[self.status.upper()]
         self.cluster = cluster

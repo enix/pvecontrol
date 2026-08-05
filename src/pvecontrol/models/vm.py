@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
+from pvecontrol.models import api_kwargs
+
 COLUMNS = ["vmid", "name", "status", "node", "cpus", "maxmem", "maxdisk", "tags"]
 
 
@@ -17,9 +19,8 @@ class VmStatus(Enum):
 
 @dataclass
 class PVEVmData:
-    api: object = None
     node: str = field(default="")
-    status: Optional["VmStatus"] = None
+    status: Optional[VmStatus] = None
     vmid: int = field(default=0)
     name: str = field(default="")
     lock: str = field(default="")
@@ -39,8 +40,7 @@ class PVEVm(PVEVmData):
     _config = None
 
     def __init__(self, api, **kwargs):
-        _values = {k: v for k, v in kwargs.items() if hasattr(PVEVmData, k)}
-        super().__init__(**_values)
+        super().__init__(**api_kwargs(PVEVmData, kwargs))
         if isinstance(self.status, str):
             self.status = VmStatus[self.status.upper()]
         self._api = api
