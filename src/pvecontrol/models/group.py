@@ -17,7 +17,7 @@ class PVEGroup(PVEGroupData):
     """Proxmox VE Access Group"""
 
     def __init__(self, groupid=None, **kwargs):
-        super().__init__(groupid=groupid, **api_kwargs(PVEGroupData, kwargs))
+        super().__init__(groupid=groupid, **kwargs)
 
         if not self.groupid:
             raise ValueError("Invalid groupid: must be a non-empty string")
@@ -26,6 +26,10 @@ class PVEGroup(PVEGroupData):
             self.users = [u for u in self.users.split(",") if u]
         else:
             self.users = list(self.users)
+
+    @classmethod
+    def from_api(cls, payload):
+        return cls(**api_kwargs(PVEGroupData, payload))
 
     def get_members(self, proxmox):
         """Return PVEUser objects for each member of this group."""
