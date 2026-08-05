@@ -1,6 +1,7 @@
 import pytest
 
 from pvecontrol.models.user import PVEUser
+from tests.fixtures.api import fake_user
 
 
 def test_basic_instantiation():
@@ -108,3 +109,21 @@ def test_tokens_empty_list():
 def test_tokens_absent():
     user = PVEUser("admin@pam")
     assert user.tokens == []
+
+
+def test_api_payload():
+    payload = fake_user("bob@pve", groups=["ops", "devs"], firstname="Bob", realm_type="pve", tokens=["ci"])
+    user = PVEUser(**payload)
+
+    assert user.userid == "bob@pve"
+    assert user.firstname == "Bob"
+    # the api key is "realm-type"
+    assert user.realm_type == "pve"
+    assert user.groups == ["ops", "devs"]
+    assert user.tokens == ["bob@pve!ci"]
+
+
+def test_unknown_api_keys_are_ignored():
+    user = PVEUser("admin@pam", something_new="ignored")
+
+    assert not hasattr(user, "something_new")
