@@ -5,7 +5,9 @@ from tests.fixtures.api import fake_backup_job
 
 def test_api_payload():
     payload = fake_backup_job(1, "100,101")
-    backup_job = PVEBackupJob(payload.pop("id"), **payload)
+    backup_job = PVEBackupJob.from_api(payload)
+
+    assert backup_job.id == "backup-d71917f0-0001"
 
     # the api uses dashes in those keys, they must not be dropped on the way in
     assert backup_job.next_run == 1735430400

@@ -46,8 +46,8 @@ class PVECluster:
         cluster_entry = [item for item in self.status if item.get("type") == "cluster"][0]
         self.cluster_name = str(cluster_entry["name"])
 
-        self.nodes = [PVENode(self, **node) for node in self.resources_nodes]
-        self.storages = [PVEStorage(self.api, **storage) for storage in self.resources_storages]
+        self.nodes = [PVENode.from_api(self, node) for node in self.resources_nodes]
+        self.storages = [PVEStorage.from_api(self.api, storage) for storage in self.resources_storages]
 
     @staticmethod
     def create_from_config(cluster_name):
@@ -252,25 +252,25 @@ class PVECluster:
                 logging.debug("Find storage: %s", (str(item)))
                 for backup in item["storage"].get_content("backup"):
                     logging.debug("New vm backup: %s", (str(backup)))
-                    self._backups.append(PVEVolume(**backup))
+                    self._backups.append(PVEVolume.from_api(backup))
         return self._backups
 
     @property
     def acls(self):
         if self._acls is None:
-            self._acls = [PVEAcl(**entry) for entry in self.api.access.acl.get()]
+            self._acls = [PVEAcl.from_api(entry) for entry in self.api.access.acl.get()]
         return self._acls
 
     @property
     def groups(self):
         if self._groups is None:
-            self._groups = [PVEGroup(**g) for g in self.api.access.groups.get()]
+            self._groups = [PVEGroup.from_api(g) for g in self.api.access.groups.get()]
         return self._groups
 
     @property
     def users(self):
         if self._users is None:
-            self._users = [PVEUser(**u) for u in self.api.access.users.get(full=1)]
+            self._users = [PVEUser.from_api(u) for u in self.api.access.users.get(full=1)]
         return self._users
 
     @property
@@ -279,5 +279,5 @@ class PVECluster:
             self._backup_jobs = []
             for backup_job in self.api.cluster.backup.get():
                 logging.debug("New backup job: %s", (str(backup_job)))
-                self._backup_jobs.append(PVEBackupJob(backup_job.pop("id"), **backup_job))
+                self._backup_jobs.append(PVEBackupJob.from_api(backup_job))
         return self._backup_jobs

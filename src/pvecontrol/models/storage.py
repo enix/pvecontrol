@@ -47,7 +47,7 @@ class PVEStorage(PVEStorageData):
     _api = None
 
     def __init__(self, api, **kwargs):
-        super().__init__(**api_kwargs(PVEStorageData, kwargs))
+        super().__init__(**kwargs)
         self.short_id = self.id.rsplit("/", maxsplit=1)[-1]
         self._api = api
         self._content = {}
@@ -58,6 +58,10 @@ class PVEStorage(PVEStorageData):
         if self.plugintype == "s3":
             self.disk = 0
             self.maxdisk = 0
+
+    @classmethod
+    def from_api(cls, api, payload):
+        return cls(api, **api_kwargs(PVEStorageData, payload))
 
     @property
     def details(self):
@@ -100,7 +104,7 @@ class PVEStorage(PVEStorageData):
 
     @property
     def images(self):
-        return [PVEVolume(**image) for image in self.get_content("images")]
+        return [PVEVolume.from_api(image) for image in self.get_content("images")]
 
     def get_content(self, content_type=None):
         if content_type not in self._content:

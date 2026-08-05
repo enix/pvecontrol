@@ -40,12 +40,16 @@ class PVEVm(PVEVmData):
     _config = None
 
     def __init__(self, api, **kwargs):
-        super().__init__(**api_kwargs(PVEVmData, kwargs))
+        super().__init__(**kwargs)
         if isinstance(self.status, str):
             self.status = VmStatus[self.status.upper()]
         self._api = api
         self.tags = set(filter(None, self.tags.split(";")))
         self.cpus = self.maxcpu
+
+    @classmethod
+    def from_api(cls, api, payload):
+        return cls(api, **api_kwargs(PVEVmData, payload))
 
     @property
     def config(self):

@@ -28,11 +28,15 @@ class PVEBackupJob(PVEBackupJobData):
 
     def __init__(self, backup_id, **kwargs):
         self.id = backup_id
-        super().__init__(**api_kwargs(PVEBackupJobData, kwargs))
+        super().__init__(**kwargs)
 
         self.all = self.all == 1
         self.vmid = self._split(self.vmid)
         self.exclude = self._split(self.exclude)
+
+    @classmethod
+    def from_api(cls, payload):
+        return cls(payload.get("id"), **api_kwargs(PVEBackupJobData, payload))
 
     @staticmethod
     def _split(value) -> List[str]:

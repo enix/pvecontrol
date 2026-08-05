@@ -27,9 +27,13 @@ class PVEVolume(PVEVolumeData):
     """Proxmox VE Volume"""
 
     def __init__(self, **kwargs):
-        super().__init__(**api_kwargs(PVEVolumeData, kwargs))
+        super().__init__(**kwargs)
         if isinstance(self.ctime, str):
             self.ctime = int(self.ctime)
+
+    @classmethod
+    def from_api(cls, payload):
+        return cls(**api_kwargs(PVEVolumeData, payload))
 
     def __str__(self):
         return f"Id: {self.volid}\n" + format_fields(self)
