@@ -1,20 +1,31 @@
+from dataclasses import dataclass, field
+from typing import List, Union
+
+from pvecontrol.models import api_kwargs
+
 COLUMNS = ["groupid", "comment", "users"]
 
 
-class PVEGroup:
+@dataclass
+class PVEGroupData:
+    groupid: str = field(default="")
+    comment: str = field(default="")
+    users: Union[str, List[str]] = field(default="")
+
+
+class PVEGroup(PVEGroupData):
     """Proxmox VE Access Group"""
 
-    def __init__(self, groupid, **kwargs):
-        if not groupid:
-            raise ValueError("Invalid groupid: must be a non-empty string")
-        self.groupid = groupid
-        self.comment = kwargs.get("comment", "")
+    def __init__(self, groupid=None, **kwargs):
+        super().__init__(groupid=groupid, **api_kwargs(PVEGroupData, kwargs))
 
-        users = kwargs.get("users", "")
-        if isinstance(users, str):
-            self.users = [u for u in users.split(",") if u]
+        if not self.groupid:
+            raise ValueError("Invalid groupid: must be a non-empty string")
+
+        if isinstance(self.users, str):
+            self.users = [u for u in self.users.split(",") if u]
         else:
-            self.users = list(users)
+            self.users = list(self.users)
 
     def get_members(self, proxmox):
         """Return PVEUser objects for each member of this group."""

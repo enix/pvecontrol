@@ -60,3 +60,8 @@ def test_invalid_ugid_empty():
 def test_invalid_roleid_empty():
     with pytest.raises(ValueError, match="Invalid roleid"):
         PVEAcl("/", "user", "admin@pam", "")
+
+
+def test_unknown_api_keys_are_ignored():
+    acl = PVEAcl("/", "user", "admin@pam", "Administrator", something_new="ignored")
+    assert not hasattr(acl, "something_new")
