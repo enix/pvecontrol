@@ -62,6 +62,14 @@ def test_invalid_roleid_empty():
         PVEAcl("/", "user", "admin@pam", "")
 
 
-def test_unknown_api_keys_are_ignored():
-    acl = PVEAcl("/", "user", "admin@pam", "Administrator", something_new="ignored")
+def test_from_api_ignores_unknown_keys():
+    acl = PVEAcl.from_api(
+        {"path": "/", "type": "user", "ugid": "admin@pam", "roleid": "Administrator", "something_new": "ignored"}
+    )
+    assert acl.path == "/"
     assert not hasattr(acl, "something_new")
+
+
+def test_unknown_keys_are_rejected_outside_from_api():
+    with pytest.raises(TypeError):
+        PVEAcl("/", "user", "admin@pam", "Administrator", something_new="ignored")

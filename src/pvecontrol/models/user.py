@@ -24,7 +24,7 @@ class PVEUser(PVEUserData):
     """Proxmox VE User"""
 
     def __init__(self, userid=None, **kwargs):
-        super().__init__(userid=userid, **api_kwargs(PVEUserData, kwargs))
+        super().__init__(userid=userid, **kwargs)
 
         if not self.userid or "@" not in self.userid:
             raise ValueError(f"Invalid userid '{self.userid}': must be in the form 'username@realm'")
@@ -44,6 +44,10 @@ class PVEUser(PVEUserData):
             self.groups = list(self.groups)
 
         self.tokens = [f"{self.userid}!{t['tokenid']}" for t in self.tokens or [] if "tokenid" in t]
+
+    @classmethod
+    def from_api(cls, payload):
+        return cls(**api_kwargs(PVEUserData, payload))
 
     def get_groups(self, proxmox):
         """Return PVEGroup objects for each group this user belongs to."""

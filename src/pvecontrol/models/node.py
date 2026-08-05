@@ -36,7 +36,7 @@ class PVENode(PVENodeData):
     """A proxmox VE Node"""
 
     def __init__(self, cluster, **kwargs):
-        super().__init__(**api_kwargs(PVENodeData, kwargs))
+        super().__init__(**kwargs)
         if isinstance(self.status, str):
             self.status = NodeStatus[self.status.upper()]
         self.cluster = cluster
@@ -56,6 +56,10 @@ class PVENode(PVENodeData):
         self._init_allocatedmem()
         self._init_allocatedcpu()
 
+    @classmethod
+    def from_api(cls, cluster, payload):
+        return cls(cluster, **api_kwargs(PVENodeData, payload))
+
     def __str__(self):
         output = "Node: " + self.node + "\n"
         output += "Status: " + str(self.status) + "\n"
@@ -70,7 +74,8 @@ class PVENode(PVENodeData):
     def _init_vms(self):
         # cluster/resources keeps listing the VMs of a node that is not online, with their last known status
         self.vms = [
-            PVEVm(self.api, **{**vm, "status": vm["status"] if self.online else "unknown"}) for vm in self.resources_vms
+            PVEVm.from_api(self.api, {**vm, "status": vm["status"] if self.online else "unknown"})
+            for vm in self.resources_vms
         ]
 
     def _init_allocatedmem(self):
