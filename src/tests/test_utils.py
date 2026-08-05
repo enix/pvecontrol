@@ -14,9 +14,9 @@ from pvecontrol.utils import render_output, redact_secrets, run_auth_commands, p
 def test_render_output():
     api = Mock()
     vms = [
-        PVEVm(api=api, node="pve-node-1", vmid=100, status="running"),
-        PVEVm(api=api, node="pve-node-2", vmid=101, status="running"),
-        PVEVm(api=api, node="pve-node-3", vmid=102, status="running"),
+        PVEVm(api, node="pve-node-1", vmid=100, status="running"),
+        PVEVm(api, node="pve-node-1", vmid=101, status="running"),
+        PVEVm(api, node="pve-node-2", vmid=102, status="stopped"),
     ]
 
     output_text = render_output(vms, columns=COLUMNS, output=OutputFormats.TEXT)
