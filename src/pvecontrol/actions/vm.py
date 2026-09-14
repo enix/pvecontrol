@@ -115,6 +115,43 @@ def restore(ctx, vmid, target, archive, storage, force, follow, wait):
         sys.exit(1)
 
 
+@root.command()
+@click.argument("vmid", type=int)
+@click.option("--dry-run", is_flag=True, help="Dry run, do not remove the lock for real")
+@click.pass_context
+def unlock(ctx, vmid, dry_run):
+    """Remove the lock set on a VM
+
+    This requires the cluster to be authenticated as root@pam: unlocking relies on the skiplock option of
+    the Proxmox API, which is restricted to root@pam by a hardcoded check in the API source, at least up to
+    PVE 9.2. No role or permission can grant it to another user.
+    """
+
+    proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
+
+    vm = _get_vm(proxmox, vmid)
+    logging.debug("Vm to unlock: %s", vm)
+    if not vm:
+        print("Vm not found")
+        sys.exit(1)
+
+    if not vm.lock:
+        print(f"Vm {vmid} is not locked")
+        return
+
+    if dry_run:
+        print(f"Dry run, skipping removal of lock '{vm.lock}' on vm {vmid}")
+        return
+
+    try:
+        vm.unlock()
+    except proxmoxer.core.ResourceException as e:
+        logging.error("Error unlocking VM, note that removing a lock requires root@pam: %s", e)
+        sys.exit(1)
+
+    print(f"Lock '{vm.lock}' removed from vm {vmid}")
+
+
 # FIXME: merge with PVECluster.get_vm()
 def _get_vm(proxmox, vmid):
     for v in proxmox.vms:
