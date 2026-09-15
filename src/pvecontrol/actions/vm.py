@@ -118,8 +118,9 @@ def restore(ctx, vmid, target, archive, storage, force, follow, wait):
 @root.command()
 @click.argument("vmid", type=int)
 @click.option("--dry-run", is_flag=True, help="Dry run, do not remove the lock for real")
+@click.option("--force", is_flag=True, help="Do not ask for confirmation before removing the lock")
 @click.pass_context
-def unlock(ctx, vmid, dry_run):
+def unlock(ctx, vmid, dry_run, force):
     """Remove the lock set on a VM
 
     This requires the cluster to be authenticated as root@pam: unlocking relies on the skiplock option of
@@ -132,15 +133,23 @@ def unlock(ctx, vmid, dry_run):
     vm = _get_vm(proxmox, vmid)
     logging.debug("Vm to unlock: %s", vm)
     if not vm:
-        print("Vm not found")
+        print("Vm to unlock not found")
         sys.exit(1)
 
     if not vm.lock:
-        print(f"Vm {vmid} is not locked")
+        print(f"VM {vm.vmid} ({vm.name}) is not locked")
         return
 
+    print(f"Removing lock '{vm.lock}' on VM {vm.vmid} ({vm.name})")
+    if not force:
+        confirmation = input("Confirm (yes):")
+        logging.debug("Confirmation input: %s", confirmation)
+        if confirmation.lower() != "yes":
+            print("Aborting")
+            return
+
     if dry_run:
-        print(f"Dry run, skipping removal of lock '{vm.lock}' on vm {vmid}")
+        print("Dry run, skipping unlock")
         return
 
     try:
@@ -149,7 +158,7 @@ def unlock(ctx, vmid, dry_run):
         logging.error("Error unlocking VM, note that removing a lock requires root@pam: %s", e)
         sys.exit(1)
 
-    print(f"Lock '{vm.lock}' removed from vm {vmid}")
+    print(f"Lock '{vm.lock}' removed from VM {vm.vmid} ({vm.name})")
 
 
 # FIXME: merge with PVECluster.get_vm()
