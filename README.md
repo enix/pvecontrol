@@ -259,11 +259,23 @@ If this works, we're good to go!
 
 ### vm unlock
 
-`vm unlock` removes the lock set on a VM, it is the equivalent of `qm unlock <vmid>`:
+`vm unlock` removes the lock set on a VM, it is the equivalent of `qm unlock <vmid>`. The lock is never removed
+automatically: the current lock is displayed and confirmation is asked before anything is done.
 
 ```shell
 $ pvecontrol --cluster my-test-cluster vm unlock 100
-Lock 'backup' removed from vm 100
+Removing lock 'backup' on VM 100 (vm-100)
+Confirm (yes):yes
+Lock 'backup' removed from VM 100 (vm-100)
+```
+
+Use `--dry-run` to display the lock that would be removed without removing it for real, and `--force` to skip the
+confirmation prompt, for non interactive usage:
+
+```shell
+$ pvecontrol --cluster my-test-cluster vm unlock 100 --force
+Removing lock 'backup' on VM 100 (vm-100)
+Lock 'backup' removed from VM 100 (vm-100)
 ```
 
 **This command only works with the `root@pam` user.** It calls `PUT /nodes/{node}/qemu/{vmid}/config` with
