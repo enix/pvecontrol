@@ -265,7 +265,7 @@ automatically: the current lock is displayed and confirmation is asked before an
 ```shell
 $ pvecontrol --cluster my-test-cluster vm unlock 100
 Removing lock 'backup' on VM 100 (vm-100)
-Confirm (yes):yes
+Confirm [y/N]: yes
 Lock 'backup' removed from VM 100 (vm-100)
 ```
 

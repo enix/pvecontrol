@@ -4,7 +4,7 @@ import sys
 import click
 import proxmoxer.core
 
-from pvecontrol.utils import print_task
+from pvecontrol.utils import confirm, print_task
 from pvecontrol.cli import ResourceGroup, migration_related_command, task_related_command
 from pvecontrol.models.vm import PVEVm, COLUMNS
 from pvecontrol.models.cluster import PVECluster
@@ -141,12 +141,8 @@ def unlock(ctx, vmid, dry_run, force):
         return
 
     print(f"Removing lock '{vm.lock}' on VM {vm.vmid} ({vm.name})")
-    if not force:
-        confirmation = input("Confirm (yes):")
-        logging.debug("Confirmation input: %s", confirmation)
-        if confirmation.lower() != "yes":
-            print("Aborting")
-            return
+    if not confirm(force):
+        return
 
     if dry_run:
         print("Dry run, skipping unlock")
