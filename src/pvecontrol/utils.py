@@ -9,6 +9,7 @@ import subprocess
 from collections import OrderedDict
 from enum import Enum
 
+import click
 import yaml
 
 from humanize import naturalsize
@@ -195,6 +196,24 @@ def print_task(proxmox, upid, follow=False, wait=False):
         print_output([{"log output": task.decode_log()}])
 
     print_taskstatus(task)
+
+
+def confirm(force=False):
+    """Ask the user to confirm before running a destructive action.
+
+    Returns True when the action is confirmed, either interactively or because force is set.
+    Returns False when the user declines, the caller is expected to abort.
+    """
+    if force:
+        return True
+
+    confirmation = click.confirm("Confirm")
+    logging.debug("Confirmation input: %s", confirmation)
+    if not confirmation:
+        print("Aborting")
+        return False
+
+    return True
 
 
 def defaulter(resource: dict, keys, default):
