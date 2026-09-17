@@ -1,37 +1,40 @@
 # Runtime dependencies, pinned.
 #
-# Declarations live in requirements.txt; this file is the resolved closure
-# (direct + transitive) and is what GitHub's dependency graph uses to match
-# advisories, so Dependabot can open actionable security PRs.
+# Declarations and security floors live in requirements.txt; this file is the
+# resolved closure (direct + transitive). GitHub's dependency graph cannot
+# resolve transitive pip dependencies on its own, so this is what lets
+# Dependabot match advisories against the versions actually in use.
+#
+# It is not what protects users installing pvecontrol from PyPI: only the
+# floors in requirements.txt ship in the package metadata.
 #
 # Regenerate with pip-tools after changing requirements.txt:
 #   pip install pip-tools
 #   pip-compile --strip-extras --output-file=requirements.lock.txt requirements.txt
-#
-# All versions below support Python 3.9 to 3.13.
 
 # direct
-click==8.1.8
-confuse==2.0.1
-humanize==4.11.0
-openssh_wrapper==0.4
-paramiko==3.5.1
-prettytable==3.14.0
-proxmoxer==2.2.0
-pyyaml==6.0.2
-requests==2.32.3
-requests_toolbelt==1.0.0
-shtab==1.7.1
-typing_extensions==4.15.0
-urllib3==2.3.0
+click==8.5.0
+confuse==2.2.1
+cryptography==50.0.1
+humanize==4.16.0
+openssh-wrapper==0.4
+paramiko==5.0.0
+prettytable==3.18.0
+proxmoxer==2.3.0
+pyyaml==6.0.3
+requests==2.34.2
+requests-toolbelt==1.0.0
+shtab==1.12.1
+typing-extensions==4.16.0
+urllib3==2.8.0
 
 # transitive
-bcrypt==4.2.1
-certifi==2025.1.31
-cffi==1.17.1
-charset-normalizer==3.4.1
-cryptography==44.0.0
-idna==3.10
-pycparser==2.22
-pynacl==1.5.0
-wcwidth==0.2.13
+bcrypt==5.0.0
+certifi==2026.7.22
+cffi==2.1.1
+charset-normalizer==3.5.1
+idna==3.19
+invoke==3.0.3
+pycparser==3.0
+pynacl==1.6.2
+wcwidth==0.8.3
