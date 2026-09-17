@@ -5,7 +5,8 @@ typing_extensions
 pyyaml
 urllib3
 shtab
-click
+# Pinned to 8.x: some APIs we rely on are deprecated in click 9
+click>=8,<9
 
 # proxmoxer depends on
 proxmoxer>=2.0.1

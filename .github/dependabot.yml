@@ -27,6 +27,10 @@ updates:
       python-dependencies:
         patterns:
           - "*"
+    ignore:
+      # Pinned to 8.x in requirements.txt, see the comment there
+      - dependency-name: "click"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions used by the workflows (pinned by SHA, Dependabot keeps
   # both the SHA and the version comment up to date)
