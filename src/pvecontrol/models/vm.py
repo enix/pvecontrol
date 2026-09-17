@@ -64,6 +64,21 @@ class PVEVm:
             output.append(f"{k}: {getattr(self, k)}")
         return ", ".join(output)
 
+    def start(self):
+        return self._api.nodes(self.node).qemu(self.vmid).status.start.post()
+
+    def shutdown(self, timeout=None):
+        options = {}
+        if timeout is not None:
+            options["timeout"] = timeout
+        return self._api.nodes(self.node).qemu(self.vmid).status.shutdown.post(**options)
+
+    def stop(self, overrule_shutdown=False):
+        options = {}
+        if overrule_shutdown:
+            options["overrule-shutdown"] = 1
+        return self._api.nodes(self.node).qemu(self.vmid).status.stop.post(**options)
+
     def migrate(self, target, online=False):
         options = {}
         options["node"] = self.node

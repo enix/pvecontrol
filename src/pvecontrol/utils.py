@@ -193,7 +193,7 @@ def print_task(proxmox, upid, follow=False, wait=False):
                 time.sleep(1)
             print("")
     elif not wait:
-        print_output([{"log output": task.decode_log()}])
+        print(task.decode_log())
 
     print_taskstatus(task)
 
