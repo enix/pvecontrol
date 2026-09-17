@@ -18,7 +18,7 @@ To communicate with Proxmox VE, `pvecontrol` uses [proxmoxer](https://pypi.org/p
 
 ## Installation
 
-`pvecontrol` requires Python version 3.9 or above.
+`pvecontrol` requires Python version 3.10 or above.
 
 The easiest way to install it is simply using pip. New versions are automatically published to [pypi](https://pypi.org/project/pvecontrol/) repository. It is recommended to use `pipx` in order to automatically create a dedicated python virtual environment:
 
@@ -288,13 +288,11 @@ If you want to tinker with the code, all the required dependencies are listed in
 pip3 install -r requirements.txt -e .
 ```
 
-`requirements.lock.txt` and `requirements-dev.lock.txt` hold the same dependencies with their transitive closure pinned to exact versions. Install from them for a reproducible environment (they also feed GitHub's dependency graph, so Dependabot can raise actionable security alerts):
+`requirements.lock.txt` holds the same runtime dependencies with their transitive closure pinned to exact versions. Install from it for a reproducible environment (it also feeds GitHub's dependency graph, so Dependabot can raise actionable security alerts):
 
 ```shell
 pip3 install -r requirements.lock.txt -e .
 ```
-
-The dev lock requires Python >= 3.10.
 
 Then you can run the script directly like so:
 
