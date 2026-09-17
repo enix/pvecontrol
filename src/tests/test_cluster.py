@@ -1,6 +1,18 @@
 from tests.testcase import PVEControlTestcase
 
 
+class PVEClusterRefreshTestcase(PVEControlTestcase):
+    """refresh() re-runs _initstatus(), it has to stay callable after __init__"""
+
+    def _post_setup(self):
+        super()._post_setup()
+        self.cluster._initstatus()  # pylint: disable=protected-access
+
+    def test_initstatus_is_reentrant(self):
+        assert len(self.cluster.nodes) == len(self.nodes)
+        assert len(self.cluster.storages) == len(self.storage_resources)
+
+
 class PVEClusterTestcase(PVEControlTestcase):
 
     def test_find_node(self):

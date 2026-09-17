@@ -1,4 +1,7 @@
+from dataclasses import dataclass, field
 from enum import Enum
+from typing import Optional
+
 import proxmoxer.core
 from proxmoxer.tools import Tasks
 
@@ -18,25 +21,38 @@ class TaskRunningStatus(Enum):
     STOPPED = 1
     VANISHED = 2
 
+    def __str__(self):
+        return self.name.lower()
 
-class PVETask:
+
+@dataclass
+class PVETaskData:
+    upid: str = field(default="")
+    node: str = field(default="")
+    starttime: int = field(default=0)
+    type: str = field(default="")
+    user: str = field(default="")
+    runningstatus: Optional[TaskRunningStatus] = TaskRunningStatus.VANISHED
+    endtime: int = field(default=0)
+    exitstatus: str = field(default="UNK")
+
+
+class PVETask(PVETaskData):
     """Proxmox VE Task"""
 
     _api = None
 
     def __init__(self, api, upid):
         task = Tasks.decode_upid(upid)
+        super().__init__(
+            upid=upid,
+            node=task["node"],
+            starttime=task["starttime"],
+            type=task["type"],
+            user=task["user"],
+        )
 
         self._api = api
-        self.upid = upid
-        self.node = task["node"]
-        self.starttime = task["starttime"]
-        self.type = task["type"]
-        self.user = task["user"]
-        self.runningstatus = TaskRunningStatus.VANISHED
-        self.endtime = 0
-        self.exitstatus = "UNK"
-
         self.refresh()
 
     def log(self, limit=0, start=0):

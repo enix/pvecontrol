@@ -111,3 +111,14 @@ def test_get_members_and_get_groups_are_consistent():
 
     assert alice in admins.get_members(cluster)
     assert admins in alice.get_groups(cluster)
+
+
+def test_from_api_ignores_unknown_keys():
+    group = PVEGroup.from_api({"groupid": "admins", "something_new": "ignored"})
+    assert group.groupid == "admins"
+    assert not hasattr(group, "something_new")
+
+
+def test_unknown_keys_are_rejected_outside_from_api():
+    with pytest.raises(TypeError):
+        PVEGroup("admins", something_new="ignored")

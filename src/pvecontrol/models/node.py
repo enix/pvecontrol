@@ -1,6 +1,9 @@
+from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any, List, Optional
 
 from pvecontrol.utils import defaulter
+from pvecontrol.models import api_kwargs
 from pvecontrol.models.vm import PVEVm, VmStatus
 
 COLUMNS = ["node", "status", "allocatedcpu", "maxcpu", "mem", "allocatedmem", "maxmem"]
@@ -11,29 +14,42 @@ class NodeStatus(Enum):
     ONLINE = 1
     OFFLINE = 2
 
+    def __str__(self):
+        return self.name.lower()
 
-class PVENode:
+
+@dataclass
+class PVENodeData:
+    node: str = field(default="")
+    status: Optional[NodeStatus] = None
+    cluster: Any = None
+    cpu: int = field(default=0)
+    allocatedcpu: int = field(default=0)
+    maxcpu: int = field(default=0)
+    mem: int = field(default=0)
+    allocatedmem: int = field(default=0)
+    maxmem: int = field(default=0)
+    disk: int = field(default=0)
+    maxdisk: int = field(default=0)
+    vms: List = field(default_factory=list)
+
+
+class PVENode(PVENodeData):
     """A proxmox VE Node"""
 
-    def __init__(self, cluster, node, status, kwargs=None):
-        if not kwargs:
-            kwargs = {}
-
-        self.node = node
-        self.status = NodeStatus[status.upper()]
+    def __init__(self, cluster, **kwargs):
+        super().__init__(**kwargs)
+        if isinstance(self.status, str):
+            self.status = NodeStatus[self.status.upper()]
         self.cluster = cluster
         self.version = self.api.nodes(self.node).version.get()
-        self.cpu = kwargs.get("cpu", 0)
-        self.allocatedcpu = 0
-        self.maxcpu = kwargs.get("maxcpu", 0)
-        self.mem = kwargs.get("mem", 0)
-        self.allocatedmem = 0
-        self.maxmem = kwargs.get("maxmem", 0)
-        self.disk = kwargs.get("disk", 0)
-        self.maxdisk = kwargs.get("maxdisk", 0)
         self._init_vms()
         self._init_allocatedmem()
         self._init_allocatedcpu()
+
+    @classmethod
+    def from_api(cls, cluster, payload):
+        return cls(cluster, **api_kwargs(PVENodeData, payload))
 
     def __str__(self):
         output = "Node: " + self.node + "\n"
@@ -49,7 +65,7 @@ class PVENode:
     def _init_vms(self):
         self.vms = []
         if self.status == NodeStatus.ONLINE:
-            self.vms = [PVEVm(self.api, self.node, vm["vmid"], vm["status"], vm) for vm in self.resources_vms]
+            self.vms = [PVEVm.from_api(self.api, vm) for vm in self.resources_vms]
 
     def _init_allocatedmem(self):
         """Compute the amount of memory allocated to running VMs"""
