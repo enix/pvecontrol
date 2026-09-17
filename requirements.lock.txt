@@ -1,0 +1,37 @@
+# Runtime dependencies, pinned.
+#
+# Declarations live in requirements.txt; this file is the resolved closure
+# (direct + transitive) and is what GitHub's dependency graph uses to match
+# advisories, so Dependabot can open actionable security PRs.
+#
+# Regenerate with pip-tools after changing requirements.txt:
+#   pip install pip-tools
+#   pip-compile --strip-extras --output-file=requirements.lock.txt requirements.txt
+#
+# All versions below support Python 3.9 to 3.13.
+
+# direct
+click==8.1.8
+confuse==2.0.1
+humanize==4.11.0
+openssh_wrapper==0.4
+paramiko==3.5.1
+prettytable==3.14.0
+proxmoxer==2.2.0
+pyyaml==6.0.2
+requests==2.32.3
+requests_toolbelt==1.0.0
+shtab==1.7.1
+typing_extensions==4.15.0
+urllib3==2.3.0
+
+# transitive
+bcrypt==4.2.1
+certifi==2025.1.31
+cffi==1.17.1
+charset-normalizer==3.4.1
+cryptography==44.0.0
+idna==3.10
+pycparser==2.22
+pynacl==1.5.0
+wcwidth==0.2.13
