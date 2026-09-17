@@ -288,6 +288,14 @@ If you want to tinker with the code, all the required dependencies are listed in
 pip3 install -r requirements.txt -e .
 ```
 
+`requirements.lock.txt` and `requirements-dev.lock.txt` hold the same dependencies with their transitive closure pinned to exact versions. Install from them for a reproducible environment (they also feed GitHub's dependency graph, so Dependabot can raise actionable security alerts):
+
+```shell
+pip3 install -r requirements.lock.txt -e .
+```
+
+The dev lock requires Python >= 3.10.
+
 Then you can run the script directly like so:
 
 ```shell
