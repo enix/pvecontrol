@@ -217,6 +217,7 @@ Commands:
   task list      List tasks in the cluster
   vm list        List VMs in the cluster
   vm migrate     Migrate VMs in the cluster
+  vm unlock      Remove the lock set on a VM
 
   Made with love by Enix.io
 ```
@@ -255,6 +256,37 @@ INFO:root:Proxmox cluster: my-test-cluster
 ```
 
 If this works, we're good to go!
+
+### vm unlock
+
+`vm unlock` removes the lock set on a VM, it is the equivalent of `qm unlock <vmid>`. The lock is never removed
+automatically: the current lock is displayed and confirmation is asked before anything is done.
+
+```shell
+$ pvecontrol --cluster my-test-cluster vm unlock 100
+Removing lock 'backup' on VM 100 (vm-100)
+Confirm [y/N]: yes
+Lock 'backup' removed from VM 100 (vm-100)
+```
+
+Use `--dry-run` to display the lock that would be removed without removing it for real, and `--force` to skip the
+confirmation prompt, for non interactive usage:
+
+```shell
+$ pvecontrol --cluster my-test-cluster vm unlock 100 --force
+Removing lock 'backup' on VM 100 (vm-100)
+Lock 'backup' removed from VM 100 (vm-100)
+```
+
+**This command only works with the `root@pam` user.** It calls `PUT /nodes/{node}/qemu/{vmid}/config` with
+`delete=lock` and `skiplock=1`: `skiplock` is required to modify the configuration of a locked VM, and the Proxmox
+API rejects it for any other user with `Only root may use this option`. This restriction is hardcoded in the API
+source (`PVE::API2::Qemu`, `raise_param_exc` on `skiplock` when `$authuser ne 'root@pam'`), it is not tied to a
+privilege or a role, so it cannot be granted to an API token or to a user with the `Administrator` role. This is
+still true as of PVE 9.2.
+
+Consequently the cluster used for `vm unlock` must be authenticated as `root@pam`, any other user or a
+privilege separated token will fail whatever permissions it is granted.
 
 ## Environment variables
 

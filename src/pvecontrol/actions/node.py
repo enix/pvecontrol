@@ -4,7 +4,7 @@ import click
 
 from pvecontrol.models.node import NodeStatus
 from pvecontrol.models.vm import VmStatus
-from pvecontrol.utils import print_task
+from pvecontrol.utils import confirm, print_task
 from pvecontrol.cli import ResourceGroup, migration_related_command
 from pvecontrol.models.node import COLUMNS
 from pvecontrol.models.cluster import PVECluster
@@ -118,10 +118,7 @@ def evacuate(ctx, node, target, dry_run, online, follow, wait, no_skip_stopped):
         return
     for p in plan:
         print(f"Migrating VM {p['vmid']} ({p['vm'].name}) from {p['node'].node} to {p['target'].node}")
-    confirmation = input("Confirm (yes):")
-    logging.debug("Confirmation input: %s", confirmation)
-    if confirmation.lower() != "yes":
-        print("Aborting")
+    if not confirm():
         return
     # run migrations
 
