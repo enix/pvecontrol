@@ -19,21 +19,21 @@ jobs:
 
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2.19.1
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - name: Python Semantic Release
-        uses: python-semantic-release/python-semantic-release@350c48fcb3ffcdfd2e0a235206bc2ecea6b69df0 # v10.5.3
+        uses: python-semantic-release/python-semantic-release@9a026e9303981c866c3425723009becb2437c757 # v10.6.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.10"
       - name: Install dependencies
