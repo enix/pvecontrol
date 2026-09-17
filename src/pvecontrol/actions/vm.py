@@ -6,7 +6,7 @@ import proxmoxer.core
 
 from pvecontrol.utils import confirm, print_task
 from pvecontrol.cli import ResourceGroup, migration_related_command, task_related_command
-from pvecontrol.models.vm import PVEVm, COLUMNS
+from pvecontrol.models.vm import PVEVm, VmStatus, COLUMNS
 from pvecontrol.models.cluster import PVECluster
 
 
@@ -155,6 +155,115 @@ def unlock(ctx, vmid, dry_run, force):
         sys.exit(1)
 
     print(f"Lock '{vm.lock}' removed from VM {vm.vmid} ({vm.name})")
+
+
+@root.command()
+@click.argument("vmid", type=int)
+@click.option("--dry-run", is_flag=True, help="Dry run, do not start the VM for real")
+@click.option("--force", is_flag=True, help="Do not ask for confirmation before starting the VM")
+@task_related_command
+@click.pass_context
+def start(ctx, vmid, dry_run, force, follow, wait):
+    """Start a VM"""
+
+    proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
+    vmid = int(vmid)
+
+    vm = _get_vm(proxmox, vmid)
+    if not vm:
+        print("VM not found")
+        sys.exit(1)
+
+    if vm.status == VmStatus.RUNNING:
+        logging.warning("VM %s is already running", vmid)
+        return
+
+    print(f"Starting VM {vm.vmid} ({vm.name})")
+    if not confirm(force):
+        return
+
+    if dry_run:
+        print("Dry run, skipping start")
+        return
+
+    upid = vm.start()
+    proxmox.refresh()
+    print_task(proxmox, upid, follow, wait)
+
+
+@root.command()
+@click.argument("vmid", type=int)
+@click.option(
+    "--timeout",
+    type=int,
+    metavar="SECONDS",
+    help="Wait at most SECONDS for the shutdown to complete",
+)
+@click.option("--dry-run", is_flag=True, help="Dry run, do not shutdown the VM for real")
+@click.option("--force", is_flag=True, help="Do not ask for confirmation before shutting down the VM")
+@task_related_command
+@click.pass_context
+def shutdown(ctx, vmid, timeout, dry_run, force, follow, wait):
+    """Cleanly shutdown a VM"""
+
+    proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
+    vmid = int(vmid)
+
+    vm = _get_vm(proxmox, vmid)
+    if not vm:
+        print("VM not found")
+        sys.exit(1)
+
+    if vm.status == VmStatus.STOPPED:
+        logging.warning("VM %s is already stopped", vmid)
+        return
+
+    print(f"Shutting down VM {vm.vmid} ({vm.name})")
+    if not confirm(force):
+        return
+
+    if dry_run:
+        print("Dry run, skipping shutdown")
+        return
+
+    upid = vm.shutdown(timeout=timeout)
+    proxmox.refresh()
+    print_task(proxmox, upid, follow, wait)
+
+
+@root.command()
+@click.argument("vmid", type=int)
+@click.option("--overrule-shutdown", is_flag=True, help="Override any in-progress shutdown task")
+@click.option("--dry-run", is_flag=True, help="Dry run, do not stop the VM for real")
+@click.option("--force", is_flag=True, help="Do not ask for confirmation before stopping the VM")
+@task_related_command
+@click.pass_context
+def stop(ctx, vmid, overrule_shutdown, dry_run, force, follow, wait):
+    """Stop a VM"""
+
+    proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
+    vmid = int(vmid)
+
+    vm = _get_vm(proxmox, vmid)
+    if not vm:
+        print("VM not found")
+        sys.exit(1)
+
+    if vm.status == VmStatus.STOPPED:
+        logging.warning("VM %s is already stopped", vmid)
+        return
+
+    print(f"Stopping VM {vm.vmid} ({vm.name})")
+    if not confirm(force):
+        return
+
+    if dry_run:
+        print("Dry run, skipping stop")
+        return
+
+    upid = vm.stop(overrule_shutdown=overrule_shutdown)
+    proxmox.refresh()
+    print_task(proxmox, upid, follow, wait)
 
 
 # FIXME: merge with PVECluster.get_vm()

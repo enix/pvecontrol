@@ -217,6 +217,9 @@ Commands:
   task list      List tasks in the cluster
   vm list        List VMs in the cluster
   vm migrate     Migrate VMs in the cluster
+  vm shutdown    Cleanly shutdown a VM
+  vm start       Start a VM
+  vm stop        Stop a VM
   vm unlock      Remove the lock set on a VM
 
   Made with love by Enix.io
