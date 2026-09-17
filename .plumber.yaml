@@ -1,0 +1,12 @@
+extends: plumber:default
+version: "2.0"
+
+github:
+  controls:
+    githubActionMustComeFromAuthorizedSources:
+      enabled: true
+      trustGithubOfficialActions: true   # trust actions/* and github/*
+      trustSameOrgActions: true          # trust your org's own actions
+      minimumStars: 0                    # > 0 to require a popularity floor (API)
+      trustedGithubActions:
+        - python-semantic-release/python-semantic-release
