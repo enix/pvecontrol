@@ -5,7 +5,7 @@ from click.testing import CliRunner
 from pvecontrol import pvecontrol, get_leaf_command
 from pvecontrol.utils import reorder_keys
 from pvecontrol.actions.node import root as node, evacuate
-from pvecontrol.actions.vm import migrate
+from pvecontrol.actions.vm import migrate, start, shutdown, stop
 
 
 def test_reorder_keys():
@@ -22,6 +22,9 @@ def test_get_leaf_command():
         (evacuate, ["node", "evacuate"], []),
         (evacuate, ["-o", "json", "node", "evacuate", "--help"], ["--help"]),
         (migrate, ["vm", "migrate", "id", "target"], ["id", "target"]),
+        (start, ["vm", "start", "id"], ["id"]),
+        (shutdown, ["vm", "shutdown", "id"], ["id"]),
+        (stop, ["vm", "stop", "id"], ["id"]),
         (None, ["foobar"], []),
     ]
 
