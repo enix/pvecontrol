@@ -1,6 +1,6 @@
 from enum import Enum
 
-COLUMNS = ["vmid", "name", "status", "node", "cpus", "maxmem", "maxdisk", "tags"]
+COLUMNS = ["vmid", "name", "status", "lock", "node", "cpus", "maxmem", "maxdisk", "tags"]
 
 
 class VmStatus(Enum):
@@ -76,6 +76,12 @@ class PVEVm:
 
         upid = self._api.nodes(self.node).qemu(self.vmid).migrate.post(**options)
         return upid
+
+    def unlock(self):
+        """Remove the lock set on the VM, equivalent to `qm unlock`"""
+        # skiplock is mandatory to update the config of a locked VM, and the API restricts it to root@pam
+        # with a hardcoded check on the authenticated user (still true as of PVE 9.2)
+        return self._api.nodes(self.node).qemu(self.vmid).config.put(delete="lock", skiplock=1)
 
     @staticmethod
     def create(proxmox, vmid, target, **options):
