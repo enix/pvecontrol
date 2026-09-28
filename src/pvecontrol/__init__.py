@@ -28,7 +28,7 @@ def get_leaf_command(cmd, ctx, args):
 
     # resolve sub command
     name, sub_cmd, sub_args = cmd.resolve_command(ctx, args_without_options)
-    if isinstance(sub_cmd, click.MultiCommand) and len(sub_args) > 0:
+    if isinstance(sub_cmd, click.Group) and len(sub_args) > 0:
         sub_ctx = sub_cmd.make_context(name, sub_args, parent=ctx)
         return get_leaf_command(sub_cmd, sub_ctx, sub_args)
 
@@ -51,7 +51,7 @@ class IgnoreRequiredForHelp(click.Group):
 
             return (
                 "--help" in leaf_args
-                or (isinstance(leaf_cmd, click.MultiCommand) and not leaf_cmd.invoke_without_command)
+                or (isinstance(leaf_cmd, click.Group) and not leaf_cmd.invoke_without_command)
                 or (leaf_cmd.no_args_is_help and len(leaf_args) == 0)
             )
         except click.exceptions.UsageError:
@@ -79,7 +79,7 @@ class IgnoreRequiredForHelp(click.Group):
 
             rows = []
             for subcommand, cmd in commands:
-                if not isinstance(cmd, click.MultiCommand):
+                if not isinstance(cmd, click.Group):
                     cmd_help = cmd.get_short_help_str(limit)
                     rows.append((subcommand, cmd_help))
                     continue
