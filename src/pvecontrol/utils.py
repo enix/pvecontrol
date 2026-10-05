@@ -163,7 +163,7 @@ def print_task(proxmox, upid, follow=False, wait=False):
     # Vanished tasks don't have any more information available in the API
     if task.vanished():
         print_taskstatus(task)
-        return
+        return task
 
     log = task.log(limit=0)
     logging.debug("Task Log: %s", log)
@@ -195,6 +195,7 @@ def print_task(proxmox, upid, follow=False, wait=False):
         print_output([{"log output": task.decode_log()}])
 
     print_taskstatus(task)
+    return task
 
 
 def defaulter(resource: dict, keys, default):

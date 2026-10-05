@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import click
 
@@ -36,12 +37,12 @@ def evacuate(ctx, node, target, dry_run, online, follow, wait, no_skip_stopped):
     srcnode = proxmox.find_node(node)
     logging.debug(srcnode)
     if not srcnode:
-        print(f"Node {node} does not exist")
-        return
+        logging.error("Node %s does not exist", node)
+        sys.exit(1)
     # check node is online
     if srcnode.status != NodeStatus.ONLINE:
-        print(f"Node {node} is not online")
-        return
+        logging.error("Node %s is not online", node)
+        sys.exit(1)
 
     targets = []
     # compute targets migration possible
@@ -49,28 +50,29 @@ def evacuate(ctx, node, target, dry_run, online, follow, wait, no_skip_stopped):
         for pattern in list(set(target)):
             nodes = proxmox.find_nodes(pattern)
             if not nodes:
-                print(f"No node match the pattern {pattern}, skipping")
+                logging.warning("No node match the pattern %s, skipping", pattern)
                 continue
             # FIXME: remove pylint disable annotation
             # pylint: disable=redefined-argument-from-local
             for node in nodes:
                 if node.node == srcnode.node:
-                    print(f"Target node {node.node} is the same as source node, skipping")
+                    logging.warning("Target node %s is the same as source node, skipping", node.node)
                     continue
                 if node.status != NodeStatus.ONLINE:
-                    print(f"Target node {node.node} is not online, skipping")
+                    logging.warning("Target node %s is not online, skipping", node.node)
                     continue
                 targets.append(node)
     else:
         targets = [n for n in proxmox.nodes if n.status == NodeStatus.ONLINE and n.node != srcnode.node]
     if len(targets) == 0:
-        print("No target node available")
-        return
+        logging.error("No target node available")
+        sys.exit(1)
     # Make sure there is no duplicate in targets
     targets = list(set(targets))
     logging.debug("Migration targets: %s", ([t.node for t in targets]))
 
     plan = []
+    unplaced = []
     for vm in srcnode.vms:
         logging.debug("Selecting node for VM: %i, maxmem: %i, cpus: %i", vm.vmid, vm.maxmem, vm.cpus)
         if vm.status != VmStatus.RUNNING and not no_skip_stopped:
@@ -109,29 +111,47 @@ def evacuate(ctx, node, target, dry_run, online, follow, wait, no_skip_stopped):
                 )
                 break
         else:
-            print(f"No target found for VM {vm.vmid} ({vm.name}), skipping")
+            logging.warning("No target found for VM %s (%s), skipping", vm.vmid, vm.name)
+            unplaced.append(vm)
 
     logging.debug(plan)
     # validate input
     if len(plan) == 0:
-        print("No VM to migrate")
+        if unplaced:
+            logging.error("No VM can be migrated, %d VM(s) have no target", len(unplaced))
+            sys.exit(1)
+        logging.info("No VM to migrate")
         return
     for p in plan:
         print(f"Migrating VM {p['vmid']} ({p['vm'].name}) from {p['node'].node} to {p['target'].node}")
     confirmation = input("Confirm (yes):")
     logging.debug("Confirmation input: %s", confirmation)
     if confirmation.lower() != "yes":
-        print("Aborting")
-        return
+        logging.error("Aborting")
+        sys.exit(1)
     # run migrations
 
+    failed = []
     for p in plan:
         print(f"Migrate VM: {p['vmid']} / {p['vm'].name} from {p['node'].node} to {p['target'].node}")
         if not dry_run:
             upid = p["vm"].migrate(p["target"].node, online)
             logging.debug("Migration UPID: %s", upid)
             proxmox.refresh()
-            _task = proxmox.find_task(upid)
-            print_task(proxmox, upid, follow, wait)
+            task = print_task(proxmox, upid, follow, wait)
+            # Without --follow or --wait the task is usually still running and its result is unknown
+            if not task.running() and not task.vanished() and task.exitstatus != "OK":
+                failed.append(p["vm"])
         else:
             print("Dry run, skipping migration")
+
+    if failed:
+        logging.error("Migration failed for VM(s): %s", ", ".join(str(vm.vmid) for vm in failed))
+    if unplaced:
+        logging.error(
+            "Node %s not fully evacuated, no target for VM(s): %s",
+            srcnode.node,
+            ", ".join(str(vm.vmid) for vm in unplaced),
+        )
+    if failed or unplaced:
+        sys.exit(1)
