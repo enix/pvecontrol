@@ -37,6 +37,11 @@ def test_all_fields():
     assert user.groups == ["ops", "devs"]
 
 
+def test_realm_type_from_api_key():
+    user = PVEUser("bob@pve", **{"realm-type": "pve"})
+    assert user.realm_type == "pve"
+
+
 def test_enable_false():
     user = PVEUser("carol@pam", enable=0)
     assert user.enable is False

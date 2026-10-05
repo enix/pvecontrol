@@ -20,6 +20,10 @@ class PVEUser:
             raise ValueError(f"Invalid userid '{userid}': must be in the form 'username@realm'")
         self.userid = userid
 
+        # The API returns this key in kebab-case
+        if "realm-type" in kwargs:
+            kwargs.setdefault("realm_type", kwargs.pop("realm-type"))
+
         for k, v in self._default_kwargs.items():
             self.__setattr__(k, kwargs.get(k, v))
 

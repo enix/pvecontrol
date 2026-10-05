@@ -88,9 +88,9 @@ def set_config(cluster_name):
     logging.debug("clusterconfig is %s", clusterconfig)
 
     for k, v in validconfig.node.items():
-        clusterconfig.node[k] = clusterconfig.node[k] if clusterconfig.node.get(k) else v
+        clusterconfig.node[k] = clusterconfig.node[k] if clusterconfig.node.get(k) is not None else v
 
     for k, v in validconfig.vm.items():
-        clusterconfig.vm[k] = clusterconfig.vm[k] if clusterconfig.vm.get(k) else v
+        clusterconfig.vm[k] = clusterconfig.vm[k] if clusterconfig.vm.get(k) is not None else v
 
     return clusterconfig
