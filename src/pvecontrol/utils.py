@@ -205,7 +205,7 @@ def defaulter(resource: dict, keys, default):
 
 
 def _execute_command(cmd):
-    return subprocess.run(cmd, shell=True, check=True, capture_output=True).stdout.rstrip()
+    return subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True).stdout.rstrip()
 
 
 def run_auth_commands(clusterconfig):
@@ -228,7 +228,7 @@ def run_auth_commands(clusterconfig):
                 value = _execute_command(result.group(1))
             auth[key] = value
 
-    if "proxy_certificate" in auth and isinstance(auth["proxy_certificate"], bytes):
+    if "proxy_certificate" in auth and isinstance(auth["proxy_certificate"], str):
         proxy_certificate = json.loads(auth["proxy_certificate"])
         auth["proxy_certificate"] = {
             "cert": proxy_certificate.get("cert"),
