@@ -98,7 +98,7 @@ Four layers, top to bottom. Each command builds a `PVECluster` from the config, 
 ## Gotchas
 
 - **confuse merges lists by index.** That is why `--config` calls `config.read(user=False, defaults=True)` before `set_file()`: layering a second file on the user config would merge cluster entries positionally. Keep that behavior.
-- **`node evacuate` only migrates running VMs by default** (`--no-skip-stopped` to include stopped ones) and `--online` defaults to false. Placement is greedy, in VM order, against the mutable `allocatedmem` / `allocatedcpu` of each target.
+- **`node evacuate` only migrates running VMs by default** (`--no-skip-stopped` to include stopped ones). `--online` defaults to false: without it, running VMs are skipped with a warning (PVE refuses to migrate them offline). It exits 1 when any VM is left on the node or a waited-for migration fails. Placement is greedy, in VM order, against the mutable `allocatedmem` / `allocatedcpu` of each target.
 - **`PVEStorage.get_flattened_grouped_list()` mutates the `PVEStorage` objects** (it pops `node` from their `__dict__`). `report.py` runs the sanity checks before the storage section for that reason. Do not call it before code that still needs intact storage objects.
 - **`PVECluster.tasks` costs 1 API call per task** returned by `cluster/tasks`. `refresh()` re-fetches them all.
 - **Offline nodes**: `PVENode.__init__` fetches the node version unconditionally. Behavior with an offline node is untested.
