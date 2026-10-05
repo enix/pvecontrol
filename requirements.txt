@@ -16,4 +16,4 @@ openssh_wrapper
 paramiko
 # Not imported directly, pulled in by paramiko: constrained here because
 # paramiko's own floor (>=3.3) allows versions with known advisories
-cryptography>=50.0.0
+cryptography>=50.0.2
