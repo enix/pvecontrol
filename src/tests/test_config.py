@@ -123,6 +123,35 @@ class TestSetConfig(unittest.TestCase):
             self.assertTrue(any("prod" in msg and "PROD" in msg for msg in log.output))
 
 
+class TestSetConfigDefaults(unittest.TestCase):
+
+    def _set_config(self, node=None, vm=None):
+        vc = _make_validconfig([])
+        vc.clusters = [_make_cluster("prod", node=node, vm=vm)]
+        with patch.object(config_module, "config") as mock_config:
+            mock_config.get.return_value = vc
+            return set_config("prod")
+
+    def test_global_defaults_fill_missing_keys(self):
+        result = self._set_config()
+        self.assertEqual(result.node, {"cpufactor": 2.5, "memoryminimum": 8589934592})
+        self.assertEqual(result.vm, {"max_last_backup": 1500})
+
+    def test_global_defaults_fill_none_keys(self):
+        result = self._set_config(node={"cpufactor": None, "memoryminimum": None})
+        self.assertEqual(result.node, {"cpufactor": 2.5, "memoryminimum": 8589934592})
+
+    def test_cluster_values_override_global(self):
+        result = self._set_config(node={"cpufactor": 4.0, "memoryminimum": 1024}, vm={"max_last_backup": 60})
+        self.assertEqual(result.node, {"cpufactor": 4.0, "memoryminimum": 1024})
+        self.assertEqual(result.vm, {"max_last_backup": 60})
+
+    def test_cluster_zero_values_are_kept(self):
+        result = self._set_config(node={"memoryminimum": 0}, vm={"max_last_backup": 0})
+        self.assertEqual(result.node["memoryminimum"], 0)
+        self.assertEqual(result.vm["max_last_backup"], 0)
+
+
 def _make_temp_config(overrides=None):
     content = {
         "clusters": [{"name": "test", "host": "127.0.0.1", "user": "root@pam", "password": "secret"}],
