@@ -177,7 +177,7 @@ def print_task(proxmox, upid, follow=False, wait=False):
         if task.unknown() and (follow or wait):
             logging.error("Can't wait for task %s, node %s can't be reached", upid, task.node)
             sys.exit(1)
-        return
+        return task
 
     log = task.log(limit=0)
     logging.debug("Task Log: %s", log)
@@ -214,6 +214,7 @@ def print_task(proxmox, upid, follow=False, wait=False):
     if task.unknown():
         logging.error("Lost track of task %s, node %s can't be reached anymore", upid, task.node)
         sys.exit(1)
+    return task
 
 
 def confirm(force=False):
