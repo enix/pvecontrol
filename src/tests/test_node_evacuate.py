@@ -56,6 +56,29 @@ class EvacuateTestcase(PVEControlTestcase):
         result, calls = self._evacuate(["pve-devel-1", "--online"])
         assert result.exit_code == 0
         assert list(calls) == [100]
+        assert calls[100][1] is True
+
+    def test_running_vm_skipped_without_online(self):
+        with self.assertLogs("root", level="WARNING") as log:
+            result, calls = self._evacuate(["pve-devel-1"])
+        assert result.exit_code == 1
+        assert calls == {}
+        assert any("VM 100 (vm-100) is running, use --online" in msg for msg in log.output)
+        assert any("running VM(s) need --online: 100" in msg for msg in log.output)
+
+    def test_stopped_vm_migrated_without_online(self):
+        with self.assertLogs("root", level="WARNING") as log:
+            result, calls = self._evacuate(["pve-devel-1", "--no-skip-stopped"])
+        assert result.exit_code == 1
+        assert list(calls) == [101]
+        assert calls[101][1] is False
+        assert any("running VM(s) need --online: 100" in msg for msg in log.output)
+
+    def test_running_and_stopped_vms_with_online(self):
+        result, calls = self._evacuate(["pve-devel-1", "--no-skip-stopped", "--online"])
+        assert result.exit_code == 0
+        assert list(calls) == [100, 101]
+        assert calls[100][1] is True
 
     def test_dry_run(self):
         result, calls = self._evacuate(["pve-devel-1", "--online", "--dry-run"])
@@ -94,4 +117,4 @@ class EvacuateNoCapacityTestcase(PVEControlTestcase):
         assert result.exit_code == 1
         migrate.assert_not_called()
         assert any("No target found for VM 100" in msg for msg in log.output)
-        assert any("No VM can be migrated" in msg for msg in log.output)
+        assert any("no target for VM(s): 100" in msg for msg in log.output)

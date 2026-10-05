@@ -73,10 +73,16 @@ def evacuate(ctx, node, target, dry_run, online, follow, wait, no_skip_stopped):
 
     plan = []
     unplaced = []
+    need_online = []
     for vm in srcnode.vms:
         logging.debug("Selecting node for VM: %i, maxmem: %i, cpus: %i", vm.vmid, vm.maxmem, vm.cpus)
         if vm.status != VmStatus.RUNNING and not no_skip_stopped:
             logging.debug("VM %i is not running, skipping", vm.vmid)
+            continue
+        # PVE refuses to migrate a running VM offline
+        if vm.status == VmStatus.RUNNING and not online:
+            logging.warning("VM %s (%s) is running, use --online to migrate it, skipping", vm.vmid, vm.name)
+            need_online.append(vm)
             continue
         # check ressources
         # FIXME: remove pylint disable annotation
@@ -117,8 +123,7 @@ def evacuate(ctx, node, target, dry_run, online, follow, wait, no_skip_stopped):
     logging.debug(plan)
     # validate input
     if len(plan) == 0:
-        if unplaced:
-            logging.error("No VM can be migrated, %d VM(s) have no target", len(unplaced))
+        if _log_vms_left(srcnode, unplaced, need_online):
             sys.exit(1)
         logging.info("No VM to migrate")
         return
@@ -146,12 +151,19 @@ def evacuate(ctx, node, target, dry_run, online, follow, wait, no_skip_stopped):
             print("Dry run, skipping migration")
 
     if failed:
-        logging.error("Migration failed for VM(s): %s", ", ".join(str(vm.vmid) for vm in failed))
-    if unplaced:
-        logging.error(
-            "Node %s not fully evacuated, no target for VM(s): %s",
-            srcnode.node,
-            ", ".join(str(vm.vmid) for vm in unplaced),
-        )
-    if failed or unplaced:
+        logging.error("Migration failed for VM(s): %s", _vmids(failed))
+    if _log_vms_left(srcnode, unplaced, need_online) or failed:
         sys.exit(1)
+
+
+def _vmids(vms):
+    return ", ".join(str(vm.vmid) for vm in vms)
+
+
+def _log_vms_left(node, unplaced, need_online):
+    """Log the VMs that evacuate leaves on the node, return True if there are any"""
+    if unplaced:
+        logging.error("Node %s not fully evacuated, no target for VM(s): %s", node.node, _vmids(unplaced))
+    if need_online:
+        logging.error("Node %s not fully evacuated, running VM(s) need --online: %s", node.node, _vmids(need_online))
+    return bool(unplaced or need_online)
