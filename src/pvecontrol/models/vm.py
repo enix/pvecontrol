@@ -1,6 +1,6 @@
 from enum import Enum
 
-COLUMNS = ["vmid", "name", "status", "node", "cpus", "maxmem", "maxdisk", "tags"]
+COLUMNS = ["vmid", "name", "status", "lock", "node", "cpus", "maxmem", "maxdisk", "tags"]
 
 
 class VmStatus(Enum):
@@ -64,6 +64,21 @@ class PVEVm:
             output.append(f"{k}: {getattr(self, k)}")
         return ", ".join(output)
 
+    def start(self):
+        return self._api.nodes(self.node).qemu(self.vmid).status.start.post()
+
+    def shutdown(self, timeout=None):
+        options = {}
+        if timeout is not None:
+            options["timeout"] = timeout
+        return self._api.nodes(self.node).qemu(self.vmid).status.shutdown.post(**options)
+
+    def stop(self, overrule_shutdown=False):
+        options = {}
+        if overrule_shutdown:
+            options["overrule-shutdown"] = 1
+        return self._api.nodes(self.node).qemu(self.vmid).status.stop.post(**options)
+
     def migrate(self, target, online=False):
         options = {}
         options["node"] = self.node
@@ -76,6 +91,12 @@ class PVEVm:
 
         upid = self._api.nodes(self.node).qemu(self.vmid).migrate.post(**options)
         return upid
+
+    def unlock(self):
+        """Remove the lock set on the VM, equivalent to `qm unlock`"""
+        # skiplock is mandatory to update the config of a locked VM, and the API restricts it to root@pam
+        # with a hardcoded check on the authenticated user (still true as of PVE 9.2)
+        return self._api.nodes(self.node).qemu(self.vmid).config.put(delete="lock", skiplock=1)
 
     @staticmethod
     def create(proxmox, vmid, target, **options):
