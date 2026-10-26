@@ -1,30 +1,39 @@
-class PVEVolume:
+from dataclasses import dataclass, field
+from typing import Optional
+
+from pvecontrol.models import api_kwargs, format_fields
+
+
+@dataclass
+class PVEVolumeData:
+    volid: str = field(default="")
+    format: str = field(default="")
+    size: int = field(default=0)
+    content: Optional[str] = None
+    # the API returns this one as a string, it is converted below
+    ctime: Optional[int] = None
+    encrypted: Optional[int] = None
+    notes: Optional[str] = None
+    parent: Optional[str] = None
+    path: Optional[str] = None
+    protected: Optional[int] = None
+    subtype: Optional[str] = None
+    used: Optional[int] = None
+    verification: Optional[dict] = None
+    vmid: Optional[int] = None
+
+
+class PVEVolume(PVEVolumeData):
     """Proxmox VE Volume"""
 
-    _default_kwargs = {
-        "content": None,
-        "ctime": None,
-        "encrypted": None,
-        "notes": None,
-        "parent": None,
-        "path": None,
-        "protected": None,
-        "subtype": None,
-        "used": None,
-        "verification": None,
-        "vmid": None,
-    }
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if isinstance(self.ctime, str):
+            self.ctime = int(self.ctime)
 
-    def __init__(self, volid, volume_format, size, **kwargs):
-        self.volid = volid
-        self.format = volume_format
-        self.size = size
-
-        for k, v in self._default_kwargs.items():
-            self.__setattr__(k, kwargs.get(k, v))
+    @classmethod
+    def from_api(cls, payload):
+        return cls(**api_kwargs(PVEVolumeData, payload))
 
     def __str__(self):
-        output = f"Id: {self.volid}\n"
-        for key in self._default_kwargs:
-            output += f"{key.capitalize()}: {self.__getattribute__(key)}\n"
-        return output
+        return f"Id: {self.volid}\n" + format_fields(self)

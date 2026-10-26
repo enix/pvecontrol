@@ -1,39 +1,53 @@
-class PVEBackupJob:
-    """Proxmox VE Backup Job"""
+from dataclasses import dataclass, field
+from typing import List, Optional
 
-    _default_kwargs = {
-        "all": 0,
-        "compress": None,
-        "enabled": None,
-        "exclude": "",
-        "fleecing": None,
-        "mode": None,
-        "next-run": None,
-        "node": None,
-        "notes-template": None,
-        "pool": None,
-        "prune-backups": None,
-        "schedule": None,
-        "storage": None,
-        "type": None,
-        "vmid": "",
-    }
+from pvecontrol.models import api_kwargs, format_fields
+
+
+@dataclass
+class PVEBackupJobData:
+    all: int = field(default=0)
+    compress: Optional[str] = None
+    enabled: Optional[int] = None
+    exclude: str = field(default="")
+    fleecing: Optional[dict] = None
+    mode: Optional[str] = None
+    next_run: Optional[int] = None
+    node: Optional[str] = None
+    notes_template: Optional[str] = None
+    pool: Optional[str] = None
+    prune_backups: Optional[dict] = None
+    schedule: Optional[str] = None
+    storage: Optional[str] = None
+    type: Optional[str] = None
+    vmid: str = field(default="")
+
+
+class PVEBackupJob(PVEBackupJobData):
+    """Proxmox VE Backup Job"""
 
     def __init__(self, backup_id, **kwargs):
         self.id = backup_id
-
-        for k, v in self._default_kwargs.items():
-            self.__setattr__(k, kwargs.get(k, v))
+        super().__init__(**kwargs)
 
         self.all = self.all == 1
-        self.vmid = self.vmid.split(",")
-        self.exclude = self.exclude.split(",")
+        self.vmid = self._split(self.vmid)
+        self.exclude = self._split(self.exclude)
+
+    @classmethod
+    def from_api(cls, payload):
+        return cls(payload.get("id"), **api_kwargs(PVEBackupJobData, payload))
+
+    @staticmethod
+    def _split(value) -> List[str]:
+        if isinstance(value, str):
+            return value.split(",")
+        if value is None:
+            return []
+        return [str(value)]
 
     def __str__(self):
-        output = f"Vm(s): {self.vmid}\n" + f"Id: {self.id}\n"
-        for key in self._default_kwargs:
-            output += f"{key.capitalize()}: {self.__getattribute__(key)}\n"
-        return output
+        return f"Vm(s): {self.vmid}\nId: {self.id}\n" + format_fields(self)
 
     def is_selection_matching(self, vm):
         if self.node is not None and self.node != vm.node:

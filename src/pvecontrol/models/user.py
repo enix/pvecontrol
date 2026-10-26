@@ -1,35 +1,41 @@
+from dataclasses import dataclass, field
+from typing import List, Union
+
+from pvecontrol.models import api_kwargs
+
 COLUMNS = ["userid", "firstname", "lastname", "email", "realm_type", "enable", "expire", "groups", "tokens"]
 
 
-class PVEUser:
+@dataclass
+class PVEUserData:
+    userid: str = field(default="")
+    enable: int = field(default=1)
+    expire: int = field(default=0)
+    firstname: str = field(default="")
+    lastname: str = field(default="")
+    email: str = field(default="")
+    # the api key for this one is "realm-type"
+    realm_type: str = field(default="")
+    groups: Union[str, List[str]] = field(default="")
+    tokens: List = field(default_factory=list)
+
+
+class PVEUser(PVEUserData):
     """Proxmox VE User"""
 
-    _default_kwargs = {
-        "enable": 1,
-        "expire": 0,
-        "firstname": "",
-        "lastname": "",
-        "email": "",
-        "realm_type": "",
-        "groups": "",
-    }
+    def __init__(self, userid=None, **kwargs):
+        super().__init__(userid=userid, **kwargs)
 
-    # pylint: disable=access-member-before-definition
-    def __init__(self, userid, **kwargs):
-        if not userid or "@" not in userid:
-            raise ValueError(f"Invalid userid '{userid}': must be in the form 'username@realm'")
-        self.userid = userid
-
-        for k, v in self._default_kwargs.items():
-            self.__setattr__(k, kwargs.get(k, v))
+        if not self.userid or "@" not in self.userid:
+            raise ValueError(f"Invalid userid '{self.userid}': must be in the form 'username@realm'")
 
         if self.enable not in (0, 1):
-            raise ValueError(f"Invalid enable value '{self.enable}' for user '{userid}': must be 0 or 1")
+            raise ValueError(f"Invalid enable value '{self.enable}' for user '{self.userid}': must be 0 or 1")
         self.enable = bool(self.enable)
 
         if not isinstance(self.expire, int) or self.expire < 0:
             raise ValueError(
-                f"Invalid expire value '{self.expire}' for user '{userid}': must be a non-negative integer"
+                f"Invalid expire value '{self.expire}' for user '{self.userid}': must be a non-negative integer"
             )
 
         if isinstance(self.groups, str):
@@ -37,8 +43,11 @@ class PVEUser:
         else:
             self.groups = list(self.groups)
 
-        tokens = kwargs.get("tokens") or []
-        self.tokens = [f"{self.userid}!{t['tokenid']}" for t in tokens if "tokenid" in t]
+        self.tokens = [f"{self.userid}!{t['tokenid']}" for t in self.tokens or [] if "tokenid" in t]
+
+    @classmethod
+    def from_api(cls, payload):
+        return cls(**api_kwargs(PVEUserData, payload))
 
     def get_groups(self, proxmox):
         """Return PVEGroup objects for each group this user belongs to."""
