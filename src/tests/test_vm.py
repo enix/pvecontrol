@@ -187,7 +187,7 @@ class PVEVmConfirmationTestcase(PVEControlTestcase):
         vm = self.cluster.get_vm(105)
         vm._api = MagicMock()  # pylint: disable=protected-access
 
-        result, mock_print_task = self._run(["vm", "start", "105", "--dry-run"], input="yes\n")
+        result, mock_print_task = self._run(["vm", "start", "105", "--dry-run"])
 
         assert result.exit_code == 0
         assert "Dry run" in result.output
@@ -234,7 +234,7 @@ class PVEVmConfirmationTestcase(PVEControlTestcase):
         vm = self.cluster.get_vm(100)
         vm._api = MagicMock()  # pylint: disable=protected-access
 
-        result, mock_print_task = self._run(["vm", "shutdown", "100", "--dry-run"], input="yes\n")
+        result, mock_print_task = self._run(["vm", "shutdown", "100", "--dry-run"])
 
         assert result.exit_code == 0
         assert "Dry run" in result.output
@@ -257,7 +257,7 @@ class PVEVmConfirmationTestcase(PVEControlTestcase):
         vm = self.cluster.get_vm(100)
         vm._api = MagicMock()  # pylint: disable=protected-access
 
-        result, mock_print_task = self._run(["vm", "stop", "100", "--dry-run"], input="yes\n")
+        result, mock_print_task = self._run(["vm", "stop", "100", "--dry-run"])
 
         assert result.exit_code == 0
         assert "Dry run" in result.output

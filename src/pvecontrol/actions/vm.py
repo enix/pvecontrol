@@ -179,11 +179,11 @@ def start(ctx, vmid, dry_run, force, follow, wait):
         return
 
     print(f"Starting VM {vm.vmid} ({vm.name})")
-    if not confirm(force):
-        return
-
     if dry_run:
         print("Dry run, skipping start")
+        return
+
+    if not confirm(force):
         return
 
     upid = vm.start()
@@ -219,11 +219,11 @@ def shutdown(ctx, vmid, timeout, dry_run, force, follow, wait):
         return
 
     print(f"Shutting down VM {vm.vmid} ({vm.name})")
-    if not confirm(force):
-        return
-
     if dry_run:
         print("Dry run, skipping shutdown")
+        return
+
+    if not confirm(force):
         return
 
     upid = vm.shutdown(timeout=timeout)
@@ -254,11 +254,11 @@ def stop(ctx, vmid, overrule_shutdown, dry_run, force, follow, wait):
         return
 
     print(f"Stopping VM {vm.vmid} ({vm.name})")
-    if not confirm(force):
-        return
-
     if dry_run:
         print("Dry run, skipping stop")
+        return
+
+    if not confirm(force):
         return
 
     upid = vm.stop(overrule_shutdown=overrule_shutdown)
