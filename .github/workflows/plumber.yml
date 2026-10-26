@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: getplumber/plumber@d37150cee04d6627497cb4c6a553ef9a2d6c7548 # pinned plumber version: v0.5.2
+      - uses: getplumber/plumber@d1133cdac48cfdf0c0004637ae4af38bcf9f16c7 # pinned plumber version: v0.7.11
         with:
           min-score: "A"
           score-push: false # set to "true" to publish a public Plumber Score badge
