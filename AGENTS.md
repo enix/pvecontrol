@@ -61,10 +61,10 @@ Four layers, top to bottom. Each command builds a `PVECluster` from the config, 
 **3. Models**: `src/pvecontrol/models/`, thin wrappers over API dicts.
 - `PVECluster` is the root. `__init__` calls `version`, `cluster/status`, `cluster/resources`, then builds one `PVENode` per node resource (each node fetches its own `nodes/{node}/version`) and the `PVEStorage` list. Everything else (`ha`, `tasks`, `backups`, `backup_jobs`, `users`, `groups`, `acls`) is a lazy property cached in a `_xxx = None` attribute. `refresh()` rebuilds status, tasks and HA.
 - `PVECluster.create_from_config(name)` is the only place that reads config and authenticates. Actions call it once at the start.
-- `PVENode` builds its `PVEVm` list from `cluster/resources` (only when the node is ONLINE) and computes `allocatedcpu` / `allocatedmem` from **running** VMs only. `node evacuate` mutates these counters while planning placements.
+- `PVENode` builds its `PVEVm` list from `cluster/resources` (VMs of a node that is not online get the `UNKNOWN` status) and computes `allocatedcpu` / `allocatedmem` from **running** VMs only. `node evacuate` mutates these counters while planning placements.
 - `PVEVm.config` lazily fetches `qemu/{vmid}/config` (1 API call per VM, cached on the object). Sanity checks rely on it heavily.
 - `PVEStorage`: 1 object per (node, storage) pair as returned by `cluster/resources`. `get_grouped_list()` merges shared storages by name; `get_flattened_grouped_list()` mutates the underlying objects (see Gotchas).
-- `PVETask` decodes the UPID locally and fetches status; a task whose status file vanished on the node is `VANISHED`, not an error.
+- `PVETask` decodes the UPID locally and fetches status; a task whose status file vanished on the node is `VANISHED`, not an error. Tasks of a node that is not online take their status from the `cluster/tasks` entry instead.
 - `PVEUser`, `PVEGroup`, `PVEAcl` validate in `__init__` (`ValueError`) and normalize comma-separated API fields into lists. Each model module exposes a `COLUMNS` list consumed by the `list` command.
 - The `ha` property handles both APIs: `cluster/ha/rules` on PVE >= 9.1, `cluster/ha/groups` before.
 
@@ -101,7 +101,7 @@ Four layers, top to bottom. Each command builds a `PVECluster` from the config, 
 - **`node evacuate` only migrates running VMs by default** (`--no-skip-stopped` to include stopped ones) and `--online` defaults to false. Placement is greedy, in VM order, against the mutable `allocatedmem` / `allocatedcpu` of each target.
 - **`PVEStorage.get_flattened_grouped_list()` mutates the `PVEStorage` objects** (it pops `node` from their `__dict__`). `report.py` runs the sanity checks before the storage section for that reason. Do not call it before code that still needs intact storage objects.
 - **`PVECluster.tasks` costs 1 API call per task** returned by `cluster/tasks`. `refresh()` re-fetches them all.
-- **Offline nodes**: `PVENode.__init__` fetches the node version unconditionally. Behavior with an offline node is untested.
+- **Offline nodes**: `cluster/resources` keeps listing the VMs and storages of a node that is not online, with stale data, but every API call proxied to it fails (HTTP 595) or hangs until the timeout. Guard any `nodes/{node}/...` call (VM config, storage content, task status or log) with `PVECluster.is_node_online()`, never by catching the error. `src/tests/test_offline_node.py` asserts that no call reaches the offline node.
 - `terminal_support_colors()` calls `curses.initscr()`; it is invoked for every rendered sanity-check message.
 - Proxmox returns kebab-case keys in places (`realm-type`, `next-run`, `prune-backups`). Map them explicitly when a model attribute uses snake_case.
 - Do not read `~/.config/pvecontrol/config.yaml` or any file that may hold credentials; ask the user for its structure instead.

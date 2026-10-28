@@ -105,7 +105,11 @@ class PVECluster:
         self._tasks = []
         for task in self.api.cluster.tasks.get():
             logging.debug("Get task informations: %s", (str(task)))
-            self._tasks.append(PVETask(self.api, task["upid"]))
+            if self.is_node_online(task["node"]):
+                self._tasks.append(PVETask(self.api, task["upid"]))
+            else:
+                # The status of a task is read from its node, use what cluster/tasks knows instead
+                self._tasks.append(PVETask(self.api, task["upid"], summary=task))
         return self._tasks
 
     def refresh(self):
@@ -144,6 +148,11 @@ class PVECluster:
                 return node
         return False
 
+    def is_node_online(self, nodename):
+        """Only the API calls proxied to an online node can succeed"""
+        node = self.find_node(nodename)
+        return bool(node) and node.online
+
     def find_nodes(self, pattern):
         """Find a list of nodes running on this cluster based on a glob pattern"""
         nodes = []
@@ -167,20 +176,7 @@ class PVECluster:
         if isinstance(vm_id, str):
             vm_id = int(vm_id)
 
-        result = None
-        node_name = None
-        # FIXME: wouldn't be easier AND faster to iterate over all nodes and vms directly?
-        for vm in self.resources_vms:
-            if vm["vmid"] == vm_id:
-                node_name = vm["node"]
-                break
-
-        for node in self.nodes:
-            if node.node == node_name:
-                result = [v for v in node.vms if v.vmid == vm_id][0]
-                break
-
-        return result
+        return next((vm for vm in self.vms if vm.vmid == vm_id), None)
 
     @property
     def resources_nodes(self):
@@ -262,7 +258,8 @@ class PVECluster:
     def backups(self):
         if self._backups is None:
             self._backups = []
-            for item in PVEStorage.get_grouped_list(self):
+            # A shared storage is listed through one of its nodes: it must be one that can answer
+            for item in PVEStorage.get_grouped_list(self, online_only=True):
                 logging.debug("Find storage: %s", (str(item)))
                 for backup in item["storage"].get_content("backup"):
                     logging.debug("New vm backup: %s", (str(backup)))

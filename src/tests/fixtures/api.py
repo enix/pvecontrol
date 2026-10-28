@@ -162,19 +162,19 @@ def get_node_resources(nodes):
 
 def get_node_qemu_for_vm(vm):
     return {
-        "name": vm["name"],
-        "maxmem": vm["maxmem"],
-        "uptime": vm["uptime"],
-        "vmid": vm["vmid"],
-        "mem": vm["mem"],
-        "disk": vm["disk"],
-        "cpu": vm["cpu"],
-        "maxdisk": vm["maxdisk"],
-        "diskread": vm["diskread"],
-        "netout": vm["netout"],
-        "netin": vm["netin"],
-        "diskwrite": vm["diskwrite"],
-        "status": vm["status"],
+        "name": vm.get("name"),
+        "maxmem": vm.get("maxmem"),
+        "uptime": vm.get("uptime"),
+        "vmid": vm.get("vmid"),
+        "mem": vm.get("mem"),
+        "disk": vm.get("disk"),
+        "cpu": vm.get("cpu"),
+        "maxdisk": vm.get("maxdisk"),
+        "diskread": vm.get("diskread"),
+        "netout": vm.get("netout"),
+        "netin": vm.get("netin"),
+        "diskwrite": vm.get("diskwrite"),
+        "status": vm.get("status"),
         "serial": 1,
         "pid": 454971,
         "cpus": 1,
@@ -293,9 +293,35 @@ def generate_storages_contents_routes(nodes, storage_resources, storages_content
     return routes
 
 
-def fake_node(node_id, local=False):
+def fake_node(node_id, local=False, online=True):
     resource_id = f"node/pve-devel-{node_id}"
     name = f"pve-devel-{node_id}"
+    if not online:
+        # As captured on PVE 9.2 with a powered off node: no usage metrics, unknown HA state
+        return {
+            "status": {
+                "id": resource_id,
+                "nodeid": node_id,
+                "name": name,
+                "ip": f"10.42.24.{node_id}",
+                "local": 0,
+                "type": "node",
+                "online": 0,
+                "level": "",
+            },
+            "resource": {
+                "id": resource_id,
+                "node": name,
+                "maxmem": 202758361088,
+                "maxdisk": 33601372160,
+                "type": "node",
+                "status": "offline",
+                "level": "",
+                "maxcpu": 32,
+                "cgroup-mode": 2,
+                "hastate": "unknown",
+            },
+        }
     return {
         "status": {
             "id": resource_id,
@@ -351,6 +377,17 @@ def fake_vm(vm_id, node, status="running", config=None):
         "maxcpu": 1,
         "type": "qemu",
         "config": config,
+    }
+
+
+def fake_offline_vm(vm_id, node):
+    """A VM as listed in cluster/resources once its node has been offline for a while (captured on PVE 9.2)"""
+    return {
+        "id": f"qemu/{vm_id}",
+        "vmid": vm_id,
+        "node": node["status"]["name"],
+        "status": "unknown",
+        "type": "qemu",
     }
 
 

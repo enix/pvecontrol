@@ -42,11 +42,12 @@ def migrate(ctx, vmid, target, online, follow, wait, dry_run):
     target = str(target)
 
     # Check that vmid exists
-    vm = _get_vm(proxmox, vmid)
+    vm = proxmox.get_vm(vmid)
     logging.debug("Source vm: %s", vm)
     if not vm:
         print("Source vm not found")
         sys.exit(1)
+    _exit_if_node_offline(proxmox, vm)
     # Get source node
     node = proxmox.find_node(vm.node)
     if not node:
@@ -130,11 +131,12 @@ def unlock(ctx, vmid, dry_run, force):
 
     proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
 
-    vm = _get_vm(proxmox, vmid)
+    vm = proxmox.get_vm(vmid)
     logging.debug("Vm to unlock: %s", vm)
     if not vm:
         print("Vm to unlock not found")
         sys.exit(1)
+    _exit_if_node_offline(proxmox, vm)
 
     if not vm.lock:
         print(f"VM {vm.vmid} ({vm.name}) is not locked")
@@ -169,10 +171,11 @@ def start(ctx, vmid, dry_run, force, follow, wait):
     proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
     vmid = int(vmid)
 
-    vm = _get_vm(proxmox, vmid)
+    vm = proxmox.get_vm(vmid)
     if not vm:
         print("VM not found")
         sys.exit(1)
+    _exit_if_node_offline(proxmox, vm)
 
     if vm.status == VmStatus.RUNNING:
         logging.warning("VM %s is already running", vmid)
@@ -209,10 +212,11 @@ def shutdown(ctx, vmid, timeout, dry_run, force, follow, wait):
     proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
     vmid = int(vmid)
 
-    vm = _get_vm(proxmox, vmid)
+    vm = proxmox.get_vm(vmid)
     if not vm:
         print("VM not found")
         sys.exit(1)
+    _exit_if_node_offline(proxmox, vm)
 
     if vm.status == VmStatus.STOPPED:
         logging.warning("VM %s is already stopped", vmid)
@@ -244,10 +248,11 @@ def stop(ctx, vmid, overrule_shutdown, dry_run, force, follow, wait):
     proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
     vmid = int(vmid)
 
-    vm = _get_vm(proxmox, vmid)
+    vm = proxmox.get_vm(vmid)
     if not vm:
         print("VM not found")
         sys.exit(1)
+    _exit_if_node_offline(proxmox, vm)
 
     if vm.status == VmStatus.STOPPED:
         logging.warning("VM %s is already stopped", vmid)
@@ -266,10 +271,7 @@ def stop(ctx, vmid, overrule_shutdown, dry_run, force, follow, wait):
     print_task(proxmox, upid, follow, wait)
 
 
-# FIXME: merge with PVECluster.get_vm()
-def _get_vm(proxmox, vmid):
-    for v in proxmox.vms:
-        logging.debug("_get_vm: %s", v)
-        if v.vmid == vmid:
-            return v
-    return None
+def _exit_if_node_offline(proxmox, vm):
+    if not proxmox.is_node_online(vm.node):
+        logging.error("VM %s (%s) is on node %s, which is not online", vm.vmid, vm.name, vm.node)
+        sys.exit(1)
