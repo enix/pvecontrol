@@ -228,6 +228,11 @@ class ReportTestcase(PVEControlTestcase):
             assert "groups" in user
             assert "tokens" in user
 
+    def test_build_report_users_realm_type(self):
+        by_id = {u["userid"]: u for u in self.data["users"]}
+        assert by_id["admin@pam"]["realm-type"] == "pam"
+        assert by_id["bob@pve"]["realm-type"] == "pve"
+
     def test_build_report_users_tokens(self):
         by_id = {u["userid"]: u for u in self.data["users"]}
         assert "admin@pam!ci-token" in by_id["admin@pam"]["tokens"]

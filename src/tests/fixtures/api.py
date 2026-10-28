@@ -206,6 +206,19 @@ def fake_ha_rule(rule_id, nodes, vm_ids):
     }
 
 
+def fake_ha_resource_affinity_rule(rule_id, vm_ids, affinity="negative"):
+    """Fake HA resource-affinity rule (Proxmox >= 9.1), it has no nodes key"""
+    return {
+        "rule": rule_id,
+        "resources": ",".join(f"vm:{vmid}" for vmid in vm_ids),
+        "type": "resource-affinity",
+        "affinity": affinity,
+        "order": 2,
+        "digest": "eeff0011",
+        "comment": f"HA rule {rule_id}",
+    }
+
+
 def fake_ha_group(group_id, nodes):
     """Fake HA group (Proxmox < 9.1)"""
     return {
