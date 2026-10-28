@@ -22,7 +22,8 @@ class PVENode:
         self.node = node
         self.status = NodeStatus[status.upper()]
         self.cluster = cluster
-        self.version = self.api.nodes(self.node).version.get()
+        # Calls proxied to a node that is not online fail (HTTP 595), or hang until the timeout
+        self.version = self.api.nodes(self.node).version.get() if self.online else {}
         self.cpu = kwargs.get("cpu", 0)
         self.allocatedcpu = 0
         self.maxcpu = kwargs.get("maxcpu", 0)
@@ -47,9 +48,11 @@ class PVENode:
         return output
 
     def _init_vms(self):
-        self.vms = []
-        if self.status == NodeStatus.ONLINE:
-            self.vms = [PVEVm(self.api, self.node, vm["vmid"], vm["status"], vm) for vm in self.resources_vms]
+        # cluster/resources keeps listing the VMs of a node that is not online, with their last known status
+        self.vms = [
+            PVEVm(self.api, self.node, vm["vmid"], vm["status"] if self.online else "unknown", vm)
+            for vm in self.resources_vms
+        ]
 
     def _init_allocatedmem(self):
         """Compute the amount of memory allocated to running VMs"""
@@ -66,6 +69,10 @@ class PVENode:
             if vm.status != VmStatus.RUNNING:
                 continue
             self.allocatedcpu += vm.cpus
+
+    @property
+    def online(self):
+        return self.status == NodeStatus.ONLINE
 
     @property
     def api(self):

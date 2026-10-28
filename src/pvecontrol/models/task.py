@@ -17,6 +17,7 @@ class TaskRunningStatus(Enum):
     RUNNING = 0
     STOPPED = 1
     VANISHED = 2
+    UNKNOWN = 3
 
 
 class PVETask:
@@ -24,7 +25,8 @@ class PVETask:
 
     _api = None
 
-    def __init__(self, api, upid):
+    def __init__(self, api, upid, summary=None):
+        """summary: the cluster/tasks entry of this task, used instead of fetching the status from its node"""
         task = Tasks.decode_upid(upid)
 
         self._api = api
@@ -37,7 +39,15 @@ class PVETask:
         self.endtime = 0
         self.exitstatus = "UNK"
 
-        self.refresh()
+        if summary is None:
+            self.refresh()
+        elif "endtime" in summary:
+            # In cluster/tasks, "status" holds the exit status of a finished task
+            self.runningstatus = TaskRunningStatus.STOPPED
+            self.endtime = summary["endtime"]
+            self.exitstatus = summary.get("status", "")
+        else:
+            self.runningstatus = TaskRunningStatus.UNKNOWN
 
     def log(self, limit=0, start=0):
         return self._api.nodes(self.node).tasks(self.upid).log.get(limit=limit, start=start)
@@ -49,9 +59,6 @@ class PVETask:
         return self.runningstatus == TaskRunningStatus.VANISHED
 
     def refresh(self):
-        # This is bugguy. replace with a catch / except ?
-        #    if self.node != NodeStatus.online:
-        #      return
         try:
             status = self._api.nodes(self.node).tasks(self.upid).status.get()
         # Some task information can be vanished over time (tasks status files removed from the node filesystem)

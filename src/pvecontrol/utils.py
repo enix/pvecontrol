@@ -161,8 +161,8 @@ def print_taskstatus(task):
 def print_task(proxmox, upid, follow=False, wait=False):
     task = proxmox.find_task(upid)
     logging.debug("Task: %s", task)
-    # Vanished tasks don't have any more information available in the API
-    if task.vanished():
+    # Vanished tasks don't have any more information available in the API, and the log is read from the node
+    if task.vanished() or not proxmox.is_node_online(task.node):
         print_taskstatus(task)
         return
 

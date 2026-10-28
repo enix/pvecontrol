@@ -59,9 +59,11 @@ class PVEStorage:
         return self._details
 
     @staticmethod
-    def get_grouped_list(proxmox):
+    def get_grouped_list(proxmox, online_only=False):
         storages = {}
         for storage in proxmox.storages:
+            if online_only and not proxmox.is_node_online(storage.node):
+                continue
             value = {"storage": storage, "nodes": [], "usage": f"{storage.percentage:.1f}%"}
             if StorageShared[storage.shared.upper()] == StorageShared.SHARED:
                 storages[storage.storage] = storages.get(storage.storage, value)
