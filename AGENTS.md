@@ -32,7 +32,7 @@ pip install -r requirements.txt -r requirements-dev.txt -e .
 
 Security floors (`urllib3>=`, `requests>=`, `cryptography>=`) live in `requirements.txt` because `setup.cfg` reads `install_requires` from it: the lock protects nobody downstream, only the floors ship in the package metadata.
 
-Python 3.10 to 3.14 are supported (CI matrix). In a **git worktree**, the `-e .` install still points at the main checkout's `src/`, so run tests with `PYTHONPATH=src` or reinstall in editable mode from the worktree.
+Python 3.10 to 3.15 are supported (CI matrix). In a **git worktree**, the `-e .` install still points at the main checkout's `src/`, so run tests with `PYTHONPATH=src` or reinstall in editable mode from the worktree.
 
 ```shell
 pytest                 # whole suite, ~1 s, HTTP is mocked (no cluster needed)
