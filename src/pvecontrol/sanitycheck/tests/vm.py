@@ -10,7 +10,8 @@ class VmsStartOnBoot(Check):
     name = "Check vms startonboot option"
 
     def run(self):
-        vms = [vm for vm in self.proxmox.vms if vm.template == 0]
+        # The config of a VM can only be read from its node, the nodes check reports the ones not online
+        vms = [vm for vm in self.proxmox.vms if vm.template == 0 and self.proxmox.is_node_online(vm.node)]
         for vm in vms:
             self._check_vm_statonboot_option(vm)
 
@@ -47,10 +48,14 @@ class DiskUnused(Check):
     name = "Check disk unused"
 
     def run(self):
+        # VM configs and storage contents are read from their node, the nodes check reports the ones not online
         for vm in self.proxmox.vms:
-            self._check_vm_disk_is_unused(vm)
+            if self.proxmox.is_node_online(vm.node):
+                self._check_vm_disk_is_unused(vm)
 
         for storage in self.proxmox.storages:
+            if not self.proxmox.is_node_online(storage.node):
+                continue
             if storage.plugintype == "s3":
                 # in enix specific case, we don't want to check s3 storage
                 continue

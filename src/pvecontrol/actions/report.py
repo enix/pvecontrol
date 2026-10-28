@@ -182,7 +182,7 @@ def _build_report_data(proxmox):
         {
             "node": node.node,
             "status": node.status.name,
-            "version": node.version["version"],
+            "version": node.version.get("version", ""),
             "vms": len([vm for vm in node.vms if not vm.template]),
             "total cpu": node.maxcpu,
             "allocated cpu": node.allocatedcpu,
