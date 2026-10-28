@@ -10,10 +10,11 @@ class VmsStartOnBoot(Check):
     name = "Check vms startonboot option"
 
     def run(self):
-        # The config of a VM can only be read from its node, the nodes check reports the ones not online
-        vms = [vm for vm in self.proxmox.vms if vm.template == 0 and self.proxmox.is_node_online(vm.node)]
+        vms = [vm for vm in self.proxmox.vms if vm.template == 0]
         for vm in vms:
-            self._check_vm_statonboot_option(vm)
+            if self.proxmox.is_node_online(vm.node):
+                self._check_vm_statonboot_option(vm)
+        self.add_messages(_offline_nodes_messages(self.proxmox, vms))
 
     def _check_vm_statonboot_option(self, vm):
         if self._vm_has_startonboot_enabled(vm):
@@ -48,22 +49,22 @@ class DiskUnused(Check):
     name = "Check disk unused"
 
     def run(self):
-        # VM configs and storage contents are read from their node, the nodes check reports the ones not online
         for vm in self.proxmox.vms:
             if self.proxmox.is_node_online(vm.node):
                 self._check_vm_disk_is_unused(vm)
 
-        for storage in self.proxmox.storages:
+        # in enix specific case, we don't want to check s3 storage
+        storages = [storage for storage in self.proxmox.storages if storage.plugintype != "s3"]
+        for storage in storages:
             if not self.proxmox.is_node_online(storage.node):
-                continue
-            if storage.plugintype == "s3":
-                # in enix specific case, we don't want to check s3 storage
                 continue
 
             if storage.shared == STORAGE_SHARED_ENUM[1]:
                 self._check_shared_storage_disk_is_unused(storage)
             elif storage.shared == STORAGE_SHARED_ENUM[0]:
                 self._check_local_storage_disk_is_unused(storage)
+
+        self.add_messages(_offline_nodes_messages(self.proxmox, self.proxmox.vms, storages))
 
     def _check_vm_disk_is_unused(self, vm):
         for key in vm.config.keys():
@@ -101,3 +102,22 @@ class DiskUnused(Check):
         for image in unused_images:
             msg = f"Disk '{storage.node}/{image.volid}' is not used, vm {image.vmid} doesn't exists"
             self.add_messages(CheckMessage(CheckCode.CRIT, msg))
+
+
+def _offline_nodes_messages(proxmox, vms, storages=()):
+    """VM configs and storage contents are read from their node: warn about the ones that couldn't be checked"""
+    messages = []
+    for node in proxmox.nodes:
+        if node.online:
+            continue
+        skipped = []
+        nb_vms = len([vm for vm in vms if vm.node == node.node])
+        nb_storages = len([storage for storage in storages if storage.node == node.node])
+        if nb_vms:
+            skipped.append(f"{nb_vms} VM(s)")
+        if nb_storages:
+            skipped.append(f"{nb_storages} storage(s)")
+        if skipped:
+            msg = f"Node '{node.node}' is not online, {' and '.join(skipped)} on it can't be checked"
+            messages.append(CheckMessage(CheckCode.WARN, msg))
+    return messages

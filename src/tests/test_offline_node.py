@@ -1,18 +1,22 @@
 import io
 import contextlib
 import re
+import unittest
 
 from datetime import datetime, timedelta
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import responses
+
+from proxmoxer.core import ResourceException
 
 from click.testing import CliRunner
 
 from pvecontrol import pvecontrol
 from pvecontrol.actions.report import _build_report_data
 from pvecontrol.models.node import NodeStatus
-from pvecontrol.models.task import TaskRunningStatus
+from pvecontrol.models.storage import PVEStorage
+from pvecontrol.models.task import PVETask, TaskRunningStatus
 from pvecontrol.models.vm import VmStatus
 from pvecontrol.sanitycheck.checks import CheckCode
 from pvecontrol.sanitycheck.tests import DEFAULT_CHECKS
@@ -94,6 +98,11 @@ class OfflineNodeTestcase(PVEControlTestcase):
         _ = self.cluster.ha
         self.tasks = self.cluster.tasks
         self.backups_found = self.cluster.backups
+        # Before the report, which flattens the storage objects
+        self.grouped_storages = [
+            {"storage": item["storage"].storage, "node": item["storage"].node, "nodes": item["nodes"]}
+            for item in PVEStorage.get_grouped_list(self.cluster)
+        ]
         self.checks = {}
         for check_id, check_class in DEFAULT_CHECKS.items():
             self.checks[check_id] = check_class(self.cluster)
@@ -156,15 +165,41 @@ class OfflineNodeTestcase(PVEControlTestcase):
         assert "HA resource 'vm:999' has no matching VM" in warnings
 
     def test_checks_skip_offline_node(self):
-        for check_id in ["vms_start_on_boot", "disk_unused"]:
+        # Each check warns about what it skipped, it may run without the nodes check
+        expected = {
+            "vms_start_on_boot": f"Node '{OFFLINE_NODE}' is not online, 2 VM(s) on it can't be checked",
+            "disk_unused": f"Node '{OFFLINE_NODE}' is not online, 2 VM(s) and 1 storage(s) on it can't be checked",
+        }
+        for check_id, warning in expected.items():
+            assert warning in self._messages(check_id, CheckCode.WARN)
             for m in self.checks[check_id].messages:
-                assert OFFLINE_NODE not in m.message and not re.search(r"\b30[01]\b", m.message), m.message
+                if m.message != warning:
+                    assert OFFLINE_NODE not in m.message and not re.search(r"\b30[01]\b", m.message), m.message
 
     def test_report(self):
         nodes = {n["node"]: n for n in self.report["nodes"]}
         assert nodes[OFFLINE_NODE]["version"] == ""
         assert nodes[OFFLINE_NODE]["vms"] == 2
         assert nodes["pve-devel-1"]["version"] == "9.1.4"
+        summary = self.report["vm_summary"][0]
+        assert (summary["running"], summary["stopped"], summary["unknown"], summary["other"]) == (5, 0, 2, 0)
+
+    def test_shared_storage_represented_by_an_online_node(self):
+        # The s3 entry of the offline node comes first in cluster/resources
+        s3 = [item for item in self.grouped_storages if item["storage"] == "s3"]
+        assert len(s3) == 1
+        assert s3[0]["node"] == "pve-devel-1"
+        assert s3[0]["nodes"] == [OFFLINE_NODE, "pve-devel-1", "pve-devel-2"]
+
+    def test_task_wait_refused(self):
+        with contextlib.redirect_stdout(io.StringIO()), self.assertLogs(level="ERROR") as logs:
+            with self.assertRaises(SystemExit) as exit_info:
+                print_task(self.cluster, UPID_OFFLINE_RUNNING, wait=True)
+        assert exit_info.exception.code == 1
+        assert f"node {OFFLINE_NODE} can't be reached" in "\n".join(logs.output)
+        # A finished task needs no waiting
+        with contextlib.redirect_stdout(io.StringIO()):
+            print_task(self.cluster, UPID_OFFLINE_DONE, wait=True)
 
     def test_vm_actions_refused(self):
         for args in [
@@ -179,3 +214,49 @@ class OfflineNodeTestcase(PVEControlTestcase):
                     result = CliRunner().invoke(pvecontrol, ["-c", "name", *args])
             assert result.exit_code == 1, args
             assert f"is on node {OFFLINE_NODE}, which is not online" in "\n".join(logs.output), args
+
+    def test_vm_actions_to_offline_target_refused(self):
+        for args, error in [
+            (["vm", "migrate", "100", "--target", OFFLINE_NODE], f"Target node {OFFLINE_NODE} is not online"),
+            (
+                ["vm", "restore", "999", "--target", OFFLINE_NODE, "--archive", "s3:backup/vzdump.vma.zst"],
+                f"Target node {OFFLINE_NODE} does not exist or is not online",
+            ),
+        ]:
+            with patch("pvecontrol.actions.vm.PVECluster.create_from_config", return_value=self.cluster):
+                with self.assertLogs(level="ERROR") as logs:
+                    result = CliRunner().invoke(pvecontrol, ["-c", "name", *args])
+            assert result.exit_code == 1, args
+            assert error in "\n".join(logs.output), args
+
+
+class TaskNodeLostTestcase(unittest.TestCase):
+    """The node of a task stops answering while pvecontrol waits for it"""
+
+    def _task(self):
+        api = MagicMock()
+        status = api.nodes.return_value.tasks.return_value.status.get
+        status.side_effect = [
+            {"status": "running"},
+            ResourceException(595, "Errors during connection establishment, proxy handshake", "No route to host"),
+        ]
+        api.nodes.return_value.tasks.return_value.log.get.return_value = []
+        return PVETask(api, UPID_ONLINE)
+
+    def test_refresh_marks_task_unknown(self):
+        task = self._task()
+        assert task.running()
+        task.refresh()
+        assert task.unknown()
+
+    def test_wait_stops_and_fails(self):
+        for options in [{"wait": True}, {"follow": True}]:
+            task = self._task()
+            proxmox = MagicMock()
+            proxmox.find_task.return_value = task
+            proxmox.is_node_online.return_value = True
+            with patch("pvecontrol.utils.time.sleep"), contextlib.redirect_stdout(io.StringIO()):
+                with self.assertLogs(level="ERROR") as logs, self.assertRaises(SystemExit) as exit_info:
+                    print_task(proxmox, UPID_ONLINE, **options)
+            assert exit_info.exception.code == 1, options
+            assert "Lost track of task" in "\n".join(logs.output), options

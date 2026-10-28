@@ -60,6 +60,9 @@ def migrate(ctx, vmid, target, online, follow, wait, dry_run):
     if not target:
         print("Target node does not exists")
         sys.exit(1)
+    if not target.online:
+        logging.error("Target node %s is not online", target.node)
+        sys.exit(1)
     # Check target node a les ressources
     # FIXME
 
@@ -106,6 +109,10 @@ def restore(ctx, vmid, target, archive, storage, force, follow, wait):
     """Restore a VM from a backup archive"""
 
     proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
+
+    if not proxmox.is_node_online(target):
+        logging.error("Target node %s does not exist or is not online", target)
+        sys.exit(1)
 
     try:
         upid = PVEVm.create(proxmox, vmid, target, archive=archive, storage=storage, force=force)

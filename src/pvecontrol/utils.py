@@ -162,8 +162,11 @@ def print_task(proxmox, upid, follow=False, wait=False):
     task = proxmox.find_task(upid)
     logging.debug("Task: %s", task)
     # Vanished tasks don't have any more information available in the API, and the log is read from the node
-    if task.vanished() or not proxmox.is_node_online(task.node):
+    if task.vanished() or task.unknown() or not proxmox.is_node_online(task.node):
         print_taskstatus(task)
+        if task.unknown() and (follow or wait):
+            logging.error("Can't wait for task %s, node %s can't be reached", upid, task.node)
+            sys.exit(1)
         return
 
     log = task.log(limit=0)
@@ -176,6 +179,8 @@ def print_task(proxmox, upid, follow=False, wait=False):
             print("log output, follow mode")
             while task.running():
                 task.refresh()
+                if task.unknown():
+                    break
                 # logging.debug("Task status: %s", status)
                 log = task.log(limit=0, start=lastline)
                 logging.debug("Task Log: %s", log)
@@ -196,6 +201,9 @@ def print_task(proxmox, upid, follow=False, wait=False):
         print(task.decode_log())
 
     print_taskstatus(task)
+    if task.unknown():
+        logging.error("Lost track of task %s, node %s can't be reached anymore", upid, task.node)
+        sys.exit(1)
 
 
 def confirm(force=False):

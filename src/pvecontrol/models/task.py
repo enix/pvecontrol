@@ -58,13 +58,18 @@ class PVETask:
     def vanished(self):
         return self.runningstatus == TaskRunningStatus.VANISHED
 
+    def unknown(self):
+        return self.runningstatus == TaskRunningStatus.UNKNOWN
+
     def refresh(self):
         try:
             status = self._api.nodes(self.node).tasks(self.upid).status.get()
         # Some task information can be vanished over time (tasks status files removed from the node filesystem)
         # In this case API return an error and we consider this tasks vanished and don't get more informations
-        except proxmoxer.core.ResourceException:
-            pass
+        except proxmoxer.core.ResourceException as e:
+            # 595: the node can't be reached, the task may still be running there
+            if e.status_code == 595:
+                self.runningstatus = TaskRunningStatus.UNKNOWN
         else:
             self.runningstatus = TaskRunningStatus[status.get("status", "stopped").upper()]
             self.endtime = status.get("endtime", 0)

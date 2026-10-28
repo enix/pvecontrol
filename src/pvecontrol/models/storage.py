@@ -66,8 +66,12 @@ class PVEStorage:
                 continue
             value = {"storage": storage, "nodes": [], "usage": f"{storage.percentage:.1f}%"}
             if StorageShared[storage.shared.upper()] == StorageShared.SHARED:
-                storages[storage.storage] = storages.get(storage.storage, value)
-                storages[storage.storage]["nodes"] += [storage.node]
+                group = storages.setdefault(storage.storage, value)
+                # The entry of a node that is not online holds stale or missing usage data
+                if not proxmox.is_node_online(group["storage"].node) and proxmox.is_node_online(storage.node):
+                    group["storage"] = storage
+                    group["usage"] = value["usage"]
+                group["nodes"] += [storage.node]
             else:
                 storages[storage.id] = value
                 storages[storage.id]["nodes"] += [storage.node]
