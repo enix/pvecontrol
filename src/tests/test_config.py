@@ -165,6 +165,34 @@ def _make_temp_config(overrides=None):
         return f.name
 
 
+class TestSetConfigDebugLog(unittest.TestCase):
+
+    def test_debug_log_masks_secrets_of_every_cluster(self):
+        config_path = _make_temp_config(
+            {
+                "clusters": [
+                    {"name": "test", "host": "127.0.0.1", "user": "root@pam", "password": "S3cretPwd"},
+                    {
+                        "name": "other",
+                        "host": "127.0.0.2",
+                        "user": "ci@pve",
+                        "token_name": "ci",
+                        "token_value": "S3cretTok",
+                    },
+                ]
+            }
+        )
+        try:
+            cfg = confuse.Configuration("pvecontrol_test", read=False)
+            cfg.set_file(config_path)
+            with patch.object(config_module, "config", cfg), self.assertLogs("root", level="DEBUG") as log:
+                clusterconfig = set_config("test")
+            assert clusterconfig.password == "S3cretPwd"
+            assert "S3cret" not in "\n".join(log.output)
+        finally:
+            os.unlink(config_path)
+
+
 class TestConfigFileOption(unittest.TestCase):
 
     def setUp(self):

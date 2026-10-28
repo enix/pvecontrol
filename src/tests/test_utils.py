@@ -8,7 +8,7 @@ import pytest
 import yaml
 
 from pvecontrol.models.vm import PVEVm, COLUMNS
-from pvecontrol.utils import render_output, run_auth_commands, OutputFormats
+from pvecontrol.utils import render_output, redact_secrets, run_auth_commands, OutputFormats
 
 
 def test_render_output():
@@ -90,3 +90,24 @@ def test_run_auth_commands_failing_command(caplog):
     with pytest.raises(SystemExit):
         run_auth_commands(_auth_config(user="root@pam", password="$(sh -c 'echo no secret key >&2; exit 2')"))
     assert "the command for password failed with exit status 2: no secret key" in caplog.text
+
+
+def test_run_auth_commands_debug_log_masks_secrets(caplog):
+    caplog.set_level("DEBUG")
+    auth = run_auth_commands(_auth_config(user="ci@pve", token_name="ci", token_value="$(echo S3cretTok)"))
+    assert auth["token_value"] == "S3cretTok"
+    assert "S3cret" not in caplog.text
+    assert "'token_name': 'ci'" in caplog.text
+
+
+def test_redact_secrets():
+    value = {
+        "clusters": [{"name": "a", "password": "x", "token_value": None}, {"name": "b", "token_value": "y"}],
+        "node": {"cpufactor": 2.5},
+    }
+    assert redact_secrets(value) == {
+        "clusters": [{"name": "a", "password": "***", "token_value": None}, {"name": "b", "token_value": "***"}],
+        "node": {"cpufactor": 2.5},
+    }
+    # The original is left untouched
+    assert value["clusters"][0]["password"] == "x"

@@ -2,6 +2,8 @@ import logging
 import sys
 import confuse
 
+from pvecontrol.utils import redact_secrets
+
 configtemplate = {
     "clusters": confuse.Sequence(  # pylint: disable=abstract-class-instantiated
         {
@@ -73,7 +75,7 @@ def set_config(cluster_name):
     for source in config.sources:
         if source.filename:
             logging.debug("configuration file: %s", source.filename)
-    logging.debug("configuration is %s", validconfig)
+    logging.debug("configuration is %s", redact_secrets(validconfig))
 
     # FIXME trouver une methode plus clean pour recuperer la configuration du bon cluster
     # Peut etre rework la configuration completement avec un dict
@@ -85,7 +87,7 @@ def set_config(cluster_name):
         logging.error('Ambiguous cluster name "%s": matches %s', cluster_name, [c.name for c in matches])
         sys.exit(1)
     clusterconfig = matches[0]
-    logging.debug("clusterconfig is %s", clusterconfig)
+    logging.debug("clusterconfig is %s", redact_secrets(clusterconfig))
 
     for k, v in validconfig.node.items():
         clusterconfig.node[k] = clusterconfig.node[k] if clusterconfig.node.get(k) is not None else v
