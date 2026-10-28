@@ -4,6 +4,7 @@ import sys
 
 from proxmoxer import ProxmoxAPI
 from proxmoxer.core import AuthenticationError, ResourceException
+from proxmoxer.tools import Tasks
 from requests.exceptions import ConnectionError as RequestsConnectionError, SSLError, Timeout
 
 from pvecontrol.utils import defaulter, run_auth_commands
@@ -110,22 +111,19 @@ class PVECluster:
         if self._tasks is not None:
             return self._tasks
 
+        # cluster/tasks holds the status of every task: no need for one call per task to its node
         self._tasks = []
         for task in self.api.cluster.tasks.get():
             logging.debug("Get task informations: %s", (str(task)))
-            if self.is_node_online(task["node"]):
-                self._tasks.append(PVETask(self.api, task["upid"]))
-            else:
-                # The status of a task is read from its node, use what cluster/tasks knows instead
-                self._tasks.append(PVETask(self.api, task["upid"], summary=task))
+            node_online = self.is_node_online(task["node"])
+            self._tasks.append(PVETask(self.api, task["upid"], summary=task, node_online=node_online))
         return self._tasks
 
     def refresh(self):
         self._initstatus()
 
-        # force tasks refesh
+        # tasks are fetched again on next use
         self._tasks = None
-        _ = self.tasks
 
         # force ha information refesh
         self._ha = None
@@ -169,12 +167,14 @@ class PVECluster:
                 nodes.append(node)
         return nodes
 
-    def find_task(self, upid):
-        """Return a task by upid"""
-        for task in self.tasks:
-            if task.upid == upid:
-                return task
-        return False
+    def get_task(self, upid):
+        """Return a task with its current status, or None if it can't be found"""
+        node = Tasks.decode_upid(upid)["node"]
+        if self.is_node_online(node):
+            # A task started a moment ago may not be listed in cluster/tasks yet, its node knows it
+            return PVETask(self.api, upid)
+        # The node can't answer, cluster/tasks is the only source left
+        return next((task for task in self.tasks if task.upid == upid), None)
 
     @property
     def is_healthy(self):

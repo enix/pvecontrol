@@ -27,7 +27,7 @@ class PVETask:
 
     _api = None
 
-    def __init__(self, api, upid, summary=None):
+    def __init__(self, api, upid, summary=None, node_online=True):
         """summary: the cluster/tasks entry of this task, used instead of fetching the status from its node"""
         task = Tasks.decode_upid(upid)
 
@@ -49,7 +49,10 @@ class PVETask:
             self.runningstatus = TaskRunningStatus.STOPPED
             self.endtime = summary["endtime"]
             self.exitstatus = summary.get("status", "")
+        elif node_online:
+            self.runningstatus = TaskRunningStatus.RUNNING
         else:
+            # It was running when its node stopped answering
             self.runningstatus = TaskRunningStatus.UNKNOWN
 
     def log(self, limit=0, start=0):

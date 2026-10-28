@@ -160,9 +160,17 @@ def print_taskstatus(task):
     print_output([task], columns)
 
 
-def print_task(proxmox, upid, follow=False, wait=False):
-    task = proxmox.find_task(upid)
+def _get_task(proxmox, upid):
+    task = proxmox.get_task(upid)
     logging.debug("Task: %s", task)
+    if task is None:
+        logging.error("Task %s not found", upid)
+        sys.exit(1)
+    return task
+
+
+def print_task(proxmox, upid, follow=False, wait=False):
+    task = _get_task(proxmox, upid)
     # Vanished tasks don't have any more information available in the API, and the log is read from the node
     if task.vanished() or task.unknown() or not proxmox.is_node_online(task.node):
         print_taskstatus(task)
