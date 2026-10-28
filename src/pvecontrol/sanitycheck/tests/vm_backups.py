@@ -40,6 +40,13 @@ class VmBackups(Check):
             if last_backup_time > datetime.now() - timedelta(minutes=minutes_ago):
                 message = f"Vm {vm.vmid} ({vm.name}) last backup is recent enough ({last_backup_time_str})"
                 self.add_messages(CheckMessage(CheckCode.OK, message))
+            elif not self.proxmox.is_node_online(vm.node):
+                # Its latest backups may sit on a local storage of its node, which can't be listed
+                message = (
+                    f"Vm {vm.vmid} ({vm.name}) last backup found is old ({last_backup_time_str}) "
+                    f"but can't be checked, node '{vm.node}' is not online"
+                )
+                self.add_messages(CheckMessage(CheckCode.WARN, message))
             else:
                 message = f"Vm {vm.vmid} ({vm.name}) last backup is too old ({last_backup_time_str})"
                 self.add_messages(CheckMessage(CheckCode.CRIT, message))

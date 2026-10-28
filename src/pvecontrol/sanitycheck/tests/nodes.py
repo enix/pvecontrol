@@ -8,11 +8,20 @@ class Nodes(Check):
     name = "Check Node capacity"
 
     def run(self):
+        self._check_offline()
         self._check_cpu_overcommit()
         self._check_mem_overcommit()
 
+    def _check_offline(self):
+        for node in self.proxmox.nodes:
+            if not node.online:
+                msg = f"Node '{node.node}' is {node.status.name.lower()}"
+                self.add_messages(CheckMessage(CheckCode.CRIT, msg))
+
     def _check_mem_overcommit(self):
         for node in self.proxmox.nodes:
+            if not node.online:
+                continue
             if self._mem_is_overcommited(node.maxmem, self.proxmox.config["node"]["memoryminimum"], node.allocatedmem):
                 msg = f"Node '{node.node}' is in mem overcommit status: {node.allocatedmem} allocated but {node.maxmem} available"
                 self.add_messages(CheckMessage(CheckCode.CRIT, msg))
@@ -22,6 +31,8 @@ class Nodes(Check):
 
     def _check_cpu_overcommit(self):
         for node in self.proxmox.nodes:
+            if not node.online:
+                continue
             if self._cpu_is_overcommited(node.maxcpu, self.proxmox.config["node"]["cpufactor"], node.allocatedcpu):
                 msg = f"Node {node.node} is in cpu overcommit status: {node.allocatedcpu} allocated but {node.maxcpu} available"
                 self.add_messages(CheckMessage(CheckCode.WARN, msg))

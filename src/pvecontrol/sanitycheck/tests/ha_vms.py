@@ -15,8 +15,16 @@ class HaVms(Check):
         ha_vms = []
         for resource in ha_resources:
             vmid = resource["sid"].split(":")[1]  # "sid = vm:100"
-            if resource["type"] == "vm":
-                ha_vms.append(self.proxmox.get_vm(vmid))
+            vm = self.proxmox.get_vm(vmid)
+            if vm is None:
+                msg = f"HA resource '{resource['sid']}' has no matching VM"
+                self.add_messages(CheckMessage(CheckCode.WARN, msg))
+            elif not self.proxmox.is_node_online(vm.node):
+                # Its config can only be read from its node
+                msg = f"Node '{vm.node}' has VM {vm.vmid} that can't be checked, the node is not online"
+                self.add_messages(CheckMessage(CheckCode.WARN, msg))
+            else:
+                ha_vms.append(vm)
 
         self.add_messages(self._check_disk_ha_consistency(ha_vms))
         self.add_messages(self._check_cpu_ha_consistency(ha_vms))

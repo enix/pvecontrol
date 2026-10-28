@@ -1,5 +1,6 @@
 import io
 import contextlib
+import re
 
 from datetime import datetime, timedelta
 from unittest.mock import patch
@@ -9,9 +10,12 @@ import responses
 from click.testing import CliRunner
 
 from pvecontrol import pvecontrol
+from pvecontrol.actions.report import _build_report_data
 from pvecontrol.models.node import NodeStatus
 from pvecontrol.models.task import TaskRunningStatus
 from pvecontrol.models.vm import VmStatus
+from pvecontrol.sanitycheck.checks import CheckCode
+from pvecontrol.sanitycheck.tests import DEFAULT_CHECKS
 from pvecontrol.utils import print_task
 from tests.fixtures.api import (
     fake_backup,
@@ -90,10 +94,18 @@ class OfflineNodeTestcase(PVEControlTestcase):
         _ = self.cluster.ha
         self.tasks = self.cluster.tasks
         self.backups_found = self.cluster.backups
+        self.checks = {}
+        for check_id, check_class in DEFAULT_CHECKS.items():
+            self.checks[check_id] = check_class(self.cluster)
+            self.checks[check_id].run()
         with contextlib.redirect_stdout(io.StringIO()):
+            self.report = _build_report_data(self.cluster)
             print_task(self.cluster, UPID_OFFLINE_DONE)
         # Every route is registered for every node, so a call to the offline node would not fail here: track them
         self.offline_calls = [c.request.url for c in responses.calls if f"/nodes/{OFFLINE_NODE}/" in c.request.url]
+
+    def _messages(self, check_id, code):
+        return [m.message for m in self.checks[check_id].messages if m.code == code]
 
     def test_no_api_call_to_offline_node(self):
         assert not self.offline_calls
@@ -127,6 +139,32 @@ class OfflineNodeTestcase(PVEControlTestcase):
 
     def test_backups_listed_through_an_online_node(self):
         assert sorted(b.vmid for b in self.backups_found) == [100, 300]
+
+    def test_check_vm_backups(self):
+        # Recent backups of vm 300 may sit on a local storage of its node: an old one is not a proof
+        assert not self._messages("vm_backups", CheckCode.CRIT)
+        warnings = self._messages("vm_backups", CheckCode.WARN)
+        assert any("Vm 300" in m and f"node '{OFFLINE_NODE}' is not online" in m for m in warnings)
+
+    def test_check_nodes(self):
+        assert self._messages("nodes", CheckCode.CRIT) == [f"Node '{OFFLINE_NODE}' is offline"]
+        assert not any(OFFLINE_NODE in m.message for m in self.checks["nodes"].messages if m.code == CheckCode.OK)
+
+    def test_check_ha_vms(self):
+        warnings = self._messages("ha_vms", CheckCode.WARN)
+        assert f"Node '{OFFLINE_NODE}' has VM 300 that can't be checked, the node is not online" in warnings
+        assert "HA resource 'vm:999' has no matching VM" in warnings
+
+    def test_checks_skip_offline_node(self):
+        for check_id in ["vms_start_on_boot", "disk_unused"]:
+            for m in self.checks[check_id].messages:
+                assert OFFLINE_NODE not in m.message and not re.search(r"\b30[01]\b", m.message), m.message
+
+    def test_report(self):
+        nodes = {n["node"]: n for n in self.report["nodes"]}
+        assert nodes[OFFLINE_NODE]["version"] == ""
+        assert nodes[OFFLINE_NODE]["vms"] == 2
+        assert nodes["pve-devel-1"]["version"] == "9.1.4"
 
     def test_vm_actions_refused(self):
         for args in [
