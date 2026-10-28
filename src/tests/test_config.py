@@ -223,6 +223,18 @@ class TestConfigFileOption(unittest.TestCase):
         finally:
             os.unlink(config_path)
 
+    def test_unreadable_config_file_exits_with_an_error(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            f.write("clusters:\n  - name: test\n    password: a: b\n")
+        try:
+            runner = CliRunner()
+            with self.assertLogs("root", level="ERROR") as log:
+                result = runner.invoke(pvecontrol, ["--config", f.name, "--cluster", "test", "status"])
+            assert result.exit_code == 1
+            assert any("Cannot read configuration file" in msg and f.name in msg for msg in log.output)
+        finally:
+            os.unlink(f.name)
+
     def test_custom_config_file_has_highest_priority(self):
         config_path = _make_temp_config()
         try:
