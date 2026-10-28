@@ -6,6 +6,7 @@ import unittest
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
+import requests
 import responses
 
 from proxmoxer.core import ResourceException
@@ -34,6 +35,7 @@ from tests.fixtures.api import (
 from tests.testcase import PVEControlTestcase
 
 OFFLINE_NODE = "pve-devel-3"
+NO_ROUTE = ResourceException(595, "Errors during connection establishment, proxy handshake", "No route to host")
 UPID_ONLINE = "UPID:pve-devel-1:00030925:03AF335A:6AE1F6B4:qmstart:100:root@pam:"
 UPID_OFFLINE_DONE = "UPID:pve-devel-3:0003092A:03AF3363:6AE1F6B5:qmshutdown:300:root@pam:"
 UPID_OFFLINE_RUNNING = "UPID:pve-devel-3:0003092B:03AF3364:6AE1F6B6:vzdump:301:root@pam:"
@@ -56,7 +58,8 @@ class OfflineNodeTestcase(PVEControlTestcase):
             # Later on, only the id, node and an unknown status remain
             fake_offline_vm(301, self.nodes[2]),
         ]
-        self.backup_jobs = [fake_backup_job(1, "300")]
+        # vm 300 has an old backup, vm 301 none that can be seen
+        self.backup_jobs = [fake_backup_job(1, "300"), fake_backup_job(2, "301")]
         # The offline node comes first for the shared storage, backups must be listed through another node
         self.storage_resources = [
             fake_storage_resource("s3", OFFLINE_NODE),
@@ -100,7 +103,12 @@ class OfflineNodeTestcase(PVEControlTestcase):
         self.backups_found = self.cluster.backups
         # Before the report, which flattens the storage objects
         self.grouped_storages = [
-            {"storage": item["storage"].storage, "node": item["storage"].node, "nodes": item["nodes"]}
+            {
+                "storage": item["storage"].storage,
+                "node": item["storage"].node,
+                "nodes": item["nodes"],
+                "usage": item["usage"],
+            }
             for item in PVEStorage.get_grouped_list(self.cluster)
         ]
         self.checks = {}
@@ -154,6 +162,25 @@ class OfflineNodeTestcase(PVEControlTestcase):
         assert not self._messages("vm_backups", CheckCode.CRIT)
         warnings = self._messages("vm_backups", CheckCode.WARN)
         assert any("Vm 300" in m and f"node '{OFFLINE_NODE}' is not online" in m for m in warnings)
+
+    def test_check_vm_backups_none_found(self):
+        warnings = self._messages("vm_backups", CheckCode.WARN)
+        assert any("Vm 301" in m and "no backup found" in m and OFFLINE_NODE in m for m in warnings)
+        assert not any("Vm 301" in m and "never been backed up" in m for m in warnings)
+
+    def test_metrics_exclude_offline_node(self):
+        # The offline node keeps its maxcpu and maxmem in cluster/resources shortly after going down
+        assert self.cluster.cpu_metrics["total"] == 2 * 32
+        assert self.cluster.memory_metrics["total"] == 2 * 202758361088
+
+    def test_storage_without_online_entry_is_unknown(self):
+        local = [item for item in self.grouped_storages if item["storage"] == "local"]
+        assert [item["usage"] for item in local] == ["unknown"]
+        rows = [row for row in self.report["storages"] if row["storage"] == "local"]
+        assert [(row["usage"], row["status"]) for row in rows] == [("unknown", "unknown")]
+        # A shared storage with an online entry keeps its usage
+        s3 = [item for item in self.grouped_storages if item["storage"] == "s3"]
+        assert s3[0]["usage"] != "unknown"
 
     def test_check_nodes(self):
         assert self._messages("nodes", CheckCode.CRIT) == [f"Node '{OFFLINE_NODE}' is offline"]
@@ -233,25 +260,39 @@ class OfflineNodeTestcase(PVEControlTestcase):
 class TaskNodeLostTestcase(unittest.TestCase):
     """The node of a task stops answering while pvecontrol waits for it"""
 
-    def _task(self):
+    def _task(self, status_error=NO_ROUTE, log_side_effect=None):
         api = MagicMock()
-        status = api.nodes.return_value.tasks.return_value.status.get
-        status.side_effect = [
-            {"status": "running"},
-            ResourceException(595, "Errors during connection establishment, proxy handshake", "No route to host"),
-        ]
+        api.nodes.return_value.tasks.return_value.status.get.side_effect = [{"status": "running"}, status_error]
+        api.nodes.return_value.tasks.return_value.log.get.side_effect = log_side_effect
         api.nodes.return_value.tasks.return_value.log.get.return_value = []
         return PVETask(api, UPID_ONLINE)
 
     def test_refresh_marks_task_unknown(self):
-        task = self._task()
-        assert task.running()
-        task.refresh()
+        # HTTP 595 from the API, or a network partition between pvecontrol and the API
+        for error in [NO_ROUTE, requests.exceptions.ConnectTimeout("timed out")]:
+            task = self._task(status_error=error)
+            assert task.running()
+            task.refresh()
+            assert task.unknown(), error
+
+    def test_log_marks_task_unknown(self):
+        task = self._task(log_side_effect=NO_ROUTE)
+        assert task.log() == []
         assert task.unknown()
 
+    def test_log_other_errors_are_raised(self):
+        task = self._task(log_side_effect=ResourceException(500, "Internal Server Error", "boom"))
+        with self.assertRaises(ResourceException):
+            task.log()
+
     def test_wait_stops_and_fails(self):
-        for options in [{"wait": True}, {"follow": True}]:
-            task = self._task()
+        for options, task_args in [
+            ({"wait": True}, {}),
+            ({"follow": True}, {}),
+            # The status still answers, but the node stops answering while its log is read
+            ({"follow": True}, {"status_error": {"status": "running"}, "log_side_effect": [[], NO_ROUTE]}),
+        ]:
+            task = self._task(**task_args)
             proxmox = MagicMock()
             proxmox.find_task.return_value = task
             proxmox.is_node_online.return_value = True

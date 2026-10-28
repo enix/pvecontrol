@@ -76,6 +76,11 @@ class PVEStorage:
                 storages[storage.id] = value
                 storages[storage.id]["nodes"] += [storage.node]
 
+        for group in storages.values():
+            # No online node can tell the current usage of this storage
+            if not proxmox.is_node_online(group["storage"].node):
+                group["usage"] = "unknown"
+
         return storages.values()
 
     @staticmethod
@@ -84,8 +89,11 @@ class PVEStorage:
 
         for item in storages:
             storage = item.pop("storage").__dict__
-            storage.pop("node")
+            node = storage.pop("node")
             item.update(storage)
+            if not proxmox.is_node_online(node):
+                # cluster/resources keeps the last known status, or none
+                item["status"] = "unknown"
 
         for storage in storages:
             storage["nodes"] = ", ".join(storage["nodes"])

@@ -205,7 +205,8 @@ class PVECluster:
 
     @property
     def cpu_metrics(self):
-        nodes = self.resources_nodes
+        # A node that is not online provides no capacity, and its usage is missing or stale
+        nodes = [node for node in self.resources_nodes if self.is_node_online(node["node"])]
         total_cpu = sum(node["maxcpu"] for node in nodes)
         total_cpu_usage = sum(node["cpu"] for node in nodes)
         total_cpu_allocated = sum(node.allocatedcpu for node in self.nodes)
@@ -220,7 +221,8 @@ class PVECluster:
 
     @property
     def memory_metrics(self):
-        nodes = self.resources_nodes
+        # A node that is not online provides no capacity, and its usage is missing or stale
+        nodes = [node for node in self.resources_nodes if self.is_node_online(node["node"])]
         total_memory = sum(node["maxmem"] for node in nodes)
         total_memory_usage = sum(node["mem"] for node in nodes)
         total_memory_allocated = sum(node.allocatedmem for node in self.nodes)
