@@ -265,7 +265,14 @@ def run_auth_commands(clusterconfig):
         if value is not None:
             result = re.match(regex, value)
             if result:
-                value = _execute_command(result.group(1))
+                try:
+                    value = _execute_command(result.group(1))
+                except subprocess.CalledProcessError as e:
+                    message = f"Auth: the command for {key} failed with exit status {e.returncode}"
+                    if e.stderr.strip():
+                        message += f": {e.stderr.strip()}"
+                    logging.error(message)
+                    sys.exit(1)
             auth[key] = value
 
     if "proxy_certificate" in auth and isinstance(auth["proxy_certificate"], str):
