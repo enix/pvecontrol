@@ -160,11 +160,16 @@ def _build_backup_jobs_data(proxmox):
 
 def _build_vm_summary(all_vms, templates):
     vm_running = sum(1 for vm in all_vms if vm.status.name == "RUNNING")
+    vm_stopped = sum(1 for vm in all_vms if vm.status.name == "STOPPED")
+    # The VMs of a node that is not online have the UNKNOWN status
+    vm_unknown = sum(1 for vm in all_vms if vm.status.name == "UNKNOWN")
     return [
         {
             "total": len(all_vms),
             "running": vm_running,
-            "stopped": len(all_vms) - vm_running,
+            "stopped": vm_stopped,
+            "unknown": vm_unknown,
+            "other": len(all_vms) - vm_running - vm_stopped - vm_unknown,
             "templates": len(templates),
         }
     ]
