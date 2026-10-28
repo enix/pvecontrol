@@ -248,6 +248,18 @@ def _execute_command(cmd):
     return subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True).stdout.rstrip()
 
 
+SECRET_KEYS = ["password", "token_value"]
+
+
+def redact_secrets(value):
+    """Return a copy of a configuration value that is safe to log, with its secrets masked"""
+    if isinstance(value, dict):
+        return {k: "***" if k in SECRET_KEYS and v is not None else redact_secrets(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [redact_secrets(v) for v in value]
+    return value
+
+
 def run_auth_commands(clusterconfig):
     auth = {}
     regex = r"^\$\((.*)\)$"
@@ -286,7 +298,7 @@ def run_auth_commands(clusterconfig):
         auth["cert"] = (auth["proxy_certificate"]["cert"], auth["proxy_certificate"]["key"])
         del auth["proxy_certificate"]
 
-    logging.debug("Auth: %s", auth)
+    logging.debug("Auth: %s", redact_secrets(auth))
     # check for "incompatible" auth options
     if "password" in auth and ("token_name" in auth or "token_value" in auth):
         logging.error("Auth: cannot use both password and token options together.")
