@@ -58,7 +58,9 @@ class PVECluster:
             )
 
         self.storages = []
-        for storage in self.resources_storages:
+        for resource in self.resources_storages:
+            # Work on a copy: the cluster/resources entry keeps its node, id and shared keys
+            storage = dict(resource)
             self.storages.append(
                 PVEStorage(self.api, storage.pop("node"), storage.pop("id"), storage.pop("shared"), **storage)
             )
@@ -237,7 +239,8 @@ class PVECluster:
 
     @property
     def disk_metrics(self):
-        storages = self.resources_storages
+        # The usage of a storage seen through a node that is not online is missing or stale
+        storages = [storage for storage in self.resources_storages if self.is_node_online(storage["node"])]
         total_disk = sum(node["maxdisk"] for node in storages)
         total_disk_usage = sum(node["disk"] for node in storages)
         disk_percent = total_disk_usage / total_disk * 100 if total_disk else 0

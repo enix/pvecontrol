@@ -172,6 +172,10 @@ class OfflineNodeTestcase(PVEControlTestcase):
         # The offline node keeps its maxcpu and maxmem in cluster/resources shortly after going down
         assert self.cluster.cpu_metrics["total"] == 2 * 32
         assert self.cluster.memory_metrics["total"] == 2 * 202758361088
+        # Only the s3 entries of the 2 online nodes count, not the offline node's s3 and local storages
+        assert self.cluster.disk_metrics["total"] == 2 * 33601372160
+        # Building the storage objects left the cluster/resources entries intact
+        assert all("node" in storage for storage in self.cluster.resources_storages)
 
     def test_storage_without_online_entry_is_unknown(self):
         local = [item for item in self.grouped_storages if item["storage"] == "local"]
@@ -265,7 +269,9 @@ class TaskNodeLostTestcase(unittest.TestCase):
         api.nodes.return_value.tasks.return_value.status.get.side_effect = [{"status": "running"}, status_error]
         api.nodes.return_value.tasks.return_value.log.get.side_effect = log_side_effect
         api.nodes.return_value.tasks.return_value.log.get.return_value = []
-        return PVETask(api, UPID_ONLINE)
+        task = PVETask(api, UPID_ONLINE)
+        task.log_get = api.nodes.return_value.tasks.return_value.log.get
+        return task
 
     def test_refresh_marks_task_unknown(self):
         # HTTP 595 from the API, or a network partition between pvecontrol and the API
@@ -275,10 +281,15 @@ class TaskNodeLostTestcase(unittest.TestCase):
             task.refresh()
             assert task.unknown(), error
 
-    def test_log_marks_task_unknown(self):
+    def test_log_failure_keeps_status(self):
         task = self._task(log_side_effect=NO_ROUTE)
+        with self.assertLogs(level="WARNING") as logs:
+            assert task.log() == []
+        assert "Can't read the log of task" in "\n".join(logs.output)
+        # The status read before still stands, and the node is not asked for the log again
+        assert task.running()
         assert task.log() == []
-        assert task.unknown()
+        assert task.log_get.call_count == 1
 
     def test_log_other_errors_are_raised(self):
         task = self._task(log_side_effect=ResourceException(500, "Internal Server Error", "boom"))
@@ -289,8 +300,6 @@ class TaskNodeLostTestcase(unittest.TestCase):
         for options, task_args in [
             ({"wait": True}, {}),
             ({"follow": True}, {}),
-            # The status still answers, but the node stops answering while its log is read
-            ({"follow": True}, {"status_error": {"status": "running"}, "log_side_effect": [[], NO_ROUTE]}),
         ]:
             task = self._task(**task_args)
             proxmox = MagicMock()
@@ -301,3 +310,29 @@ class TaskNodeLostTestcase(unittest.TestCase):
                     print_task(proxmox, UPID_ONLINE, **options)
             assert exit_info.exception.code == 1, options
             assert "Lost track of task" in "\n".join(logs.output), options
+
+    def _print_task(self, task, **options):
+        proxmox = MagicMock()
+        proxmox.get_task.return_value = task
+        proxmox.find_task.return_value = task
+        proxmox.is_node_online.return_value = True
+        with patch("pvecontrol.utils.time.sleep"), contextlib.redirect_stdout(io.StringIO()) as output:
+            with self.assertLogs(level="WARNING") as logs:
+                print_task(proxmox, UPID_ONLINE, **options)
+        return output.getvalue(), "\n".join(logs.output)
+
+    def test_log_unavailable_on_finished_task(self):
+        # task get on a finished task: its result is known even if its log can't be read
+        task = self._task(log_side_effect=NO_ROUTE)
+        task.runningstatus = TaskRunningStatus.STOPPED
+        output, logs = self._print_task(task)
+        assert "TaskRunningStatus.STOPPED" in output
+        assert "Can't read the log of task" in logs
+        assert task.log_get.call_count == 1
+
+    def test_follow_without_log_still_waits_for_the_result(self):
+        # The node stops answering for the log only: the status is still polled until the task ends
+        task = self._task(status_error={"status": "stopped", "exitstatus": "OK"}, log_side_effect=NO_ROUTE)
+        output, _ = self._print_task(task, follow=True)
+        assert "TaskRunningStatus.STOPPED" in output
+        assert task.log_get.call_count == 1

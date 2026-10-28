@@ -1,3 +1,4 @@
+import logging
 from enum import Enum
 import proxmoxer.core
 from proxmoxer.tools import Tasks
@@ -39,6 +40,7 @@ class PVETask:
         self.runningstatus = TaskRunningStatus.VANISHED
         self.endtime = 0
         self.exitstatus = "UNK"
+        self._log_available = True
 
         if summary is None:
             self.refresh()
@@ -51,12 +53,16 @@ class PVETask:
             self.runningstatus = TaskRunningStatus.UNKNOWN
 
     def log(self, limit=0, start=0):
+        if not self._log_available:
+            return []
         try:
             return self._api.nodes(self.node).tasks(self.upid).log.get(limit=limit, start=start)
         except (proxmoxer.core.ResourceException, RequestsConnectionError, Timeout) as e:
             if not _node_unreachable(e):
                 raise
-            self.runningstatus = TaskRunningStatus.UNKNOWN
+            # The status of the task stays as last read, only stop asking its node for the log
+            logging.warning("Can't read the log of task %s, node %s can't be reached", self.upid, self.node)
+            self._log_available = False
             return []
 
     def running(self):
