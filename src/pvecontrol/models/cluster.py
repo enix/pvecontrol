@@ -3,7 +3,8 @@ import fnmatch
 import sys
 
 from proxmoxer import ProxmoxAPI
-from requests.exceptions import SSLError
+from proxmoxer.core import AuthenticationError, ResourceException
+from requests.exceptions import ConnectionError as RequestsConnectionError, SSLError, Timeout
 
 from pvecontrol.utils import defaulter, run_auth_commands
 from pvecontrol.models.node import PVENode
@@ -23,11 +24,6 @@ class PVECluster:
     """Proxmox VE Cluster"""
 
     def __init__(self, name, host, config, timeout, verify_ssl=False, **auth):
-        try:
-            self.api = ProxmoxAPI(host, timeout=timeout, verify_ssl=verify_ssl, **auth)
-        except SSLError as e:
-            print(e)
-            sys.exit(1)
         self.name = name
         self.config = config
         self._tasks = None
@@ -37,7 +33,17 @@ class PVECluster:
         self._users = None
         self._groups = None
         self._acls = None
-        self._initstatus()
+        # With a password, ProxmoxAPI authenticates right away; with a token, the first call does
+        try:
+            self.api = ProxmoxAPI(host, timeout=timeout, verify_ssl=verify_ssl, **auth)
+            self._initstatus()
+        except (RequestsConnectionError, Timeout, AuthenticationError, ResourceException) as e:
+            message = _connection_error_message(host, timeout, auth, e)
+            if message is None:
+                raise
+            logging.debug("Connection to %s failed", host, exc_info=True)
+            logging.error(message)
+            sys.exit(1)
 
     def _initstatus(self):
         self.version = self.api.version.get()
@@ -299,3 +305,22 @@ class PVECluster:
                 logging.debug("New backup job: %s", (str(backup_job)))
                 self._backup_jobs.append(PVEBackupJob(backup_job.pop("id"), **backup_job))
         return self._backup_jobs
+
+
+def _connection_error_message(host, timeout, auth, error):
+    """Explain why the cluster can't be reached, or None when the error is not about reaching it"""
+    # requests wraps the urllib3 error, whose reason is the readable part
+    reason = getattr(error.args[0], "reason", error) if error.args else error
+    user = auth.get("user", "")
+    if "token_name" in auth:
+        user = f"{user}!{auth['token_name']}"
+
+    if isinstance(error, SSLError):
+        return f"TLS error with {host}: {reason}"
+    if isinstance(error, Timeout):
+        return f"Connection to {host} timed out after {timeout}s"
+    if isinstance(error, RequestsConnectionError):
+        return f"Can't connect to {host}: {reason}"
+    if isinstance(error, AuthenticationError) or (isinstance(error, ResourceException) and error.status_code == 401):
+        return f"Authentication failed on {host} for {user}"
+    return None

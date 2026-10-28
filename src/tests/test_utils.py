@@ -84,3 +84,9 @@ def test_run_auth_commands_password_and_token_conflict():
 def test_run_auth_commands_token_name_without_value():
     with pytest.raises(SystemExit):
         run_auth_commands(_auth_config(user="root@pam", token_name="ci"))
+
+
+def test_run_auth_commands_failing_command(caplog):
+    with pytest.raises(SystemExit):
+        run_auth_commands(_auth_config(user="root@pam", password="$(sh -c 'echo no secret key >&2; exit 2')"))
+    assert "the command for password failed with exit status 2: no secret key" in caplog.text
