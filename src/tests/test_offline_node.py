@@ -304,7 +304,7 @@ class TaskNodeLostTestcase(unittest.TestCase):
         ]:
             task = self._task(**task_args)
             proxmox = MagicMock()
-            proxmox.find_task.return_value = task
+            proxmox.get_task.return_value = task
             proxmox.is_node_online.return_value = True
             with patch("pvecontrol.utils.time.sleep"), contextlib.redirect_stdout(io.StringIO()):
                 with self.assertLogs(level="ERROR") as logs, self.assertRaises(SystemExit) as exit_info:

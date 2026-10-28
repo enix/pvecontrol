@@ -128,7 +128,6 @@ def evacuate(ctx, node, target, dry_run, online, follow, wait, no_skip_stopped):
             upid = p["vm"].migrate(p["target"].node, online)
             logging.debug("Migration UPID: %s", upid)
             proxmox.refresh()
-            _task = proxmox.find_task(upid)
             print_task(proxmox, upid, follow, wait)
         else:
             print("Dry run, skipping migration")
