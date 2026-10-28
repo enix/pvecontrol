@@ -32,7 +32,7 @@ pip install -r requirements.txt -r requirements-dev.txt -e .
 
 Security floors (`urllib3>=`, `requests>=`, `cryptography>=`) live in `requirements.txt` because `setup.cfg` reads `install_requires` from it: the lock protects nobody downstream, only the floors ship in the package metadata.
 
-Python 3.10 to 3.13 are supported (CI matrix). In a **git worktree**, the `-e .` install still points at the main checkout's `src/`, so run tests with `PYTHONPATH=src` or reinstall in editable mode from the worktree.
+Python 3.10 to 3.14 are supported (CI matrix). In a **git worktree**, the `-e .` install still points at the main checkout's `src/`, so run tests with `PYTHONPATH=src` or reinstall in editable mode from the worktree.
 
 ```shell
 pytest                 # whole suite, ~1 s, HTTP is mocked (no cluster needed)
@@ -105,4 +105,3 @@ Four layers, top to bottom. Each command builds a `PVECluster` from the config, 
 - `terminal_support_colors()` calls `curses.initscr()`; it is invoked for every rendered sanity-check message.
 - Proxmox returns kebab-case keys in places (`realm-type`, `next-run`, `prune-backups`). Map them explicitly when a model attribute uses snake_case.
 - Do not read `~/.config/pvecontrol/config.yaml` or any file that may hold credentials; ask the user for its structure instead.
-
