@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from importlib.metadata import version
 
 import click
+import confuse
 import urllib3
 
 from pvecontrol import actions
@@ -145,6 +146,9 @@ def pvecontrol(ctx, debug, output, cluster, unicode, color, config_file):
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     if not ctx.command.ignoring:
+        # configure logging
+        logging.basicConfig(encoding="utf-8", level=logging.DEBUG if debug else logging.INFO)
+
         if config_file:
             # Use the given file authoritatively: layer it on top of the packaged
             # defaults only, skipping the user config (~/.config/pvecontrol/config.yaml).
@@ -154,10 +158,11 @@ def pvecontrol(ctx, debug, output, cluster, unicode, color, config_file):
             # a dict, items of the list will be merged based on their index in the
             # config file, producing very weird behaviors.
             config.read(user=False, defaults=True)
-            config.set_file(config_file)
-
-        # configure logging
-        logging.basicConfig(encoding="utf-8", level=logging.DEBUG if debug else logging.INFO)
+            try:
+                config.set_file(config_file)
+            except confuse.ConfigReadError as e:
+                logging.error("Cannot read configuration file: %s", e)
+                ctx.exit(1)
 
         if cluster is None:
             clusters = list_clusters()
