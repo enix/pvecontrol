@@ -1,6 +1,7 @@
 from enum import Enum
 import proxmoxer.core
 from proxmoxer.tools import Tasks
+from requests.exceptions import ConnectionError as RequestsConnectionError, Timeout
 
 COLUMNS = [
     "upid",
@@ -50,7 +51,13 @@ class PVETask:
             self.runningstatus = TaskRunningStatus.UNKNOWN
 
     def log(self, limit=0, start=0):
-        return self._api.nodes(self.node).tasks(self.upid).log.get(limit=limit, start=start)
+        try:
+            return self._api.nodes(self.node).tasks(self.upid).log.get(limit=limit, start=start)
+        except (proxmoxer.core.ResourceException, RequestsConnectionError, Timeout) as e:
+            if not _node_unreachable(e):
+                raise
+            self.runningstatus = TaskRunningStatus.UNKNOWN
+            return []
 
     def running(self):
         return self.runningstatus == TaskRunningStatus.RUNNING
@@ -66,9 +73,9 @@ class PVETask:
             status = self._api.nodes(self.node).tasks(self.upid).status.get()
         # Some task information can be vanished over time (tasks status files removed from the node filesystem)
         # In this case API return an error and we consider this tasks vanished and don't get more informations
-        except proxmoxer.core.ResourceException as e:
-            # 595: the node can't be reached, the task may still be running there
-            if e.status_code == 595:
+        except (proxmoxer.core.ResourceException, RequestsConnectionError, Timeout) as e:
+            # The node can't be reached, the task may still be running there
+            if _node_unreachable(e):
                 self.runningstatus = TaskRunningStatus.UNKNOWN
         else:
             self.runningstatus = TaskRunningStatus[status.get("status", "stopped").upper()]
@@ -78,3 +85,10 @@ class PVETask:
     def decode_log(self, limit=0, start=0):
         log = self.log(limit, start)
         return Tasks.decode_log(log)
+
+
+def _node_unreachable(error):
+    """The API answers 595 when it can't reach the node, a network partition can also make the request fail"""
+    if isinstance(error, proxmoxer.core.ResourceException):
+        return error.status_code == 595
+    return isinstance(error, (RequestsConnectionError, Timeout))

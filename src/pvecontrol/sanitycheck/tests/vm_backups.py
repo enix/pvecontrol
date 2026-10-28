@@ -32,8 +32,12 @@ class VmBackups(Check):
         for vm in vms:
             last_backup = vm.get_last_backup(self.proxmox)
             if last_backup is None:
-                message = CheckMessage(CheckCode.WARN, f"Vm {vm.vmid} ({vm.name}) has never been backed up yet")
-                self.add_messages(message)
+                if self.proxmox.is_node_online(vm.node):
+                    message = f"Vm {vm.vmid} ({vm.name}) has never been backed up yet"
+                else:
+                    # Its backups may sit on a local storage of its node, which can't be listed
+                    message = f"Vm {vm.vmid} ({vm.name}) has no backup found but can't be checked, node '{vm.node}' is not online"
+                self.add_messages(CheckMessage(CheckCode.WARN, message))
                 continue
             last_backup_time = datetime.fromtimestamp(last_backup.ctime)
             last_backup_time_str = last_backup_time.strftime("%Y-%m-%d %H:%M:%S")
