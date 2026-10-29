@@ -12,6 +12,7 @@ from enum import Enum
 import click
 import proxmoxer.core
 import yaml
+from proxmoxer.tools import Tasks
 
 from humanize import naturalsize
 from prettytable import PrettyTable, TableStyle
@@ -160,6 +161,54 @@ def print_taskstatus(task):
     print_output([task], columns)
 
 
+# The HA manager handles a migration request on its next round, every 10 s
+HA_MIGRATION_START_TIMEOUT = 120
+HA_MIGRATION_SETTLE_TIMEOUT = 60
+
+
+def _ha_migration_upid(proxmox, upid):
+    """Return the qmigrate task the HA manager runs for a hamigrate request, or None if it doesn't start one"""
+    request = Tasks.decode_upid(upid)
+    deadline = time.monotonic() + HA_MIGRATION_START_TIMEOUT
+    while time.monotonic() < deadline:
+        for task in proxmox.api.cluster.tasks.get():
+            if (
+                task["type"] == "qmigrate"
+                and task.get("id") == request["id"]
+                and task["starttime"] >= request["starttime"]
+            ):
+                return task["upid"]
+        time.sleep(2)
+    return None
+
+
+def _follow_ha_migration(proxmox, task, follow, wait):
+    """A VM managed by HA is not migrated by a hamigrate task: it only asks the HA manager to do it in a task of its own.
+    Return the task that actually migrated the VM, the given task otherwise."""
+    if task.type != "hamigrate" or task.exitstatus != "OK" or not (follow or wait):
+        return task
+    ha_upid = _ha_migration_upid(proxmox, task.upid)
+    if ha_upid is None:
+        logging.error("The HA manager didn't start the migration requested by %s", task.upid)
+        sys.exit(1)
+    logging.info("Following the migration run by the HA manager: %s", ha_upid)
+    ha_task = print_task(proxmox, ha_upid, follow, wait)
+    _wait_ha_settled(proxmox, f"vm:{Tasks.decode_upid(task.upid)['id']}")
+    return ha_task
+
+
+def _wait_ha_settled(proxmox, sid):
+    """The HA manager records the end of a migration on its next round only, and ignores new requests for the service
+    until then: a request to migrate it back would be dropped as 'already on target node'"""
+    deadline = time.monotonic() + HA_MIGRATION_SETTLE_TIMEOUT
+    while time.monotonic() < deadline:
+        services = [entry for entry in proxmox.api.cluster.ha.status.current.get() if entry.get("sid") == sid]
+        if not services or services[0].get("state") != "migrate":
+            return
+        time.sleep(2)
+    logging.warning("The HA manager still reports %s as migrating", sid)
+
+
 def _get_task(proxmox, upid):
     task = proxmox.get_task(upid)
     logging.debug("Task: %s", task)
@@ -214,7 +263,7 @@ def print_task(proxmox, upid, follow=False, wait=False):
     if task.unknown():
         logging.error("Lost track of task %s, node %s can't be reached anymore", upid, task.node)
         sys.exit(1)
-    return task
+    return _follow_ha_migration(proxmox, task, follow, wait)
 
 
 def confirm(force=False):
