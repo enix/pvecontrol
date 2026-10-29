@@ -10,10 +10,12 @@ from collections import OrderedDict
 from enum import Enum
 
 import click
+import proxmoxer.core
 import yaml
 
 from humanize import naturalsize
 from prettytable import PrettyTable, TableStyle
+from requests.exceptions import ConnectionError as RequestsConnectionError, Timeout
 
 
 class Fonts:
@@ -222,6 +224,17 @@ def confirm(force=False):
         return False
 
     return True
+
+
+# Errors of an API call proxied to a node, the ones node_unreachable() can tell about
+NODE_ERRORS = (proxmoxer.core.ResourceException, RequestsConnectionError, Timeout)
+
+
+def node_unreachable(error):
+    """The API answers 595 when it can't reach the node, a network partition can also make the request fail"""
+    if isinstance(error, proxmoxer.core.ResourceException):
+        return error.status_code == 595
+    return isinstance(error, (RequestsConnectionError, Timeout))
 
 
 def defaulter(resource: dict, keys, default):

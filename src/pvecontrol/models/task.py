@@ -1,8 +1,8 @@
 import logging
 from enum import Enum
-import proxmoxer.core
 from proxmoxer.tools import Tasks
-from requests.exceptions import ConnectionError as RequestsConnectionError, Timeout
+
+from pvecontrol.utils import NODE_ERRORS, node_unreachable
 
 COLUMNS = [
     "upid",
@@ -57,8 +57,8 @@ class PVETask:
             return []
         try:
             return self._api.nodes(self.node).tasks(self.upid).log.get(limit=limit, start=start)
-        except (proxmoxer.core.ResourceException, RequestsConnectionError, Timeout) as e:
-            if not _node_unreachable(e):
+        except NODE_ERRORS as e:
+            if not node_unreachable(e):
                 raise
             # The status of the task stays as last read, only stop asking its node for the log
             logging.warning("Can't read the log of task %s, node %s can't be reached", self.upid, self.node)
@@ -79,9 +79,9 @@ class PVETask:
             status = self._api.nodes(self.node).tasks(self.upid).status.get()
         # Some task information can be vanished over time (tasks status files removed from the node filesystem)
         # In this case API return an error and we consider this tasks vanished and don't get more informations
-        except (proxmoxer.core.ResourceException, RequestsConnectionError, Timeout) as e:
+        except NODE_ERRORS as e:
             # The node can't be reached, the task may still be running there
-            if _node_unreachable(e):
+            if node_unreachable(e):
                 self.runningstatus = TaskRunningStatus.UNKNOWN
         else:
             self.runningstatus = TaskRunningStatus[status.get("status", "stopped").upper()]
@@ -91,10 +91,3 @@ class PVETask:
     def decode_log(self, limit=0, start=0):
         log = self.log(limit, start)
         return Tasks.decode_log(log)
-
-
-def _node_unreachable(error):
-    """The API answers 595 when it can't reach the node, a network partition can also make the request fail"""
-    if isinstance(error, proxmoxer.core.ResourceException):
-        return error.status_code == 595
-    return isinstance(error, (RequestsConnectionError, Timeout))
