@@ -1,5 +1,6 @@
 import io
 import contextlib
+import json
 import re
 import unittest
 
@@ -15,7 +16,7 @@ from click.testing import CliRunner
 
 from pvecontrol import pvecontrol
 from pvecontrol.actions.report import _build_report_data
-from pvecontrol.models.node import NodeStatus
+from pvecontrol.models.node import NodeStatus, PVENode
 from pvecontrol.models.storage import PVEStorage
 from pvecontrol.models.task import PVETask, TaskRunningStatus
 from pvecontrol.models.vm import VmStatus
@@ -336,3 +337,54 @@ class TaskNodeLostTestcase(unittest.TestCase):
         output, _ = self._print_task(task, follow=True)
         assert "TaskRunningStatus.STOPPED" in output
         assert task.log_get.call_count == 1
+
+
+class RebootingNodeTestcase(PVEControlTestcase):
+    """pve-devel-2 reboots: cluster/resources still lists it online, but its API refuses connections.
+    Captured on PVE 9.2 for about 3 s while shutting down, and 2 s while booting."""
+
+    error = {"status": 595, "body": json.dumps({"data": None})}
+
+    def _cluster_config(self):
+        return {"node": {"cpufactor": 2.5, "memoryminimum": 0}, "vm": {"max_last_backup": 100}}
+
+    def _register_routes(self):
+        # Registered first, so the version call of pve-devel-2 gets it instead of the default answer
+        responses.get("https://host:8006/api2/json/nodes/pve-devel-2/version", **self.error)
+        super()._register_routes()
+
+    def _post_setup(self):
+        _ = self.cluster.ha
+        self.checks = {check_id: check_class(self.cluster) for check_id, check_class in DEFAULT_CHECKS.items()}
+        for check in self.checks.values():
+            check.run()
+        self.node_calls = [c.request.url for c in responses.calls if "/nodes/pve-devel-2/" in c.request.url]
+
+    def test_node_handled_as_unknown(self):
+        node = self.cluster.find_node("pve-devel-2")
+        assert node.status == NodeStatus.UNKNOWN
+        assert not self.cluster.is_node_online("pve-devel-2")
+        assert node.version == {}
+        assert all(vm.status == VmStatus.UNKNOWN for vm in node.vms)
+        assert self.cluster.is_node_online("pve-devel-1")
+
+    def test_only_the_version_call_reaches_the_node(self):
+        assert [url.split("/api2/json")[1] for url in self.node_calls] == ["/nodes/pve-devel-2/version"]
+
+    def test_check_nodes(self):
+        crit = [m.message for m in self.checks["nodes"].messages if m.code == CheckCode.CRIT]
+        assert crit == ["Node 'pve-devel-2' is unknown"]
+
+
+class RebootingNodeTimeoutTestcase(RebootingNodeTestcase):
+    """Between both windows, the call proxied to the rebooting node can also hang until the timeout"""
+
+    error = {"body": requests.exceptions.ReadTimeout("Read timed out")}
+
+
+class NodeVersionOtherErrorTestcase(unittest.TestCase):
+    def test_other_errors_are_raised(self):
+        cluster = MagicMock()
+        cluster.api.nodes.return_value.version.get.side_effect = ResourceException(403, "Forbidden", "no access")
+        with self.assertRaises(ResourceException):
+            PVENode(cluster, "pve-devel-1", "online")

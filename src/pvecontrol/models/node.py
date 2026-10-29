@@ -1,6 +1,7 @@
+import logging
 from enum import Enum
 
-from pvecontrol.utils import defaulter
+from pvecontrol.utils import NODE_ERRORS, defaulter, node_unreachable
 from pvecontrol.models.vm import PVEVm, VmStatus
 
 COLUMNS = ["node", "status", "allocatedcpu", "maxcpu", "mem", "allocatedmem", "maxmem"]
@@ -23,7 +24,17 @@ class PVENode:
         self.status = NodeStatus[status.upper()]
         self.cluster = cluster
         # Calls proxied to a node that is not online fail (HTTP 595), or hang until the timeout
-        self.version = self.api.nodes(self.node).version.get() if self.online else {}
+        self.version = {}
+        if self.online:
+            try:
+                self.version = self.api.nodes(self.node).version.get()
+            except NODE_ERRORS as e:
+                if not node_unreachable(e):
+                    raise
+                # While it reboots, a node is still listed online for a few seconds after its API went down,
+                # and again before its API is back
+                logging.warning("Node %s is listed online but can't be reached, it is handled as unknown", self.node)
+                self.status = NodeStatus.UNKNOWN
         self.cpu = kwargs.get("cpu", 0)
         self.allocatedcpu = 0
         self.maxcpu = kwargs.get("maxcpu", 0)
