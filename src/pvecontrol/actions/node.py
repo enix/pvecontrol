@@ -65,8 +65,8 @@ def evacuate(ctx, node, target, dry_run, online, follow, wait, no_skip_stopped):
     else:
         targets = [n for n in proxmox.nodes if n.status == NodeStatus.ONLINE and n.node != srcnode.node]
     if len(targets) == 0:
-        logging.error("No target node available")
-        sys.exit(1)
+        # An empty node needs no target: the VMs that can't be placed are reported once the plan is built
+        logging.warning("No target node available")
     # Make sure there is no duplicate in targets
     targets = list(set(targets))
     logging.debug("Migration targets: %s", ([t.node for t in targets]))

@@ -47,11 +47,20 @@ class EvacuateTestcase(PVEControlTestcase):
         assert "does not exist" not in result.stdout
 
     def test_no_target_available(self):
-        with self.assertLogs("root", level="ERROR") as log:
-            result, calls = self._evacuate(["pve-devel-1", "pve-devel-1"])
+        with self.assertLogs("root", level="WARNING") as log:
+            result, calls = self._evacuate(["pve-devel-1", "pve-devel-1", "--online"])
         assert result.exit_code == 1
         assert calls == {}
         assert any("No target node available" in msg for msg in log.output)
+        assert any("not fully evacuated, no target for VM(s): 100" in msg for msg in log.output)
+
+    def test_empty_node_without_target(self):
+        # pve-devel-3 hosts no VM: there is nothing to evacuate, whatever the targets
+        with self.assertLogs("root", level="INFO") as log:
+            result, calls = self._evacuate(["pve-devel-3", "pve-devel-3"])
+        assert result.exit_code == 0
+        assert calls == {}
+        assert any("No VM to migrate" in msg for msg in log.output)
 
     def test_migration(self):
         result, calls = self._evacuate(["pve-devel-1", "--online"])
