@@ -37,25 +37,21 @@ def migrate(ctx, vmid, target, online, follow, wait, dry_run):
 
     proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
     logging.debug("ARGS: %s", ctx.obj["args"])
-    # Migrate a vm to a node
     vmid = int(vmid)
     target = str(target)
 
-    # Check that vmid exists
     vm = proxmox.get_vm(vmid)
     logging.debug("Source vm: %s", vm)
     if not vm:
         print("Source vm not found")
         sys.exit(1)
     _exit_if_node_offline(proxmox, vm)
-    # Get source node
     node = proxmox.find_node(vm.node)
     if not node:
         print("Source node does not exists")
         sys.exit(1)
     logging.debug("Source node: %s", node)
 
-    # Check target node exists
     target = proxmox.find_node(target)
     if not target:
         print("Target node does not exists")
@@ -63,27 +59,13 @@ def migrate(ctx, vmid, target, online, follow, wait, dry_run):
     if not target.online:
         logging.error("Target node %s is not online", target.node)
         sys.exit(1)
-    # Check target node a les ressources
-    # FIXME
 
-    # Check que la migration est possible
-    check = proxmox.api.nodes(node.node).qemu(vmid).migrate.get(node=node.node, target=target.node)
-    logging.debug("Migration check: %s", check)
-    options = {}
-    options["node"] = node.node
-    options["target"] = target.node
-    options["online"] = int(online)
-    if len(check["local_disks"]) > 0:
-        options["with-local-disks"] = int(True)
-
-    if not dry_run:
-        # Lancer tache de migration
-        upid = proxmox.api.nodes(node.node).qemu(vmid).migrate.post(**options)
-        # Suivre la task cree
-        proxmox.refresh()
-        print_task(proxmox, upid, follow, wait)
-    else:
+    upid = vm.migrate(target.node, online, dry_run=dry_run)
+    if dry_run:
         print("Dry run, skipping migration")
+        return
+    proxmox.refresh()
+    print_task(proxmox, upid, follow, wait)
 
 
 @root.command()

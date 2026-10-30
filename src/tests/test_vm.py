@@ -287,3 +287,60 @@ class PVEVmConfirmationTestcase(PVEControlTestcase):
             vm.vmid
         ).status.stop.post.assert_called_once_with(**{"overrule-shutdown": 1})
         mock_print_task.assert_called_once()
+
+
+class PVEVmMigrateTestcase(PVEControlTestcase):
+    """vm migrate runs the migration precheck, then starts the migration unless in dry run"""
+
+    MIGRATE_URL = "https://host:8006/api2/json/nodes/pve-devel-1/qemu/100/migrate"
+    UPID = "UPID:pve-devel-1:00001234:00005678:6AE38CD2:qmigrate:100:root@pam:"
+
+    def _post_setup(self):
+        super()._post_setup()
+        self.cluster.refresh = MagicMock()
+
+    def _run(self, args, local_disks=None):
+        responses.get(self.MIGRATE_URL, body=json.dumps({"data": {"local_disks": local_disks or []}}))
+        responses.post(self.MIGRATE_URL, body=json.dumps({"data": self.UPID}))
+        with patch("pvecontrol.actions.vm.PVECluster.create_from_config", return_value=self.cluster), patch(
+            "pvecontrol.actions.vm.print_task"
+        ) as mock_print_task:
+            result = CliRunner().invoke(pvecontrol, ["-c", "name", "vm", "migrate", *args])
+        return result, mock_print_task
+
+    @staticmethod
+    def _calls(method):
+        return [call.request for call in responses.calls if call.request.method == method]
+
+    @responses.activate
+    def test_migrate(self):
+        result, mock_print_task = self._run(["100", "--target", "pve-devel-2"])
+
+        assert result.exit_code == 0
+        [check] = self._calls("GET")
+        assert check.params == {"node": "pve-devel-1", "target": "pve-devel-2"}
+        [migration] = self._calls("POST")
+        assert "target=pve-devel-2" in migration.body
+        assert "online=0" in migration.body
+        assert "with-local-disks" not in migration.body
+        mock_print_task.assert_called_once_with(self.cluster, self.UPID, False, False)
+
+    @responses.activate
+    def test_migrate_online_with_local_disks(self):
+        result, _ = self._run(["100", "--target", "pve-devel-2", "--online"], local_disks=[{"volid": "local:100/disk"}])
+
+        assert result.exit_code == 0
+        [migration] = self._calls("POST")
+        assert "online=1" in migration.body
+        assert "with-local-disks=1" in migration.body
+
+    @responses.activate
+    def test_migrate_dry_run(self):
+        result, mock_print_task = self._run(["100", "--target", "pve-devel-2", "--dry-run"])
+
+        assert result.exit_code == 0
+        assert "Dry run, skipping migration" in result.output
+        # The precheck still runs in dry run, the migration does not
+        assert len(self._calls("GET")) == 1
+        assert not self._calls("POST")
+        mock_print_task.assert_not_called()
