@@ -48,7 +48,7 @@ CI runs black, pylint and pytest on every PR. All three must pass. Never test ag
 Four layers, top to bottom. Each command builds a `PVECluster` from the config, then works on model objects.
 
 **1. CLI entry point**: `src/pvecontrol/__init__.py`
-- `pvecontrol` is a Click group with the custom class `IgnoreRequiredForHelp`. It walks down to the leaf command (`get_leaf_command`) so `--help` works without `--cluster`, and flattens `node list`, `vm migrate`, etc. into a single "Commands" listing.
+- `pvecontrol` is a Click group with the custom class `IgnoreRequiredForHelp`. It walks down to the leaf command (`get_leaf_command`) so `--help` works without `--cluster` (the "help only" state lives in `ctx.meta`, never on the shared group), and flattens `node list`, `vm migrate`, etc. into a single "Commands" listing.
 - Global options: `-d/--debug`, `-o/--output`, `-c/--cluster`, `--config`, `--unicode/--no-unicode`, `--color/--no-color`. `main()` sets `auto_envvar_prefix="PVECONTROL"`, so `envvar="CLUSTER"` in the code means `PVECONTROL_CLUSTER` for users.
 - Cluster autodetection: without `-c`, exactly 1 configured cluster is picked automatically; 0 or several is a fatal error.
 - Parsed globals land in `ctx.obj["args"]` (a `SimpleNamespace` with `output`, `cluster`, `unicode`, `color`). Subcommands read them from there.

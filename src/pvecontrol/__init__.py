@@ -36,11 +36,22 @@ def get_leaf_command(cmd, ctx, args):
     return sub_cmd, sub_args
 
 
+# Key of ctx.meta telling that the invocation only displays a help, see IgnoreRequiredForHelp
+HELP_ONLY = "pvecontrol.help_only"
+
+
+def is_help_only(ctx):
+    """Tell whether the invocation only displays a help, in which case the group callback must not load any config"""
+    return ctx.meta.get(HELP_ONLY, False)
+
+
 # Patch click to ignore required parameters when --help is passed
 class IgnoreRequiredForHelp(click.Group):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.ignoring = False
+    """Let --help work on any subcommand without the options the group requires, --cluster for instance.
+
+    The state lives in the invocation context, never in the group itself: the group is a module-level
+    object shared by every invocation in a process (the test suite runs many of them).
+    """
 
     def _is_defaulting_to_help(self, ctx, args):
         try:
@@ -59,12 +70,19 @@ class IgnoreRequiredForHelp(click.Group):
             return False
 
     def parse_args(self, ctx, args):
-        self.ignoring = self._is_defaulting_to_help(ctx, args)
-        if self.ignoring:
-            for param in self.params:
-                param.required = False
+        ctx.meta[HELP_ONLY] = self._is_defaulting_to_help(ctx, args)
+        if not ctx.meta[HELP_ONLY]:
+            return super().parse_args(ctx, args)
 
-        return super().parse_args(ctx, args)
+        # Relax the required parameters for this parsing only
+        required = [param for param in self.params if param.required]
+        for param in required:
+            param.required = False
+        try:
+            return super().parse_args(ctx, args)
+        finally:
+            for param in required:
+                param.required = True
 
     def format_commands(self, ctx, formatter) -> None:
         commands = []
@@ -145,7 +163,7 @@ def pvecontrol(ctx, debug, output, cluster, unicode, color, config_file):
     # Disable urllib3 warnings about invalid certs
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    if not ctx.command.ignoring:
+    if not is_help_only(ctx):
         # configure logging
         logging.basicConfig(encoding="utf-8", level=logging.DEBUG if debug else logging.INFO)
 

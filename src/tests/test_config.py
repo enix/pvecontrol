@@ -195,11 +195,6 @@ class TestSetConfigDebugLog(unittest.TestCase):
 
 class TestConfigFileOption(unittest.TestCase):
 
-    def setUp(self):
-        # test_pvecontrol.py::test_get_leaf_command calls make_context with --help args,
-        # which sets ignoring=True on the shared pvecontrol group instance and never resets it.
-        pvecontrol.ignoring = False
-
     def test_config_option_calls_set_file(self):
         config_path = _make_temp_config()
         try:
