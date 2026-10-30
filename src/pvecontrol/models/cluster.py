@@ -7,7 +7,7 @@ from proxmoxer.core import AuthenticationError, ResourceException
 from proxmoxer.tools import Tasks
 from requests.exceptions import ConnectionError as RequestsConnectionError, SSLError, Timeout
 
-from pvecontrol.utils import defaulter, run_auth_commands
+from pvecontrol.utils import defaulter, parse_pve_version, run_auth_commands
 from pvecontrol.models.node import PVENode
 from pvecontrol.models.storage import PVEStorage
 from pvecontrol.models.task import PVETask
@@ -95,7 +95,7 @@ class PVECluster:
             return self._ha
 
         # use rules instead of ha in newer versions
-        if float(self.version["release"]) >= 9.1:
+        if parse_pve_version(self.version["release"]) >= (9, 1):
             _ha_groups = self.api.cluster.ha.rules.get()
         else:
             _ha_groups = self.api.cluster.ha.groups.get()
