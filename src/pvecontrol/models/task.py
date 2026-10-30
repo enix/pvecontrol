@@ -2,7 +2,7 @@ import logging
 from enum import Enum
 from proxmoxer.tools import Tasks
 
-from pvecontrol.utils import NODE_ERRORS, node_unreachable
+from pvecontrol.utils import NODE_ERRORS, exitstatus_ok, node_unreachable
 
 COLUMNS = [
     "upid",
@@ -82,7 +82,7 @@ class PVETask:
 
         A running task has no result yet, and neither has a vanished or unknown one: none of them is a failure.
         """
-        return not self.running() and not self.vanished() and not self.unknown() and self.exitstatus != "OK"
+        return not self.running() and not self.vanished() and not self.unknown() and not exitstatus_ok(self.exitstatus)
 
     def refresh(self):
         try:

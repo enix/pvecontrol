@@ -109,10 +109,11 @@ class PVEVmErrorsTestcase(PVEControlTestcase):
                 assert not errors
 
     def test_successful_task_waited_for(self):
-        self._mock_api(105)
-        result, errors, _ = self._run(["vm", "start", "105", "--force", "--wait"], task=fake_task("OK"))
-        assert result.exit_code == 0
-        assert not errors
+        for exitstatus in ["OK", "WARNINGS: 1"]:
+            self._mock_api(105)
+            result, errors, _ = self._run(["vm", "start", "105", "--force", "--wait"], task=fake_task(exitstatus))
+            assert result.exit_code == 0, exitstatus
+            assert not errors, exitstatus
 
     def test_api_errors_are_logged(self):
         cases = [
@@ -148,6 +149,10 @@ class PVEVmErrorsTestcase(PVEControlTestcase):
 def test_task_failed():
     assert fake_task("migration aborted").failed()
     assert not fake_task("OK").failed()
+    # Proxmox reports a task that ended with warnings as "WARNINGS: <count>": it succeeded
+    assert not fake_task("WARNINGS: 2").failed()
+    assert fake_task("WARNINGS").failed()
+    assert fake_task("command 'qm start' failed: WARNINGS: 1").failed()
     # A running task has no result yet, nor has one whose node can't be reached
     assert not fake_task(None).failed()
     assert not PVETask(None, UPID, summary={}, node_online=False).failed()
