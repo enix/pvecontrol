@@ -15,7 +15,7 @@ jobs:
     environment: release
     permissions:
       id-token: write
-      contents: write
+      contents: read
 
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -23,14 +23,25 @@ jobs:
         with:
           egress-policy: audit
 
+      # The release commit goes straight to the protected main branch: only this
+      # GitHub App is allowed to bypass the ruleset, GITHUB_TOKEN cannot.
+      - name: Generate a GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Python Semantic Release
         uses: python-semantic-release/python-semantic-release@b700dbeb1f431a0fcc30a79f3f0869407fe07278 # v10.7.0
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ steps.app-token.outputs.token }}
 
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
