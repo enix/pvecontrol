@@ -1,3 +1,5 @@
+import responses
+
 from tests.testcase import PVEControlTestcase
 
 
@@ -28,3 +30,33 @@ class PVEClusterTestcase(PVEControlTestcase):
 
         node_objects = self.cluster.find_nodes("*prod*")
         assert len(node_objects) == 0
+
+
+class PVEClusterHaApiTestcase(PVEControlTestcase):
+    """The ha property picks cluster/ha/rules from PVE 9.1 on, cluster/ha/groups before."""
+
+    def _ha_api_used(self, release):
+        self.cluster.version = {"release": release, "version": f"{release}.0", "repoid": "deadbeef"}
+        self.cluster._ha = None  # pylint: disable=protected-access
+        with responses.RequestsMock(assert_all_requests_are_fired=False) as mock:
+            for path in ("rules", "groups", "status/manager_status", "resources"):
+                mock.get(f"https://host:8006/api2/json/cluster/ha/{path}", json={"data": []})
+            _ = self.cluster.ha
+            called = {call.request.url.split("?")[0] for call in mock.calls}
+        rules = "https://host:8006/api2/json/cluster/ha/rules" in called
+        groups = "https://host:8006/api2/json/cluster/ha/groups" in called
+        assert rules != groups
+        return "rules" if rules else "groups"
+
+    def test_ha_api_by_release(self):
+        expected = {
+            "8.4": "groups",
+            "9.0": "groups",
+            "9.1": "rules",
+            "9.2": "rules",
+            "9.10": "rules",
+            "10.0": "rules",
+        }
+        for release, api in expected.items():
+            with self.subTest(release=release):
+                assert self._ha_api_used(release) == api

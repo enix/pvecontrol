@@ -8,7 +8,7 @@ import pytest
 import yaml
 
 from pvecontrol.models.vm import PVEVm, COLUMNS
-from pvecontrol.utils import render_output, redact_secrets, run_auth_commands, OutputFormats
+from pvecontrol.utils import render_output, redact_secrets, run_auth_commands, parse_pve_version, OutputFormats
 
 
 def test_render_output():
@@ -111,3 +111,33 @@ def test_redact_secrets():
     }
     # The original is left untouched
     assert value["clusters"][0]["password"] == "x"
+
+
+@pytest.mark.parametrize(
+    "version, expected",
+    [
+        ("8.4", (8, 4)),
+        ("9.0", (9, 0)),
+        ("9.1", (9, 1)),
+        ("9.2.4", (9, 2, 4)),
+        ("9.10", (9, 10)),
+        ("10.0", (10, 0)),
+        ("9.0~beta1", (9, 0)),
+        (" 9.1 ", (9, 1)),
+    ],
+)
+def test_parse_pve_version(version, expected):
+    assert parse_pve_version(version) == expected
+
+
+def test_parse_pve_version_orders_like_versions():
+    assert parse_pve_version("9.10") > parse_pve_version("9.2")
+    assert parse_pve_version("10.0") > parse_pve_version("9.9")
+    assert parse_pve_version("9.1") >= (9, 1)
+    assert parse_pve_version("9.0") < (9, 1)
+
+
+@pytest.mark.parametrize("version", ["", "beta", None])
+def test_parse_pve_version_invalid(version):
+    with pytest.raises(ValueError):
+        parse_pve_version(version)

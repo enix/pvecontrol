@@ -19,6 +19,18 @@ from prettytable import PrettyTable, TableStyle
 from requests.exceptions import ConnectionError as RequestsConnectionError, Timeout
 
 
+def parse_pve_version(version):
+    """Turn a Proxmox VE version string ("9.1", "9.2.4", "9.0~beta1") into a tuple of ints.
+
+    Tuples compare component by component, so (9, 10) > (9, 2) and (10, 0) > (9, 1),
+    unlike the float values of the same strings.
+    """
+    match = re.match(r"\d+(?:\.\d+)*", str(version).strip())
+    if match is None:
+        raise ValueError(f"Cannot parse Proxmox VE version {version!r}")
+    return tuple(int(part) for part in match.group(0).split("."))
+
+
 class Fonts:
     BLUE = "\033[94m"
     GREEN = "\033[92m"
