@@ -218,7 +218,6 @@ def _build_report_data(proxmox):
         for vm in sorted(proxmox.vms, key=lambda v: v.vmid)
     ]
 
-    # Sanity checks must run before storages because get_flattened_grouped_list mutates PVEStorage objects
     sanity_checks = _build_sanity_check_section(proxmox)
 
     # Storage — extract only the columns we need to avoid serialization issues

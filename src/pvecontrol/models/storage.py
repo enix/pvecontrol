@@ -85,20 +85,28 @@ class PVEStorage:
 
     @staticmethod
     def get_flattened_grouped_list(proxmox):
-        storages = PVEStorage.get_grouped_list(proxmox)
+        """One plain dict per grouped storage, built from the public fields of its representative.
 
-        for item in storages:
-            storage = item.pop("storage").__dict__
-            node = storage.pop("node")
-            item.update(storage)
-            if not proxmox.is_node_online(node):
+        The PVEStorage objects are left untouched, so they stay usable afterwards.
+        """
+        rows = []
+        for item in PVEStorage.get_grouped_list(proxmox):
+            storage = item["storage"]
+            row = {key: getattr(storage, key) for key in PVEStorage._default_kwargs}
+            row.update(
+                {
+                    "id": storage.id,
+                    "shared": storage.shared,
+                    "nodes": ", ".join(item["nodes"]),
+                    "usage": item["usage"],
+                }
+            )
+            if not proxmox.is_node_online(storage.node):
                 # cluster/resources keeps the last known status, or none
-                item["status"] = "unknown"
+                row["status"] = "unknown"
+            rows.append(row)
 
-        for storage in storages:
-            storage["nodes"] = ", ".join(storage["nodes"])
-
-        return storages
+        return rows
 
     @property
     def percentage(self):
