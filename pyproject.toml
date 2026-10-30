@@ -59,6 +59,11 @@ env = "GH_TOKEN"
 dist_glob_patterns = ["dist/*"]
 upload_to_vcs_release = true
 
+[tool.pytest.ini_options]
+# Fail on deprecations so that an API about to disappear (click.MultiCommand was one) is caught by CI, not by a
+# release of a dependency. No third-party library emits any today: restrict the filter to our modules if one does.
+filterwarnings = ["error::DeprecationWarning"]
+
 [tool.black]
 line-length = 120
 exclude = '''
