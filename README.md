@@ -294,7 +294,7 @@ Options:
 
 The `-c` or `--cluster` flag indicates on which cluster we want to work. It can be omitted when exactly one cluster is configured: that cluster is then used. With no cluster configured, or several clusters and no `-c`, `pvecontrol` stops with an error listing the available clusters. The cluster can also be set with the `PVECONTROL_CLUSTER` environment variable.
 
-Logs, warnings and errors are written on stderr, so `-o json` (or `csv`, `yaml`) output on stdout can be piped as is. `-d` / `--debug` enables debug logs.
+Logs, warnings and errors are written on stderr, so `-o json` (or `csv`, `yaml`) output on stdout can be piped as is. `-d` / `--debug` enables debug logs. Errors end with exit code `1`: a VM or node that doesn't exist, an error returned by the Proxmox API, a declined confirmation, or a task that failed while waited for (see [Tasks](#tasks)).
 
 The simplest operation we can do to check that `pvecontrol` works correctly, and that authentication has been configured properly is `status`:
 
@@ -344,7 +344,7 @@ $ pvecontrol vm migrate 100 --target pve-node-2 --online --wait
 
 ### vm start, vm shutdown, vm stop
 
-`vm start`, `vm shutdown` (clean ACPI shutdown, `--timeout SECONDS` to bound it) and `vm stop` (hard stop, `--overrule-shutdown` to override a shutdown in progress) change the power state of a VM. They ask for confirmation, unless `--force` is given; `--dry-run` only shows what would be done. Nothing is done if the VM is already in the requested state.
+`vm start`, `vm shutdown` (clean ACPI shutdown, `--timeout SECONDS` to bound it) and `vm stop` (hard stop, `--overrule-shutdown` to override a shutdown in progress) change the power state of a VM. They ask for confirmation, unless `--force` is given; declining it exits with code 1. `--dry-run` only shows what would be done. Nothing is done if the VM is already in the requested state.
 
 ```shell
 $ pvecontrol vm shutdown 100 --timeout 120 --wait
@@ -363,7 +363,8 @@ $ pvecontrol vm restore 200 --target pve-node-1 --archive 'pbs:backup/vm/100/202
 ### vm unlock
 
 `vm unlock` removes the lock set on a VM, it is the equivalent of `qm unlock <vmid>`. The lock is never removed
-automatically: the current lock is displayed and confirmation is asked before anything is done.
+automatically: the current lock is displayed and confirmation is asked before anything is done. Declining it exits
+with code 1, and so does a VM that is not found. A VM that is not locked is not an error: there is nothing to do.
 
 ```shell
 $ pvecontrol --cluster my-test-cluster vm unlock 100
@@ -403,7 +404,7 @@ Migrating VM 1001 (vm-a) from pve-node-1 to pve-node-3
 Migrating VM 1002 (vm-b) from pve-node-1 to pve-node-3
 Migrating VM 1005 (vm-e) from pve-node-1 to pve-node-3
 Confirm [y/N]: n
-Aborting
+ERROR:root:Aborting
 ```
 
 How it works:
@@ -415,7 +416,7 @@ How it works:
 - **Confirmation**: the planned migrations are displayed, then confirmation is always asked. Declining it exits with code 1.
 - **`--dry-run`**: the plan is computed and displayed (and the confirmation asked) but no migration is started.
 - **`--wait` / `--follow`**: wait for each migration to end, or follow its log, before starting the next one. Without them, migrations are started one after another and their result is not checked.
-- **Exit code**: `1` when the node is not fully evacuated (a VM had no target, or a running VM was skipped because `--online` was missing) or when a migration waited for didn't end with the `OK` status; `0` otherwise. A node with nothing to migrate succeeds, even when no target is available.
+- **Exit code**: `1` when the node is not fully evacuated (a VM had no target, or a running VM was skipped because `--online` was missing) or when a migration waited for failed (see [Tasks](#tasks)); `0` otherwise. A node with nothing to migrate succeeds, even when no target is available.
 
 The source node must be online.
 
@@ -424,6 +425,8 @@ The source node must be online.
 `task list` lists the tasks of the cluster, `task get UPID` shows a task, its status and its log. With `--wait` (`-w`), `task get` waits for the end of a running task; with `--follow` (`-f`), it prints its log while it runs. The same options are available on the commands that start a task (`vm migrate`, `vm start`, `vm shutdown`, `vm stop`, `vm restore`, `node evacuate`).
 
 Migrating a VM managed by HA starts a `hamigrate` task, which only asks the HA manager to migrate the VM and ends right away; the HA manager runs the actual migration in a task of its own a few seconds later. With `--wait` or `--follow`, `pvecontrol` finds that migration task and waits for it (or follows it) as well, then waits for the HA manager to record the end of the migration. Without them, only the `hamigrate` task is shown.
+
+With `--wait` or `--follow`, the command exits with code 1 when the task failed: Proxmox ended it with any status other than `OK` or `WARNINGS: <count>`. A task that completed with warnings succeeded, its warnings are in its log. A task whose node can't be reached anymore also exits with code 1. Without `--wait` or `--follow`, the task is usually still running when the command returns, so its result is not checked.
 
 ### sanitycheck
 
