@@ -39,6 +39,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Python Semantic Release
+        id: release
         uses: python-semantic-release/python-semantic-release@b700dbeb1f431a0fcc30a79f3f0869407fe07278 # v10.7.0
         with:
           github_token: ${{ steps.app-token.outputs.token }}
@@ -55,3 +56,15 @@ jobs:
         run: python -m build
       - name: Publish package
         uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1.14.3
+
+      - name: Announce the release on Slack
+        if: steps.release.outputs.released == 'true'
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          PACKAGE_NAME: pvecontrol
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_NOTES: ${{ steps.release.outputs.release_notes }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+        run: python .github/release/announce.py
