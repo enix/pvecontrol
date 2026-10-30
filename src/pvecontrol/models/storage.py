@@ -39,7 +39,6 @@ class PVEStorage:
         self.node = node
         self._api = api
         self._content = {}
-        self._details = {}
 
         self.shared = STORAGE_SHARED_ENUM[shared]
 
@@ -50,13 +49,6 @@ class PVEStorage:
         if self.plugintype == "s3":
             self.disk = 0
             self.maxdisk = 0
-
-    @property
-    def details(self):
-        if self._details is None:
-            self._details = self._api.storage(self.short_id).get()
-
-        return self._details
 
     @staticmethod
     def get_grouped_list(proxmox, online_only=False):
