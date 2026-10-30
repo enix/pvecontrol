@@ -49,7 +49,7 @@ Four layers, top to bottom. Each command builds a `PVECluster` from the config, 
 
 **1. CLI entry point**: `src/pvecontrol/__init__.py`
 - `pvecontrol` is a Click group with the custom class `IgnoreRequiredForHelp`. It walks down to the leaf command (`get_leaf_command`) so `--help` works without `--cluster` (the "help only" state lives in `ctx.meta`, never on the shared group), and flattens `node list`, `vm migrate`, etc. into a single "Commands" listing.
-- Global options: `-d/--debug`, `-o/--output`, `-c/--cluster`, `--config`, `--unicode/--no-unicode`, `--color/--no-color`. `main()` sets `auto_envvar_prefix="PVECONTROL"`: every option is read from `PVECONTROL_<COMMAND>_<PARAM NAME>` (`PVECONTROL_CLUSTER`, `PVECONTROL_VM_LIST_SORT_BY`). An explicit `envvar=` is not prefixed and is read first: `envvar="CLUSTER"` reads `CLUSTER`, then `PVECONTROL_CLUSTER`. `--config` (param `config_file`) is read from `CONFIG` and `PVECONTROL_CONFIG_FILE`, not `PVECONTROL_CONFIG`.
+- Global options: `-d/--debug`, `-o/--output`, `-c/--cluster`, `--config`, `--unicode/--no-unicode`, `--color/--no-color`. `main()` sets `auto_envvar_prefix="PVECONTROL"`: every option is read from `PVECONTROL_<COMMAND>_<PARAM NAME>` (`PVECONTROL_CLUSTER`, `PVECONTROL_VM_LIST_SORT_BY`). An explicit `envvar=` is not prefixed and is read first, so the global options give their full name (`envvar="PVECONTROL_CLUSTER"`, `envvar="PVECONTROL_CONFIG"`): a short `envvar="CLUSTER"` would read the unprefixed `CLUSTER`.
 - Cluster autodetection: without `-c`, exactly 1 configured cluster is picked automatically; 0 or several is a fatal error.
 - Parsed globals land in `ctx.obj["args"]` (a `SimpleNamespace` with `output`, `cluster`, `unicode`, `color`). Subcommands read them from there.
 

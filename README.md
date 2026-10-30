@@ -495,17 +495,15 @@ Actions that need the node are refused with an error: `vm` commands on one of it
 - `PVECONTROL_CLUSTER`: the default cluster to use when no `-c` or `--cluster` option is specified.
 - `PVECONTROL_COLOR`: if set to `False`, it will disable all colorized output.
 - `PVECONTROL_UNICODE`: if set to `False`, it will disable all unicode output.
-- `PVECONTROL_CONFIG_FILE`: path to the configuration file to use instead of `~/.config/pvecontrol/config.yaml`, like `--config`.
+- `PVECONTROL_CONFIG`: path to the configuration file to use instead of `~/.config/pvecontrol/config.yaml`, like `--config`.
 - `PVECONTROL_OUTPUT`: the default output format, like `-o` / `--output`.
 - `PVECONTROL_DEBUG`: if set to `True`, enable debug logs, like `-d` / `--debug`.
 
 More generally, every option can be set with a `PVECONTROL_<COMMAND>_<OPTION>` variable, for instance `PVECONTROL_VM_LIST_SORT_BY=name` for `vm list --sort-by name`.
 
-CAUTION: the cluster, configuration file, color and unicode options are also read from the unprefixed variables `CLUSTER`, `CONFIG`, `COLOR` and `UNICODE`, which take precedence over the `PVECONTROL_` ones. Make sure these are not set in your environment for something else. Despite its name, `PVECONTROL_CONFIG` is not read.
-
 ### Using another configuration file
 
-`--config PATH` (or `PVECONTROL_CONFIG_FILE`) **replaces** `~/.config/pvecontrol/config.yaml`, it doesn't add to it: the given file is only layered on top of the default values shipped with `pvecontrol` (`cpufactor`, `memoryminimum`, `max_last_backup`), and nothing is read from your usual configuration file. The given file must therefore hold everything needed, clusters and credentials included.
+`--config PATH` (or `PVECONTROL_CONFIG`) **replaces** `~/.config/pvecontrol/config.yaml`, it doesn't add to it: the given file is only layered on top of the default values shipped with `pvecontrol` (`cpufactor`, `memoryminimum`, `max_last_backup`), and nothing is read from your usual configuration file. The given file must therefore hold everything needed, clusters and credentials included.
 
 This is deliberate: when two configuration files are merged, the `clusters:` lists are merged entry by entry, by position, so the first cluster of one file would be mixed with the first cluster of the other one.
 
