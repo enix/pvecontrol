@@ -110,6 +110,11 @@ class EvacuateTestcase(PVEControlTestcase):
         assert result.exit_code == 1
         assert any("Migration failed for VM(s): 100" in msg for msg in log.output)
 
+    def test_migration_with_warnings_is_not_a_failure(self):
+        result, calls = self._evacuate(["pve-devel-1", "--online", "--wait"], task_exitstatus="WARNINGS: 1")
+        assert result.exit_code == 0
+        assert list(calls) == [100]
+
     def test_running_task_is_not_a_failure(self):
         result, _ = self._evacuate(["pve-devel-1", "--online"], task_exitstatus="", task_running=True)
         assert result.exit_code == 0

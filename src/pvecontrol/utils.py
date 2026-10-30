@@ -205,7 +205,7 @@ def _ha_migration_upid(proxmox, upid):
 def _follow_ha_migration(proxmox, task, follow, wait):
     """A VM managed by HA is not migrated by a hamigrate task: it only asks the HA manager to do it in a task of its own.
     Return the task that actually migrated the VM, the given task otherwise."""
-    if task.type != "hamigrate" or task.exitstatus != "OK" or not (follow or wait):
+    if task.type != "hamigrate" or not exitstatus_ok(task.exitstatus) or not (follow or wait):
         return task
     ha_upid = _ha_migration_upid(proxmox, task.upid)
     if ha_upid is None:
@@ -316,6 +316,12 @@ def confirm(force=False):
 
 # Errors of an API call proxied to a node, the ones node_unreachable() can tell about
 NODE_ERRORS = (proxmoxer.core.ResourceException, RequestsConnectionError, Timeout)
+
+
+def exitstatus_ok(exitstatus):
+    """A task that ends with warnings succeeded: Proxmox reports it as "WARNINGS: <count>" instead of "OK",
+    as in PVE::Tools::upid_status_is_error()"""
+    return exitstatus == "OK" or re.fullmatch(r"WARNINGS: \d+", exitstatus or "") is not None
 
 
 def node_unreachable(error):
