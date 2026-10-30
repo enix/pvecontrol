@@ -128,23 +128,25 @@ class IgnoreRequiredForHelp(click.Group):
     default=OutputFormats.TEXT.value,
     callback=lambda *v: OutputFormats(v[2]),
 )
+# Click reads an explicit envvar= as is, without the auto_envvar_prefix of main(): give the full names, or
+# unprefixed variables such as CLUSTER or CONFIG would be read, and would win over the PVECONTROL_ ones
 @click.option(
     "-c",
     "--cluster",
     metavar="NAME",
-    envvar="CLUSTER",
+    envvar="PVECONTROL_CLUSTER",
     default=None,
     help="Proxmox cluster name as defined in configuration",
 )
 @click.option(
     "--unicode/--no-unicode",
-    envvar="UNICODE",
+    envvar="PVECONTROL_UNICODE",
     default=True,
     help="Use unicode characters for output",
 )
 @click.option(
     "--color/--no-color",
-    envvar="COLOR",
+    envvar="PVECONTROL_COLOR",
     default=True,
     help="Use colorized output",
 )
@@ -152,7 +154,7 @@ class IgnoreRequiredForHelp(click.Group):
     "--config",
     "config_file",
     metavar="PATH",
-    envvar="CONFIG",
+    envvar="PVECONTROL_CONFIG",
     type=click.Path(exists=True, dir_okay=False, readable=True),
     default=None,
     help=f"Path to configuration file (overrides default {config.user_config_path()})",
