@@ -12,10 +12,19 @@ class SanityCheck:
         self._unicode = unicode
 
     def run(self, checks):
-        if not checks:
-            checks = DEFAULT_CHECK_IDS
+        """Run the given check ids, or every check when none is given.
 
-        for key in checks:
+        The checks always run in the canonical order of DEFAULT_CHECKS, whatever order
+        the ids come in, and each id runs once. DEFAULT_CHECKS lists the checks grouped
+        by type, so display() prints each type banner once, exactly as in a full run.
+        """
+        selected = set(checks) if checks else set(DEFAULT_CHECK_IDS)
+        unknown = selected - set(DEFAULT_CHECK_IDS)
+        if unknown:
+            raise ValueError(f"Unknown sanity check(s): {', '.join(sorted(unknown))}")
+        for key in DEFAULT_CHECK_IDS:
+            if key not in selected:
+                continue
             check = DEFAULT_CHECKS[key](self._proxmox, colors=self._colors, unicode=self._unicode)
             check.run()
             self._checks.append(check)
