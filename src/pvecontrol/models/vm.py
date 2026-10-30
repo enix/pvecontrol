@@ -1,3 +1,5 @@
+import logging
+
 from enum import Enum
 
 COLUMNS = ["vmid", "name", "status", "lock", "node", "cpus", "maxmem", "maxdisk", "tags"]
@@ -79,16 +81,22 @@ class PVEVm:
             options["overrule-shutdown"] = 1
         return self._api.nodes(self.node).qemu(self.vmid).status.stop.post(**options)
 
-    def migrate(self, target, online=False):
+    def migrate(self, target, online=False, dry_run=False):
+        """Migrate the VM to the target node, return the UPID of the migration task.
+
+        The migration precheck runs even in dry run, which then stops before starting the migration and returns None.
+        """
         options = {}
         options["node"] = self.node
         options["target"] = target
         check = self._api.nodes(self.node).qemu(self.vmid).migrate.get(**options)
-        #    logging.debug("Migration check: %s"%check)
+        logging.debug("Migration check: %s", check)
         options["online"] = int(online)
         if len(check["local_disks"]) > 0:
             options["with-local-disks"] = int(True)
 
+        if dry_run:
+            return None
         upid = self._api.nodes(self.node).qemu(self.vmid).migrate.post(**options)
         return upid
 
