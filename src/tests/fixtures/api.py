@@ -1,5 +1,4 @@
 import json
-import requests
 import responses
 
 
@@ -42,33 +41,6 @@ DEFAULT_VM_CONFIG = {
     "scsi0": "local:9012/base-9012-disk-0.qcow2,size=2G,ssd=1",
     "name": "template.debian-12-bookworm-amd64",
 }
-
-
-def mock_api_requests(
-    nodes,
-    vms,
-    backup_jobs=None,
-    storage_resources=None,
-    storages_contents=None,
-    ha_rules=None,
-    ha_resources=None,
-    users=None,
-    groups=None,
-    acls=None,
-):
-    routes = generate_routes(
-        nodes, vms, backup_jobs, storage_resources, storages_contents, ha_rules, ha_resources, users, groups, acls
-    )
-
-    def side_effect(method, url, **kwargs):
-        content = execute_route(routes, method, url, **kwargs)
-
-        res = requests.Response()
-        res.status_code = 200
-        res._content = content.encode("utf-8")  # pylint: disable=protected-access
-        return res
-
-    return side_effect
 
 
 def create_response_wrapper(

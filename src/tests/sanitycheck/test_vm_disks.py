@@ -1,11 +1,11 @@
 from unittest.mock import patch
-from pvecontrol.models.cluster import PVECluster
+
 from pvecontrol.sanitycheck.tests.vm import DiskUnused
 from pvecontrol.sanitycheck import SanityCheck
 from pvecontrol.sanitycheck.checks import CheckCode
 from tests.sanitycheck.utils import assert_message
+from tests.testcase import PVEEmptyClusterTestcase
 from tests.fixtures.api import (
-    mock_api_requests,
     fake_node,
     fake_vm,
     fake_storage_resource,
@@ -14,162 +14,116 @@ from tests.fixtures.api import (
 )
 
 
-@patch("proxmoxer.backends.https.ProxmoxHTTPAuth")
-@patch("proxmoxer.backends.https.ProxmoxHttpSession.request")
-def test_sanitycheck_vm_disk_unused(request, _proxmox_http_auth):
-    # VM have unused disks
-    nodes = [
-        fake_node(3, True),
-        fake_node(4, True),
-    ]
-    vms = [
-        fake_vm(100, nodes[0], config={**DEFAULT_VM_CONFIG, "unused1": "vm-100-disk-1.qcow2"}),
-        fake_vm(101, nodes[0], config={**DEFAULT_VM_CONFIG, "unused1": "local:101/vm-101-disk-1.qcow2"}),
-        fake_vm(102, nodes[1]),
-        fake_vm(103, nodes[1]),
-    ]
+class DiskUnusedTestcase(PVEEmptyClusterTestcase):
+    """2 nodes, pve-devel-3 and pve-devel-4, subclasses set the VMs and storages"""
 
-    request.side_effect = mock_api_requests(nodes, vms)
+    def _build_fixtures(self):
+        super()._build_fixtures()
+        self.nodes = [fake_node(3, True), fake_node(4, True)]
 
-    proxmox = PVECluster(
-        "name",
-        "host",
-        config={},
-        **{"user": "user", "password": "password"},
-        timeout=1,
-    )
+    def _register_routes(self):
+        super()._register_routes()
+        for node in self.nodes:
+            name = node["status"]["name"]
+            self.responses_get(f"/api2/json/nodes/{name}/version")
+            for storage in self.storage_resources:
+                self.responses_get(
+                    f"/api2/json/nodes/{name}/storage/{storage['storage']}/content", params={"content": "images"}
+                )
+        for vm in self.vms:
+            self.responses_get(f"/api2/json/nodes/{vm['node']}/qemu/{vm['vmid']}/config")
 
-    disk_unused_check = DiskUnused(proxmox)
-    disk_unused_check.run()
+    def _post_setup(self):
+        super()._post_setup()
+        self.check = DiskUnused(self.cluster)
+        self.check.run()
 
-    sc = SanityCheck(proxmox)
-    with patch.object(sc, "_checks", new=[disk_unused_check]):
-        exitcode = sc.get_exit_code()
-        sc.display()
-
-        assert exitcode == 1
-        assert len(disk_unused_check.messages) == 2
-        assert_message(disk_unused_check.messages[0], CheckCode.CRIT, "Disk 'unused1' is not used on vm 100/vm-100")
-        assert_message(disk_unused_check.messages[1], CheckCode.CRIT, "Disk 'unused1' is not used on vm 101/vm-101")
+        sc = SanityCheck(self.cluster)
+        with patch.object(sc, "_checks", new=[self.check]):
+            self.exitcode = sc.get_exit_code()
+            sc.display()
 
 
-@patch("proxmoxer.backends.https.ProxmoxHTTPAuth")
-@patch("proxmoxer.backends.https.ProxmoxHttpSession.request")
-def test_sanitycheck_local_storage_vm_deleted(request, _proxmox_http_auth):
-    # Local Storage have unused disks, VM doesn't exist anymore
-    nodes = [
-        fake_node(3, True),
-        fake_node(4, True),
-    ]
-    vms = [fake_vm(100, nodes[0])]
+class VmDiskUnusedTestcase(DiskUnusedTestcase):
+    """VM have unused disks"""
 
-    storage_resources = [
-        fake_storage_resource("local", nodes[0]["status"]["name"], shared=0, plugin_type="lvm"),
-        fake_storage_resource("local", nodes[1]["status"]["name"], shared=0, plugin_type="lvm"),
-    ]
+    def _build_fixtures(self):
+        super()._build_fixtures()
+        self.vms = [
+            fake_vm(100, self.nodes[0], config={**DEFAULT_VM_CONFIG, "unused1": "vm-100-disk-1.qcow2"}),
+            fake_vm(101, self.nodes[0], config={**DEFAULT_VM_CONFIG, "unused1": "local:101/vm-101-disk-1.qcow2"}),
+            fake_vm(102, self.nodes[1]),
+            fake_vm(103, self.nodes[1]),
+        ]
 
-    storage_contents = {
-        nodes[0]["status"]["name"]: {
-            "local": [fake_storage_content("local", "vm-100-disk-1.qcow2", 100, "image", 1738461900, "qcow2", {})],
-        },
-        nodes[1]["status"]["name"]: {
-            "local": [fake_storage_content("local", "vm-101-disk-1.qcow2", 101, "image", 1738461900, "qcow2", {})],
-        },
-    }
+    def test_sanitycheck_vm_disk_unused(self):
+        assert self.exitcode == 1
+        assert len(self.check.messages) == 2
+        assert_message(self.check.messages[0], CheckCode.CRIT, "Disk 'unused1' is not used on vm 100/vm-100")
+        assert_message(self.check.messages[1], CheckCode.CRIT, "Disk 'unused1' is not used on vm 101/vm-101")
 
-    request.side_effect = mock_api_requests(
-        nodes, vms, storage_resources=storage_resources, storages_contents=storage_contents
-    )
 
-    proxmox = PVECluster(
-        "name",
-        "host",
-        config={},
-        **{"user": "user", "password": "password"},
-        timeout=1,
-    )
+class LocalStorageVmDeletedTestcase(DiskUnusedTestcase):
+    """Local Storage have unused disks, VM doesn't exist anymore"""
 
-    disk_unused_check = DiskUnused(proxmox)
-    disk_unused_check.run()
+    def _build_fixtures(self):
+        super()._build_fixtures()
+        node3, node4 = (node["status"]["name"] for node in self.nodes)
+        self.vms = [fake_vm(100, self.nodes[0])]
+        self.storage_resources = [
+            fake_storage_resource("local", node3, shared=0, plugin_type="lvm"),
+            fake_storage_resource("local", node4, shared=0, plugin_type="lvm"),
+        ]
+        self.storages_contents = {
+            node3: {
+                "local": [fake_storage_content("local", "vm-100-disk-1.qcow2", 100, "image", 1738461900, "qcow2", {})],
+            },
+            node4: {
+                "local": [fake_storage_content("local", "vm-101-disk-1.qcow2", 101, "image", 1738461900, "qcow2", {})],
+            },
+        }
 
-    sc = SanityCheck(proxmox)
+    def test_sanitycheck_local_storage_vm_deleted(self):
+        assert self.exitcode == 1
+        assert len(self.check.messages) == 3
 
-    with patch.object(sc, "_checks", new=[disk_unused_check]):
-        exitcode = sc.get_exit_code()
-        sc.display()
-
-        assert exitcode == 1
-        assert len(disk_unused_check.messages) == 3
-
-        assert_message(disk_unused_check.messages[0], CheckCode.OK, "Storage 'pve-devel-3/local' have 1/1 disk used")
-        assert_message(disk_unused_check.messages[1], CheckCode.WARN, "Storage 'pve-devel-4/local' have 0/1 disk used")
+        assert_message(self.check.messages[0], CheckCode.OK, "Storage 'pve-devel-3/local' have 1/1 disk used")
+        assert_message(self.check.messages[1], CheckCode.WARN, "Storage 'pve-devel-4/local' have 0/1 disk used")
         assert_message(
-            disk_unused_check.messages[2],
+            self.check.messages[2],
             CheckCode.CRIT,
             "Disk 'pve-devel-4/local:101/vm-101-disk-1.qcow2' is not used, vm 101 doesn't exists on node",
         )
 
 
-@patch("proxmoxer.backends.https.ProxmoxHTTPAuth")
-@patch("proxmoxer.backends.https.ProxmoxHttpSession.request")
-def test_sanitycheck_shared_storage_vm_deleted(request, _proxmox_http_auth):
-    # Local Storage have unused disks, VM doesn't exist anymore
-    nodes = [
-        fake_node(3, True),
-        fake_node(4, True),
-    ]
-    vms = [fake_vm(100, nodes[0])]
+class SharedStorageVmDeletedTestcase(DiskUnusedTestcase):
+    """Shared Storage have unused disks, VM doesn't exist anymore"""
 
-    storage_resources = [
-        fake_storage_resource("shared", nodes[0]["status"]["name"], shared=1, plugin_type="lvm"),
-        fake_storage_resource("shared", nodes[1]["status"]["name"], shared=1, plugin_type="lvm"),
-    ]
+    def _build_fixtures(self):
+        super()._build_fixtures()
+        node3, node4 = (node["status"]["name"] for node in self.nodes)
+        self.vms = [fake_vm(100, self.nodes[0])]
+        self.storage_resources = [
+            fake_storage_resource("shared", node3, shared=1, plugin_type="lvm"),
+            fake_storage_resource("shared", node4, shared=1, plugin_type="lvm"),
+        ]
+        contents = [
+            fake_storage_content("shared", "vm-100-disk-1.qcow2", 100, "image", 1738461900, "qcow2", {}),
+            fake_storage_content("shared", "vm-101-disk-1.qcow2", 101, "image", 1738461900, "qcow2", {}),
+        ]
+        self.storages_contents = {node3: {"shared": contents}, node4: {"shared": contents}}
 
-    contents = [
-        fake_storage_content("shared", "vm-100-disk-1.qcow2", 100, "image", 1738461900, "qcow2", {}),
-        fake_storage_content("shared", "vm-101-disk-1.qcow2", 101, "image", 1738461900, "qcow2", {}),
-    ]
-
-    storage_contents = {
-        nodes[0]["status"]["name"]: {
-            "shared": contents,
-        },
-        nodes[1]["status"]["name"]: {
-            "shared": contents,
-        },
-    }
-
-    request.side_effect = mock_api_requests(
-        nodes, vms, storage_resources=storage_resources, storages_contents=storage_contents
-    )
-
-    proxmox = PVECluster(
-        "name",
-        "host",
-        config={},
-        **{"user": "user", "password": "password"},
-        timeout=1,
-    )
-
-    disk_unused_check = DiskUnused(proxmox)
-    disk_unused_check.run()
-
-    sc = SanityCheck(proxmox)
-
-    with patch.object(sc, "_checks", new=[disk_unused_check]):
-        exitcode = sc.get_exit_code()
-        sc.display()
-
-        assert exitcode == 1
-        assert len(disk_unused_check.messages) == 2
+    def test_sanitycheck_shared_storage_vm_deleted(self):
+        assert self.exitcode == 1
+        assert len(self.check.messages) == 2
 
         assert_message(
-            disk_unused_check.messages[0],
+            self.check.messages[0],
             CheckCode.CRIT,
             "Disk 'pve-devel-3/shared:101/vm-101-disk-1.qcow2' is not used, vm 101 doesn't exists",
         )
         assert_message(
-            disk_unused_check.messages[1],
+            self.check.messages[1],
             CheckCode.CRIT,
             "Disk 'pve-devel-4/shared:101/vm-101-disk-1.qcow2' is not used, vm 101 doesn't exists",
         )
