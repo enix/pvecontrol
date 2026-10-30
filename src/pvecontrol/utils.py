@@ -8,6 +8,7 @@ import subprocess
 
 from collections import OrderedDict
 from enum import Enum
+from functools import cache
 
 import click
 import proxmoxer.core
@@ -52,7 +53,14 @@ class OutputFormats(Enum):
         return self.value
 
 
+@cache
 def terminal_support_colors():
+    """Tell whether the terminal supports colors.
+
+    Probing goes through curses.initscr() / endwin(), which writes terminal control
+    sequences to stdout each time. The answer does not change during a run, so it is
+    computed once per process: sanitycheck asks for it for every check and message.
+    """
     try:
         _stdscr = curses.initscr()
         curses.start_color()
