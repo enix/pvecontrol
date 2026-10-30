@@ -77,8 +77,6 @@ def set_config(cluster_name):
             logging.debug("configuration file: %s", source.filename)
     logging.debug("configuration is %s", redact_secrets(validconfig))
 
-    # FIXME trouver une methode plus clean pour recuperer la configuration du bon cluster
-    # Peut etre rework la configuration completement avec un dict
     matches = [c for c in validconfig.clusters if c.name.lower() == cluster_name.lower()]
     if not matches:
         logging.error('No such cluster "%s"', cluster_name)
