@@ -87,6 +87,6 @@ def sanitycheck(ctx, checks):
     # VM is running in cpu = qemu64
     proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
     sc = SanityCheck(proxmox, ctx.obj["args"].color, ctx.obj["args"].unicode)
-    exitcode = sc.run(checks=set(checks))
+    exitcode = sc.run(checks=checks)
     sc.display()
     sys.exit(exitcode)

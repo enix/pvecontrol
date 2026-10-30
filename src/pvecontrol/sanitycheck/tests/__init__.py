@@ -4,6 +4,8 @@ from .ha_vms import HaVms
 from .vm import VmsStartOnBoot, DiskUnused
 from .vm_backups import VmBackups
 
+# Canonical order of the checks: SanityCheck always runs and displays them in this order.
+# Keep the checks of a same CheckType next to each other, so each type banner is printed once.
 DEFAULT_CHECKS = {
     Nodes.id: Nodes,
     HaGroups.id: HaGroups,
