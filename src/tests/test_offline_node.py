@@ -102,16 +102,6 @@ class OfflineNodeTestcase(PVEControlTestcase):
         _ = self.cluster.ha
         self.tasks = self.cluster.tasks
         self.backups_found = self.cluster.backups
-        # Before the report, which flattens the storage objects
-        self.grouped_storages = [
-            {
-                "storage": item["storage"].storage,
-                "node": item["storage"].node,
-                "nodes": item["nodes"],
-                "usage": item["usage"],
-            }
-            for item in PVEStorage.get_grouped_list(self.cluster)
-        ]
         self.checks = {}
         for check_id, check_class in DEFAULT_CHECKS.items():
             self.checks[check_id] = check_class(self.cluster)
@@ -121,6 +111,9 @@ class OfflineNodeTestcase(PVEControlTestcase):
             print_task(self.cluster, UPID_OFFLINE_DONE)
         # Every route is registered for every node, so a call to the offline node would not fail here: track them
         self.offline_calls = [c.request.url for c in responses.calls if f"/nodes/{OFFLINE_NODE}/" in c.request.url]
+
+    def _grouped_storages(self, name):
+        return [item for item in PVEStorage.get_grouped_list(self.cluster) if item["storage"].storage == name]
 
     def _messages(self, check_id, code):
         return [m.message for m in self.checks[check_id].messages if m.code == code]
@@ -179,12 +172,12 @@ class OfflineNodeTestcase(PVEControlTestcase):
         assert all("node" in storage for storage in self.cluster.resources_storages)
 
     def test_storage_without_online_entry_is_unknown(self):
-        local = [item for item in self.grouped_storages if item["storage"] == "local"]
+        local = self._grouped_storages("local")
         assert [item["usage"] for item in local] == ["unknown"]
         rows = [row for row in self.report["storages"] if row["storage"] == "local"]
         assert [(row["usage"], row["status"]) for row in rows] == [("unknown", "unknown")]
         # A shared storage with an online entry keeps its usage
-        s3 = [item for item in self.grouped_storages if item["storage"] == "s3"]
+        s3 = self._grouped_storages("s3")
         assert s3[0]["usage"] != "unknown"
 
     def test_check_nodes(self):
@@ -218,9 +211,9 @@ class OfflineNodeTestcase(PVEControlTestcase):
 
     def test_shared_storage_represented_by_an_online_node(self):
         # The s3 entry of the offline node comes first in cluster/resources
-        s3 = [item for item in self.grouped_storages if item["storage"] == "s3"]
+        s3 = self._grouped_storages("s3")
         assert len(s3) == 1
-        assert s3[0]["node"] == "pve-devel-1"
+        assert s3[0]["storage"].node == "pve-devel-1"
         assert s3[0]["nodes"] == [OFFLINE_NODE, "pve-devel-1", "pve-devel-2"]
 
     def test_task_wait_refused(self):
