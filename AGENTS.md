@@ -83,7 +83,6 @@ Four layers, top to bottom. Each command builds a `PVECluster` from the config, 
 
 - Fixtures in `src/tests/fixtures/api.py` fake the Proxmox API (`fake_node`, `fake_vm`, `fake_storage_resource`, `fake_backup_job`, `fake_ha_rule`, `fake_user`, ...) and build a route table with `generate_routes()`. They simulate PVE 9.1.4.
 - `src/tests/testcase.py`: `PVEEmptyClusterTestcase` (auth mocked, base routes only) and `PVEControlTestcase` (3 nodes, 5 VMs, an `s3` storage, backups). Extend them through the hooks, never by overriding `setUp`: `_build_fixtures()` to set `self.nodes`, `self.vms`, `self.users`, ... before the route table is built; `_register_routes()` for extra routes; `_cluster_config()` for `cpufactor` / `memoryminimum` / `max_last_backup`; `_post_setup()` runs once `self.cluster` exists, with the response mock still active.
-- Older tests (`sanitycheck/test_vm_disks.py`) patch `ProxmoxHttpSession.request` directly with `mock_api_requests()`. Prefer the `responses`-based test case for new tests.
 - Pure model tests (`test_user.py`, `test_group.py`, `test_acl.py`, `test_backup_job.py`) need no cluster.
 
 ## Conventions
