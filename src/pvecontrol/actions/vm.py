@@ -4,7 +4,7 @@ import sys
 import click
 import proxmoxer.core
 
-from pvecontrol.utils import confirm, print_task
+from pvecontrol.utils import confirm, exit_if_task_failed, print_task
 from pvecontrol.cli import ResourceGroup, migration_related_command, task_related_command
 from pvecontrol.models.vm import PVEVm, VmStatus, COLUMNS
 from pvecontrol.models.cluster import PVECluster
@@ -43,29 +43,32 @@ def migrate(ctx, vmid, target, online, follow, wait, dry_run):
     vm = proxmox.get_vm(vmid)
     logging.debug("Source vm: %s", vm)
     if not vm:
-        print("Source vm not found")
+        logging.error("Source VM %s not found", vmid)
         sys.exit(1)
     _exit_if_node_offline(proxmox, vm)
     node = proxmox.find_node(vm.node)
     if not node:
-        print("Source node does not exists")
+        logging.error("Source node %s does not exist", vm.node)
         sys.exit(1)
     logging.debug("Source node: %s", node)
 
-    target = proxmox.find_node(target)
-    if not target:
-        print("Target node does not exists")
+    target_node = proxmox.find_node(target)
+    if not target_node:
+        logging.error("Target node %s does not exist", target)
         sys.exit(1)
-    if not target.online:
-        logging.error("Target node %s is not online", target.node)
+    if not target_node.online:
+        logging.error("Target node %s is not online", target_node.node)
         sys.exit(1)
 
-    upid = vm.migrate(target.node, online, dry_run=dry_run)
+    try:
+        upid = vm.migrate(target_node.node, online, dry_run=dry_run)
+    except proxmoxer.core.ResourceException as e:
+        logging.error("Error migrating VM %s: %s", vmid, e)
+        sys.exit(1)
     if dry_run:
         print("Dry run, skipping migration")
         return
-    proxmox.refresh()
-    print_task(proxmox, upid, follow, wait)
+    _follow_task(proxmox, upid, follow, wait)
 
 
 @root.command()
@@ -98,11 +101,10 @@ def restore(ctx, vmid, target, archive, storage, force, follow, wait):
 
     try:
         upid = PVEVm.create(proxmox, vmid, target, archive=archive, storage=storage, force=force)
-        proxmox.refresh()
-        print_task(proxmox, upid, follow, wait)
     except proxmoxer.core.ResourceException as e:
         logging.error("Error creating VM: %s", e)
         sys.exit(1)
+    _follow_task(proxmox, upid, follow, wait)
 
 
 @root.command()
@@ -123,7 +125,7 @@ def unlock(ctx, vmid, dry_run, force):
     vm = proxmox.get_vm(vmid)
     logging.debug("Vm to unlock: %s", vm)
     if not vm:
-        print("Vm to unlock not found")
+        logging.error("VM %s to unlock not found", vmid)
         sys.exit(1)
     _exit_if_node_offline(proxmox, vm)
 
@@ -133,7 +135,7 @@ def unlock(ctx, vmid, dry_run, force):
 
     print(f"Removing lock '{vm.lock}' on VM {vm.vmid} ({vm.name})")
     if not confirm(force):
-        return
+        sys.exit(1)
 
     if dry_run:
         print("Dry run, skipping unlock")
@@ -162,7 +164,7 @@ def start(ctx, vmid, dry_run, force, follow, wait):
 
     vm = proxmox.get_vm(vmid)
     if not vm:
-        print("VM not found")
+        logging.error("VM %s not found", vmid)
         sys.exit(1)
     _exit_if_node_offline(proxmox, vm)
 
@@ -176,11 +178,14 @@ def start(ctx, vmid, dry_run, force, follow, wait):
         return
 
     if not confirm(force):
-        return
+        sys.exit(1)
 
-    upid = vm.start()
-    proxmox.refresh()
-    print_task(proxmox, upid, follow, wait)
+    try:
+        upid = vm.start()
+    except proxmoxer.core.ResourceException as e:
+        logging.error("Error starting VM %s: %s", vmid, e)
+        sys.exit(1)
+    _follow_task(proxmox, upid, follow, wait)
 
 
 @root.command()
@@ -203,7 +208,7 @@ def shutdown(ctx, vmid, timeout, dry_run, force, follow, wait):
 
     vm = proxmox.get_vm(vmid)
     if not vm:
-        print("VM not found")
+        logging.error("VM %s not found", vmid)
         sys.exit(1)
     _exit_if_node_offline(proxmox, vm)
 
@@ -217,11 +222,14 @@ def shutdown(ctx, vmid, timeout, dry_run, force, follow, wait):
         return
 
     if not confirm(force):
-        return
+        sys.exit(1)
 
-    upid = vm.shutdown(timeout=timeout)
-    proxmox.refresh()
-    print_task(proxmox, upid, follow, wait)
+    try:
+        upid = vm.shutdown(timeout=timeout)
+    except proxmoxer.core.ResourceException as e:
+        logging.error("Error shutting down VM %s: %s", vmid, e)
+        sys.exit(1)
+    _follow_task(proxmox, upid, follow, wait)
 
 
 @root.command()
@@ -239,7 +247,7 @@ def stop(ctx, vmid, overrule_shutdown, dry_run, force, follow, wait):
 
     vm = proxmox.get_vm(vmid)
     if not vm:
-        print("VM not found")
+        logging.error("VM %s not found", vmid)
         sys.exit(1)
     _exit_if_node_offline(proxmox, vm)
 
@@ -253,14 +261,24 @@ def stop(ctx, vmid, overrule_shutdown, dry_run, force, follow, wait):
         return
 
     if not confirm(force):
-        return
+        sys.exit(1)
 
-    upid = vm.stop(overrule_shutdown=overrule_shutdown)
-    proxmox.refresh()
-    print_task(proxmox, upid, follow, wait)
+    try:
+        upid = vm.stop(overrule_shutdown=overrule_shutdown)
+    except proxmoxer.core.ResourceException as e:
+        logging.error("Error stopping VM %s: %s", vmid, e)
+        sys.exit(1)
+    _follow_task(proxmox, upid, follow, wait)
 
 
 def _exit_if_node_offline(proxmox, vm):
     if not proxmox.is_node_online(vm.node):
         logging.error("VM %s (%s) is on node %s, which is not online", vm.vmid, vm.name, vm.node)
         sys.exit(1)
+
+
+def _follow_task(proxmox, upid, follow, wait):
+    """Display the task started by a command, exit in error if it was followed or waited for and failed"""
+    proxmox.refresh()
+    task = print_task(proxmox, upid, follow, wait)
+    exit_if_task_failed(task, follow, wait)

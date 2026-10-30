@@ -93,7 +93,7 @@ Four layers, top to bottom. Each command builds a `PVECluster` from the config, 
 - `main` is protected: every change goes through a PR with a review. Releases are triggered manually from `main` via the "Release New version" workflow.
 - Code, comments, docstrings, commit messages and docs are in English.
 - Formatting is black (120 columns). Pylint runs with the exceptions listed in `pyproject.toml`; do not add new `# pylint: disable` comments without a reason, and remove the `FIXME`-tagged ones when you touch that code.
-- User-facing errors: existing code mixes `print()` + `sys.exit(1)` and `logging.error()`. Prefer `logging` (goes to stderr, keeps `-o json` output clean) and a non-zero exit code.
+- User-facing errors: `logging.error()` (goes to stderr, keeps `-o json` output clean) and a non-zero exit code, not `print()`. Catch `proxmoxer.core.ResourceException` around the API call of an action. Declining a confirmation exits 1, and so does a task that failed under `--wait` / `--follow` (`utils.exit_if_task_failed()`, based on `PVETask.failed()`).
 
 ## Gotchas
 

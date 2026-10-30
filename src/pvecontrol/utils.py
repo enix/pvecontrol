@@ -286,6 +286,16 @@ def print_task(proxmox, upid, follow=False, wait=False):
     return _follow_ha_migration(proxmox, task, follow, wait)
 
 
+def exit_if_task_failed(task, follow=False, wait=False):
+    """Exit in error when a task followed or waited for failed.
+
+    Without follow or wait the task is usually still running and its result is not known yet, it is not checked.
+    """
+    if (follow or wait) and task.failed():
+        logging.error("Task %s failed: %s", task.upid, task.exitstatus)
+        sys.exit(1)
+
+
 def confirm(force=False):
     """Ask the user to confirm before running a destructive action.
 
@@ -298,7 +308,7 @@ def confirm(force=False):
     confirmation = click.confirm("Confirm")
     logging.debug("Confirmation input: %s", confirmation)
     if not confirmation:
-        print("Aborting")
+        logging.error("Aborting")
         return False
 
     return True
