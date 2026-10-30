@@ -1,12 +1,15 @@
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from click.testing import CliRunner
 
 from pvecontrol.actions.node import evacuate
+from pvecontrol.models.task import PVETask
 from pvecontrol.models.vm import PVEVm
 from tests.fixtures.api import fake_vm
 from tests.testcase import PVEControlTestcase
+
+UPID = "UPID:pve-devel-1:00001234:00005678:6AE38CD2:qmigrate:100:root@pam:"
 
 
 class EvacuateTestcase(PVEControlTestcase):
@@ -22,10 +25,8 @@ class EvacuateTestcase(PVEControlTestcase):
         return config
 
     def _evacuate(self, args, confirmation="yes", task_exitstatus="OK", task_running=False):
-        task = Mock(exitstatus=task_exitstatus)
-        task.running.return_value = task_running
-        task.vanished.return_value = False
-        task.unknown.return_value = False
+        # cluster/tasks lists a finished task with its exit status and endtime, a running one without both
+        task = PVETask(None, UPID, summary={} if task_running else {"endtime": 1, "status": task_exitstatus})
         with (
             patch("pvecontrol.actions.node.PVECluster.create_from_config", return_value=self.cluster),
             patch.object(self.cluster, "refresh"),
@@ -96,9 +97,11 @@ class EvacuateTestcase(PVEControlTestcase):
         assert calls == {}
 
     def test_aborted(self):
-        result, calls = self._evacuate(["pve-devel-1", "--online"], confirmation="no")
+        with self.assertLogs("root", level="ERROR") as log:
+            result, calls = self._evacuate(["pve-devel-1", "--online"], confirmation="no")
         assert result.exit_code == 1
-        assert "Aborting" in result.output
+        assert any("Aborting" in msg for msg in log.output)
+        assert "Aborting" not in result.stdout
         assert calls == {}
 
     def test_failed_migration(self):

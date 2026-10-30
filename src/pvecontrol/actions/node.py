@@ -142,7 +142,7 @@ def evacuate(ctx, node, target, dry_run, online, follow, wait, no_skip_stopped):
             proxmox.refresh()
             task = print_task(proxmox, upid, follow, wait)
             # Without --follow or --wait the task is usually still running and its result is unknown
-            if not task.running() and not task.vanished() and not task.unknown() and task.exitstatus != "OK":
+            if task.failed():
                 failed.append(p["vm"])
         else:
             print("Dry run, skipping migration")

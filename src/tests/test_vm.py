@@ -61,11 +61,14 @@ class PVEVmUnlockTestcase(PVEControlTestcase):
 
     @responses.activate
     def test_unlock_refused(self):
-        result = self._invoke(["100"], confirm="no\n")
+        with self.assertLogs(level="ERROR") as logs:
+            result = self._invoke(["100"], confirm="no\n")
 
-        assert result.exit_code == 0
+        # Declining the confirmation is an abort, scripts must not take it for a success
+        assert result.exit_code == 1
         assert "Removing lock 'backup' on VM 100 (vm-100)" in result.output
-        assert "Aborting" in result.output
+        assert "Aborting" in "\n".join(logs.output)
+        assert "Aborting" not in result.stdout
         assert len(responses.calls) == 0
 
     @responses.activate
@@ -78,10 +81,12 @@ class PVEVmUnlockTestcase(PVEControlTestcase):
 
     @responses.activate
     def test_unlock_unknown_vm(self):
-        result = self._invoke(["999"])
+        with self.assertLogs(level="ERROR") as logs:
+            result = self._invoke(["999"])
 
         assert result.exit_code == 1
-        assert "Vm to unlock not found" in result.output
+        assert "VM 999 to unlock not found" in "\n".join(logs.output)
+        assert "not found" not in result.stdout
         assert len(responses.calls) == 0
 
     @responses.activate
@@ -223,10 +228,11 @@ class PVEVmConfirmationTestcase(PVEControlTestcase):
         vm = self.cluster.get_vm(105)
         vm._api = MagicMock()  # pylint: disable=protected-access
 
-        result, mock_print_task = self._run(["vm", "start", "105"], input="no\n")
+        with self.assertLogs(level="ERROR") as logs:
+            result, mock_print_task = self._run(["vm", "start", "105"], input="no\n")
 
-        assert result.exit_code == 0
-        assert "Aborting" in result.output
+        assert result.exit_code == 1
+        assert "Aborting" in "\n".join(logs.output)
         vm._api.nodes.assert_not_called()  # pylint: disable=protected-access
         mock_print_task.assert_not_called()
 

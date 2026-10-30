@@ -77,6 +77,13 @@ class PVETask:
     def unknown(self):
         return self.runningstatus == TaskRunningStatus.UNKNOWN
 
+    def failed(self):
+        """Tell whether the task is known to have ended in error.
+
+        A running task has no result yet, and neither has a vanished or unknown one: none of them is a failure.
+        """
+        return not self.running() and not self.vanished() and not self.unknown() and self.exitstatus != "OK"
+
     def refresh(self):
         try:
             status = self._api.nodes(self.node).tasks(self.upid).status.get()

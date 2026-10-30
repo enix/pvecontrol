@@ -1,6 +1,6 @@
 import click
 
-from pvecontrol.utils import print_task
+from pvecontrol.utils import exit_if_task_failed, print_task
 from pvecontrol.cli import ResourceGroup, task_related_command
 from pvecontrol.models.task import COLUMNS
 from pvecontrol.models.cluster import PVECluster
@@ -24,4 +24,5 @@ def root():
 def get(ctx, upid, follow, wait):
     """Get detailled information about a task"""
     proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
-    print_task(proxmox, upid, follow, wait)
+    task = print_task(proxmox, upid, follow, wait)
+    exit_if_task_failed(task, follow, wait)
