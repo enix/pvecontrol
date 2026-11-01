@@ -208,6 +208,39 @@ class TestConfigFileOption(unittest.TestCase):
         finally:
             os.unlink(config_path)
 
+    def _invoke_with_env(self, env):
+        """Run status with the given environment, the way main() does, and return the config and cluster used"""
+        with (
+            patch.object(pvecontrol_module, "config") as mock_config,
+            patch("pvecontrol.actions.cluster.PVECluster.create_from_config", side_effect=SystemExit(0)) as create,
+        ):
+            CliRunner().invoke(pvecontrol, ["status"], env=env, auto_envvar_prefix="PVECONTROL")
+        cluster = create.call_args.args[0] if create.called else None
+        return mock_config, cluster
+
+    def test_prefixed_environment_variables(self):
+        config_path = _make_temp_config()
+        try:
+            mock_config, cluster = self._invoke_with_env(
+                {"PVECONTROL_CONFIG": config_path, "PVECONTROL_CLUSTER": "test"}
+            )
+            mock_config.set_file.assert_called_once_with(config_path)
+            assert cluster == "test"
+        finally:
+            os.unlink(config_path)
+
+    def test_unprefixed_environment_variables_are_ignored(self):
+        # CLUSTER or CONFIG may be set for something else in the environment
+        config_path = _make_temp_config()
+        try:
+            mock_config, cluster = self._invoke_with_env(
+                {"CONFIG": config_path, "CLUSTER": "other", "PVECONTROL_CLUSTER": "test"}
+            )
+            mock_config.set_file.assert_not_called()
+            assert cluster == "test"
+        finally:
+            os.unlink(config_path)
+
     def test_config_option_skips_user_config(self):
         # The given file must be layered on the packaged defaults only (user=False),
         # otherwise confuse merges the user config underneath and keys absent from the
