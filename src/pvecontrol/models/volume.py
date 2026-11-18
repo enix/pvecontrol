@@ -36,4 +36,4 @@ class PVEVolume(PVEVolumeData):
         return cls(**api_kwargs(PVEVolumeData, payload))
 
     def __str__(self):
-        return f"Id: {self.volid}\n" + format_fields(self)
+        return f"Id: {self.volid}\n" + format_fields(self, exclude=("volid",))
