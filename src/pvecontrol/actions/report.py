@@ -7,7 +7,8 @@ import click
 from humanize import naturalsize
 
 from pvecontrol.models.cluster import PVECluster
-from pvecontrol.models.storage import PVEStorage
+from pvecontrol.models.storage import PVEStorage, COLUMNS as STORAGE_COLUMNS
+from pvecontrol.models.vm import VmStatus
 from pvecontrol.sanitycheck.sanitychecks import SanityCheck
 from pvecontrol.sanitycheck.tests import DEFAULT_CHECK_IDS
 from pvecontrol.utils import OutputFormats, render_output
@@ -159,10 +160,10 @@ def _build_backup_jobs_data(proxmox):
 
 
 def _build_vm_summary(all_vms, templates):
-    vm_running = sum(1 for vm in all_vms if vm.status.name == "RUNNING")
-    vm_stopped = sum(1 for vm in all_vms if vm.status.name == "STOPPED")
+    vm_running = sum(1 for vm in all_vms if vm.status == VmStatus.RUNNING)
+    vm_stopped = sum(1 for vm in all_vms if vm.status == VmStatus.STOPPED)
     # The VMs of a node that is not online have the UNKNOWN status
-    vm_unknown = sum(1 for vm in all_vms if vm.status.name == "UNKNOWN")
+    vm_unknown = sum(1 for vm in all_vms if vm.status == VmStatus.UNKNOWN)
     return [
         {
             "total": len(all_vms),
@@ -221,10 +222,9 @@ def _build_report_data(proxmox):
     sanity_checks = _build_sanity_check_section(proxmox)
 
     # Storage — extract only the columns we need to avoid serialization issues
-    storage_columns = ["storage", "nodes", "shared", "usage", "maxdisk", "disk", "plugintype", "status"]
     node_count = len(proxmox.nodes)
     storages_data = [
-        {col: item.get(col) for col in storage_columns} for item in PVEStorage.get_flattened_grouped_list(proxmox)
+        {col: item[col] for col in STORAGE_COLUMNS} for item in PVEStorage.get_flattened_grouped_list(proxmox)
     ]
     for storage in storages_data:
         if storage.get("nodes") and len(storage["nodes"].split(", ")) == node_count:
