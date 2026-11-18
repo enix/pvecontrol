@@ -6,7 +6,7 @@ from pvecontrol.models import api_kwargs
 COLUMNS = ["userid", "firstname", "lastname", "email", "realm_type", "enable", "expire", "groups", "tokens"]
 
 
-@dataclass
+@dataclass(eq=False)
 class PVEUserData:
     userid: str = field(default="")
     enable: int = field(default=1)

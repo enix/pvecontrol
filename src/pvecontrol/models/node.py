@@ -16,7 +16,7 @@ class NodeStatus(Enum):
     OFFLINE = 2
 
 
-@dataclass
+@dataclass(eq=False)
 class PVENodeData:
     node: str = field(default="")
     status: Optional[NodeStatus] = None

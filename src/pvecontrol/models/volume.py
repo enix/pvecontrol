@@ -4,7 +4,7 @@ from typing import Optional
 from pvecontrol.models import api_kwargs, format_fields
 
 
-@dataclass
+@dataclass(eq=False)
 class PVEVolumeData:
     volid: str = field(default="")
     format: str = field(default="")

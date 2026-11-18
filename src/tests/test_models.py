@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import List
 
 from pvecontrol.models import api_kwargs, format_fields
+from pvecontrol.models.vm import PVEVm
 
 
 @dataclass
@@ -31,3 +32,12 @@ def test_unknown_keys_are_dropped_and_logged(caplog):
 
 def test_format_fields():
     assert format_fields(SampleData(name="a", next_run=42)) == "Name: a\nNext-run: 42\nItems: []"
+
+
+def test_models_compare_by_identity():
+    # Models are mutable and get deduplicated through sets (node evacuate targets): they must stay hashable
+    first = PVEVm(None, vmid=100, status="running")
+    second = PVEVm(None, vmid=100, status="running")
+
+    assert first != second
+    assert len({first, second, first}) == 2

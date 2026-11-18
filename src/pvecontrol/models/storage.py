@@ -27,7 +27,7 @@ class StorageShared(Enum):
         return STORAGE_SHARED_ENUM[self.value]
 
 
-@dataclass
+@dataclass(eq=False)
 class PVEStorageData:
     node: str = field(default="")
     id: str = field(default="")
