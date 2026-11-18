@@ -178,6 +178,12 @@ def test_shared_is_an_enum():
     assert str(shared.shared) == "shared"
 
 
+def test_shared_accepts_the_enum():
+    for value in StorageShared:
+        assert PVEStorage(None, shared=value).shared is value
+    assert PVEStorage(None).shared is StorageShared.LOCAL
+
+
 def test_s3_sizing_is_ignored():
     storage = PVEStorage.from_api(Mock(), fake_storage_resource("s3", "pve-node-1", plugin_type="s3"))
 

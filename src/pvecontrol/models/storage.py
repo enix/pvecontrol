@@ -51,7 +51,9 @@ class PVEStorage(PVEStorageData):
         self.short_id = self.id.rsplit("/", maxsplit=1)[-1]
         self._api = api
         self._content = {}
-        self.shared = StorageShared(int(self.shared or 0))
+        if not isinstance(self.shared, StorageShared):
+            # The API gives 0 or 1, possibly missing
+            self.shared = StorageShared(int(self.shared or 0))
         # We exclude s3 storage type sizing informations wich are not relevent.
         # PVE api see missleading informations depending on s3 tool used to mount the filesystem thru fuse.
         if self.plugintype == "s3":
