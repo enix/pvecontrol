@@ -25,7 +25,7 @@ class TaskRunningStatus(Enum):
     UNKNOWN = 3
 
 
-@dataclass
+@dataclass(eq=False)
 class PVETaskData:
     upid: str = field(default="")
     node: str = field(default="")

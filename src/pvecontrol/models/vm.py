@@ -18,7 +18,7 @@ class VmStatus(Enum):
     UNKNOWN = 6
 
 
-@dataclass
+@dataclass(eq=False)
 class PVEVmData:
     node: str = field(default="")
     status: Optional[VmStatus] = None

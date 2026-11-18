@@ -4,7 +4,7 @@ from typing import List, Optional
 from pvecontrol.models import api_kwargs, format_fields
 
 
-@dataclass
+@dataclass(eq=False)
 class PVEBackupJobData:
     all: int = field(default=0)
     compress: Optional[str] = None

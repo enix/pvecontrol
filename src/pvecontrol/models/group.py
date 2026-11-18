@@ -6,7 +6,7 @@ from pvecontrol.models import api_kwargs
 COLUMNS = ["groupid", "comment", "users"]
 
 
-@dataclass
+@dataclass(eq=False)
 class PVEGroupData:
     groupid: str = field(default="")
     comment: str = field(default="")

@@ -7,7 +7,7 @@ VALID_TYPES = ("user", "group", "token")
 COLUMNS = ["path", "type", "ugid", "roleid", "propagate"]
 
 
-@dataclass
+@dataclass(eq=False)
 class PVEAclData:
     path: str = field(default="")
     type: str = field(default="")
