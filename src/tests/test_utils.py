@@ -32,6 +32,15 @@ def test_render_output():
     assert len(output_md.split("\n")) == 5
 
 
+def test_render_output_reads_models_through_their_attributes():
+    vm = PVEVm(Mock(), node="pve-node-1", vmid=100, status="running", maxcpu=4)
+
+    # cpus is not a dataclass field, it is computed from maxcpu
+    rows = json.loads(render_output([vm], columns=["vmid", "cpus"], output=OutputFormats.JSON))
+
+    assert rows == [{"vmid": 100, "cpus": 4}]
+
+
 def _auth_config(**kwargs):
     clusterconfig = {
         "user": None,

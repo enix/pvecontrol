@@ -2,7 +2,7 @@ import re
 import logging
 import click
 
-from pvecontrol.utils import print_output
+from pvecontrol.utils import column_value, print_output
 from pvecontrol.models.cluster import PVECluster
 
 
@@ -99,9 +99,6 @@ def add_list_resource_command(resource_name, root_cmd, default_columns, default_
         output = ctx.obj["args"].output
 
         data = list_callback(proxmox)
-        data = [
-            dict((k, item.__dict__[k] if hasattr(item, "__dict__") else item[k]) for k in default_columns)
-            for item in data
-        ]
+        data = [{key: column_value(item, key) for key in default_columns} for item in data]
 
         print_output(data, columns=columns, sortby=sort_by, filters=filters, output=output)
