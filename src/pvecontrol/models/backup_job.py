@@ -6,6 +6,7 @@ from pvecontrol.models import api_kwargs, format_fields
 
 @dataclass(eq=False)
 class PVEBackupJobData:
+    id: str = field(default="")
     all: int = field(default=0)
     compress: Optional[str] = None
     enabled: Optional[int] = None
@@ -27,8 +28,7 @@ class PVEBackupJob(PVEBackupJobData):
     """Proxmox VE Backup Job"""
 
     def __init__(self, backup_id, **kwargs):
-        self.id = backup_id
-        super().__init__(**kwargs)
+        super().__init__(id=backup_id, **kwargs)
 
         self.all = self.all == 1
         self.vmid = self._split(self.vmid)
@@ -36,7 +36,8 @@ class PVEBackupJob(PVEBackupJobData):
 
     @classmethod
     def from_api(cls, payload):
-        return cls(payload.get("id"), **api_kwargs(PVEBackupJobData, payload))
+        values = api_kwargs(PVEBackupJobData, payload)
+        return cls(values.pop("id", None), **values)
 
     @staticmethod
     def _split(value) -> List[str]:
@@ -47,7 +48,7 @@ class PVEBackupJob(PVEBackupJobData):
         return [str(value)]
 
     def __str__(self):
-        return f"Vm(s): {self.vmid}\nId: {self.id}\n" + format_fields(self)
+        return f"Vm(s): {self.vmid}\n" + format_fields(self)
 
     def is_selection_matching(self, vm):
         if self.node is not None and self.node != vm.node:
