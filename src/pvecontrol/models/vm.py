@@ -17,6 +17,9 @@ class VmStatus(Enum):
     PRELAUNCH = 5
     UNKNOWN = 6
 
+    def __str__(self):
+        return self.name.lower()
+
 
 @dataclass(eq=False)
 class PVEVmData:

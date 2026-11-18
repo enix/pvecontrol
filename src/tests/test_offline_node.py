@@ -320,7 +320,7 @@ class TaskNodeLostTestcase(unittest.TestCase):
         task = self._task(log_side_effect=NO_ROUTE)
         task.runningstatus = TaskRunningStatus.STOPPED
         output, logs = self._print_task(task)
-        assert "TaskRunningStatus.STOPPED" in output
+        assert "| stopped " in output
         assert "Can't read the log of task" in logs
         assert task.log_get.call_count == 1
 
@@ -328,7 +328,7 @@ class TaskNodeLostTestcase(unittest.TestCase):
         # The node stops answering for the log only: the status is still polled until the task ends
         task = self._task(status_error={"status": "stopped", "exitstatus": "OK"}, log_side_effect=NO_ROUTE)
         output, _ = self._print_task(task, follow=True)
-        assert "TaskRunningStatus.STOPPED" in output
+        assert "| stopped " in output
         assert task.log_get.call_count == 1
 
 
