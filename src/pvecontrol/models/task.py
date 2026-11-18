@@ -24,6 +24,9 @@ class TaskRunningStatus(Enum):
     VANISHED = 2
     UNKNOWN = 3
 
+    def __str__(self):
+        return self.name.lower()
+
 
 @dataclass(eq=False)
 class PVETaskData:

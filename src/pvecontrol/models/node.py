@@ -15,6 +15,9 @@ class NodeStatus(Enum):
     ONLINE = 1
     OFFLINE = 2
 
+    def __str__(self):
+        return self.name.lower()
+
 
 @dataclass(eq=False)
 class PVENodeData:
