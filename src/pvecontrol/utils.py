@@ -100,7 +100,7 @@ def render_output(table, columns=None, sortby=None, filters=None, output=OutputF
     if len(columns) == 0:
         columns = list(table[0].keys())
     else:
-        table = [reorder_keys(n.__dict__ if hasattr(n, "__dict__") else n, columns) for n in table]
+        table = [as_row(item, columns) for item in table]
 
     x = prepare_prettytable(table, sortby, filters)
 
@@ -156,6 +156,22 @@ def prepare_prettytable(table, sortby, filters):
 
 def print_output(table, columns=None, sortby=None, filters=None, output=OutputFormats.TEXT):
     print(render_output(table, columns, sortby, filters, output))
+
+
+def column_value(item, key):
+    """Read a column of a dict, or of a model.
+
+    A model is read through getattr(): some columns are not dataclass fields but computed attributes
+    (the allocated counters of a node, the cpus of a VM), and its private attributes must stay out of the output.
+    """
+    return item[key] if isinstance(item, dict) else getattr(item, key)
+
+
+def as_row(item, columns):
+    """Turn a dict or a model into a table row, its columns first"""
+    if isinstance(item, dict):
+        return reorder_keys(item, columns)
+    return {key: column_value(item, key) for key in columns}
 
 
 def reorder_keys(input_d, keys):
