@@ -380,4 +380,4 @@ class NodeVersionOtherErrorTestcase(unittest.TestCase):
         cluster = MagicMock()
         cluster.api.nodes.return_value.version.get.side_effect = ResourceException(403, "Forbidden", "no access")
         with self.assertRaises(ResourceException):
-            PVENode(cluster, "pve-devel-1", "online")
+            PVENode(cluster, node="pve-devel-1", status="online")

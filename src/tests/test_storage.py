@@ -3,6 +3,7 @@ import csv
 import io
 import json
 
+from dataclasses import fields
 from unittest.mock import Mock, patch
 
 import pytest
@@ -11,7 +12,7 @@ import yaml
 from click.testing import CliRunner
 
 from pvecontrol import pvecontrol
-from pvecontrol.models.storage import COLUMNS, PVEStorage, StorageShared
+from pvecontrol.models.storage import COLUMNS, PVEStorage, PVEStorageData, StorageShared
 from tests.fixtures.api import fake_storage_resource
 from tests.testcase import PVEControlTestcase
 
@@ -112,8 +113,9 @@ class PVEStorageFlattenedListTestcase(PVEControlTestcase):
 
     def test_rows_hold_no_private_key(self):
         for row in self._rows():
-            # COLUMNS, the other fields read from cluster/resources and the id: no private attribute
-            assert set(row) == {*COLUMNS, "test", "id"}
+            # COLUMNS and the other dataclass fields read from cluster/resources: no private attribute
+            assert set(row) == {*COLUMNS, *(f.name for f in fields(PVEStorageData))}
+            assert set(row) - set(COLUMNS) == {"id", "node", "type", "content"}
             assert not any(key.startswith("_") for key in row)
 
     def test_idempotent(self):
