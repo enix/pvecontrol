@@ -1,9 +1,9 @@
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Optional
 
-from pvecontrol.utils import NODE_ERRORS, defaulter, node_unreachable
+from pvecontrol.utils import NODE_ERRORS, node_unreachable
 from pvecontrol.models import api_kwargs
 from pvecontrol.models.vm import PVEVm, VmStatus
 
@@ -20,20 +20,20 @@ class NodeStatus(Enum):
 class PVENodeData:
     node: str = field(default="")
     status: Optional[NodeStatus] = None
-    cluster: Any = None
     cpu: int = field(default=0)
-    allocatedcpu: int = field(default=0)
     maxcpu: int = field(default=0)
     mem: int = field(default=0)
-    allocatedmem: int = field(default=0)
     maxmem: int = field(default=0)
     disk: int = field(default=0)
     maxdisk: int = field(default=0)
-    vms: List = field(default_factory=list)
 
 
 class PVENode(PVENodeData):
-    """A proxmox VE Node"""
+    """A proxmox VE Node
+
+    The cluster, the VMs and the allocated counters are not node data from the API: they are set here,
+    and node evacuate updates the allocated counters while it plans the migrations.
+    """
 
     def __init__(self, cluster, **kwargs):
         super().__init__(**kwargs)
@@ -108,11 +108,7 @@ class PVENode(PVENodeData):
 
     @property
     def resources_vms(self):
-        return [
-            defaulter(resource, ["maxcpu", "maxdisk", "maxmem"], 0)
-            for resource in self.resources
-            if resource["type"] == "qemu"
-        ]
+        return [resource for resource in self.resources if resource["type"] == "qemu"]
 
     # def __contains__(self, item):
     #   """Check if a VM is running on this node"""
