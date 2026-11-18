@@ -26,6 +26,9 @@ def test_id_is_a_field(caplog):
         backup_job = PVEBackupJob.from_api(fake_backup_job(1, "100"))
 
     assert "Id: backup-d71917f0-0001" in str(backup_job)
+    # the vms are rendered once, as the "Vm(s):" prefix
+    assert str(backup_job).startswith("Vm(s): ['100']\n")
+    assert "Vmid:" not in str(backup_job)
     # the id is read like any other key, not reported as an ignored one
     assert "'id'" not in caplog.text
 

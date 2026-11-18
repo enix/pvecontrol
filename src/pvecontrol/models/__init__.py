@@ -28,9 +28,14 @@ def api_kwargs(dataclass_type, payload):
     return values
 
 
-def format_fields(instance):
+def format_fields(instance, exclude=()):
     """Render the dataclass fields of an instance, one "Key: value" per line.
 
     Underscores are turned back into dashes so the output keeps using the api wording.
+    Fields named in exclude are left out, for those a caller already renders itself.
     """
-    return "\n".join(f"{f.name.replace('_', '-').capitalize()}: {getattr(instance, f.name)}" for f in fields(instance))
+    return "\n".join(
+        f"{f.name.replace('_', '-').capitalize()}: {getattr(instance, f.name)}"
+        for f in fields(instance)
+        if f.name not in exclude
+    )

@@ -42,6 +42,10 @@ def test_format_fields():
     assert format_fields(SampleData(name="a", next_run=42)) == "Name: a\nNext-run: 42\nItems: []"
 
 
+def test_format_fields_exclude():
+    assert format_fields(SampleData(name="a", next_run=42), exclude=("name",)) == "Next-run: 42\nItems: []"
+
+
 def test_models_compare_by_identity():
     # Models are mutable and get deduplicated through sets (node evacuate targets): they must stay hashable
     first = PVEVm(None, vmid=100, status="running")

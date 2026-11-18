@@ -40,3 +40,5 @@ def test_str():
     assert output.startswith("Id: local:100/disk.qcow2\n")
     assert "Format: qcow2" in output
     assert "Notes: a note" in output
+    # the id is rendered once, as the "Id:" prefix
+    assert "Volid:" not in output

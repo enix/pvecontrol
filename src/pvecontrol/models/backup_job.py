@@ -48,7 +48,7 @@ class PVEBackupJob(PVEBackupJobData):
         return [str(value)]
 
     def __str__(self):
-        return f"Vm(s): {self.vmid}\n" + format_fields(self)
+        return f"Vm(s): {self.vmid}\n" + format_fields(self, exclude=("vmid",))
 
     def is_selection_matching(self, vm):
         if self.node is not None and self.node != vm.node:
