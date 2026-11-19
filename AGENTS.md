@@ -8,7 +8,7 @@ Guidance for AI coding agents (Claude Code, and any tool reading `AGENTS.md`) wo
 
 - **Inventory** across all nodes: `vm`, `node`, `storage`, `task`, `user`, `group`, `acl` each have a `list` subcommand with sorting, regex filters and 5 output formats (`text`, `json`, `csv`, `yaml`, `md`).
 - **Operations**: `vm migrate`, `vm restore`, `crs show` / `crs set` (HA Cluster Resource Scheduler settings, a read-modify-write of the `crs` property string of `cluster/options`, model in `models/crs.py`), `node evacuate` (drain a node, picking targets that respect the `cpufactor` overcommit ratio and the `memoryminimum` host reserve), `task get` with `--follow` / `--wait`.
-- **Audit**: `sanitycheck` (6 checks, exit code 1 on any CRITICAL) and `report` (a Markdown cluster report that aggregates everything, including the sanity checks).
+- **Audit**: `sanitycheck` (7 checks, exit code 1 on any CRITICAL) and `report` (a Markdown cluster report that aggregates everything, including the sanity checks).
 
 Published on PyPI, released automatically by python-semantic-release from `main`.
 
