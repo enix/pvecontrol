@@ -257,6 +257,8 @@ Options:
 
 Commands:
   acl list       List acls in the cluster
+  crs set        Change the HA Cluster Resource Scheduler settings
+  crs show       Show the HA Cluster Resource Scheduler settings
   group list     List groups in the cluster
   node evacuate  Evacuate a node by migrating all it's VM out to one or...
   node list      List nodes in the cluster
@@ -419,6 +421,52 @@ How it works:
 - **Exit code**: `1` when the node is not fully evacuated (a VM had no target, or a running VM was skipped because `--online` was missing) or when a migration waited for failed (see [Tasks](#tasks)); `0` otherwise. A node with nothing to migrate succeeds, even when no target is available.
 
 The source node must be online.
+
+### crs
+
+`crs show` and `crs set` manage the HA Cluster Resource Scheduler (CRS) settings, the `crs` option of the datacenter configuration (Datacenter > Options > Cluster Resource Scheduling in the web UI). They decide where the HA manager places and moves HA resources.
+
+```shell
+$ pvecontrol crs show
++---------------------------------+------------+------------+
+| option                          | value      | source     |
++---------------------------------+------------+------------+
+| ha                              | static     | configured |
+| ha-rebalance-on-start           | False      | default    |
+| ha-auto-rebalance               | True       | configured |
+| ha-auto-rebalance-threshold     | 30         | default    |
+| ha-auto-rebalance-hold-duration | 3          | default    |
+| ha-auto-rebalance-margin        | 10         | default    |
+| ha-auto-rebalance-method        | bruteforce | default    |
+| imbalance                       | 12.3%      | ha manager |
++---------------------------------+------------+------------+
+$ pvecontrol crs set --mode dynamic --auto-rebalance --threshold 20 --dry-run
+Current CRS settings: ha=static,ha-auto-rebalance=1
+New CRS settings: ha=dynamic,ha-auto-rebalance=1,ha-auto-rebalance-threshold=20
+Dry run, skipping update
+```
+
+`crs show` lists every option with its effective value, and whether it is configured or takes the Proxmox VE default. The `imbalance` row is the current imbalance of the cluster as computed by the HA manager, only shown when Proxmox VE provides it (9.2 and later). `crs show` honors `-o`.
+
+`crs set` options, all optional, the ones left out keep their current value:
+
+| Option | Proxmox key | Values | Default |
+|--------|-------------|--------|---------|
+| `--mode` | `ha` | `basic`, `static`, `dynamic` (9.2+) | `basic` |
+| `--rebalance-on-start / --no-rebalance-on-start` | `ha-rebalance-on-start` | flag | off |
+| `--auto-rebalance / --no-auto-rebalance` | `ha-auto-rebalance` | flag (9.2+) | off |
+| `--threshold PERCENT` | `ha-auto-rebalance-threshold` | 0 to 100 | 30 |
+| `--hold-duration ROUNDS` | `ha-auto-rebalance-hold-duration` | HA manager rounds (about 10 s each), 0 or more | 3 |
+| `--margin PERCENT` | `ha-auto-rebalance-margin` | 0 to 100 | 10 |
+| `--method` | `ha-auto-rebalance-method` | `bruteforce`, `topsis` | `bruteforce` |
+
+How it works:
+
+- Proxmox VE stores all the settings in a single value and replaces it as a whole: `crs set` reads it, changes the given options and writes it back. Proxmox requires `ha-auto-rebalance` whenever an `ha-auto-rebalance-*` key is set, `crs set` adds it (with its current value) when needed.
+- Auto-rebalance is refused (error, exit code 1) with the `basic` mode, the default one: Proxmox VE accepts it but the HA manager silently ignores it.
+- `--reset` removes the whole setting, back to the Proxmox VE defaults. It can't be combined with other options.
+- The current and new settings are displayed, then confirmation is asked unless `--force` is given. Declining it exits with code 1. `--dry-run` displays the settings and stops there, without asking.
+- Reading the settings requires the `Sys.Audit` privilege on `/` (without it, Proxmox VE doesn't return them and they are shown as defaults), changing them requires `Sys.Modify` on `/`.
 
 ### Tasks
 

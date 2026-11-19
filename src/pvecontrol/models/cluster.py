@@ -13,6 +13,7 @@ from pvecontrol.models.storage import PVEStorage
 from pvecontrol.models.task import PVETask
 from pvecontrol.models.acl import PVEAcl
 from pvecontrol.models.backup_job import PVEBackupJob
+from pvecontrol.models.crs import PVECrs
 from pvecontrol.models.group import PVEGroup
 from pvecontrol.models.user import PVEUser
 from pvecontrol.models.volume import PVEVolume
@@ -34,6 +35,7 @@ class PVECluster:
         self._users = None
         self._groups = None
         self._acls = None
+        self._crs = None
         # With a password, ProxmoxAPI authenticates right away; with a token, the first call does
         try:
             self.api = ProxmoxAPI(host, timeout=timeout, verify_ssl=verify_ssl, **auth)
@@ -89,6 +91,36 @@ class PVECluster:
             "resources": self.api.cluster.ha.resources.get(),
         }
         return self._ha
+
+    @property
+    def crs(self):
+        """HA Cluster Resource Scheduler settings, from cluster/options (needs Sys.Audit on /)"""
+        if self._crs is None:
+            self._crs = PVECrs.from_api(self.api.cluster.options.get().get("crs"))
+        return self._crs
+
+    def set_crs(self, crs):
+        """Write the whole crs value: Proxmox replaces it, keys left out are reset to their default"""
+        value = crs.to_property_string()
+        if value:
+            self.api.cluster.options.put(crs=value)
+        else:
+            self.api.cluster.options.put(delete="crs")
+        self._crs = None
+
+    def reset_crs(self):
+        self.api.cluster.options.put(delete="crs")
+        self._crs = None
+
+    @property
+    def ha_imbalance(self):
+        """Current HA imbalance as a fraction (0-1) computed by the HA manager, None when unknown (PVE < 9.2)"""
+        status = self.api.cluster.ha.status.manager_status.get()
+        manager_status = status.get("manager_status") if isinstance(status, dict) else None
+        if not isinstance(manager_status, dict):
+            return None
+        imbalance = manager_status.get("imbalance")
+        return None if imbalance is None else float(imbalance)
 
     @property
     def tasks(self):
