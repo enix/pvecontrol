@@ -216,6 +216,7 @@ def pvecontrol(ctx, debug, output, cluster, unicode, color, config_file):
 pvecontrol.add_command(cmd=actions.cluster.status, name="status")
 pvecontrol.add_command(cmd=actions.cluster.sanitycheck, name="sanitycheck")
 pvecontrol.add_command(cmd=actions.report.report, name="report")
+pvecontrol.add_command(cmd=actions.crs.root, name="crs")
 pvecontrol.add_command(cmd=actions.node.root, name="node")
 pvecontrol.add_command(cmd=actions.storage.root, name="storage")
 pvecontrol.add_command(cmd=actions.task.root, name="task")
