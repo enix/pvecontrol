@@ -485,11 +485,22 @@ With `--wait` or `--follow`, the command exits with code 1 when the task failed:
 | `nodes` | NODE | Every node is online (CRIT otherwise). The memory allocated to running VMs plus `memoryminimum` stays below the node memory (CRIT otherwise). The vCPUs allocated to running VMs stay below `cpufactor` times the node CPUs (WARN otherwise). |
 | `ha_groups` | HIGH_AVAILABILITY | Every HA group (node-affinity rule since PVE 9.1) contains at least 2 nodes (CRIT otherwise). |
 | `ha_vms` | HIGH_AVAILABILITY | VMs managed by HA have all their disks on shared storages (CRIT otherwise) and don't use the `host` CPU type (WARN otherwise). An HA resource without a matching VM is a WARN. |
+| `crs` | HIGH_AVAILABILITY | The HA Cluster Resource Scheduler settings, see below. |
 | `vms_start_on_boot` | VIRTUAL_MACHINE | The `onboot` option ("Start at boot") of each VM, templates excluded, matches its state, see below. |
 | `vm_backups` | VIRTUAL_MACHINE | Each VM is selected by at least one enabled backup job (WARN otherwise), and its last backup is more recent than `max_last_backup` minutes (CRIT if older, WARN if it was never backed up). |
 | `disk_unused` | STORAGE | No VM has `unused` disks in its configuration, and no disk image on a storage belongs to a VM that doesn't exist (on that node for a local storage, in the cluster for a shared one): CRIT otherwise. Storages of type `s3` are not checked. |
 
 `vms_start_on_boot` is opinionated: it expects running VMs to start at boot and stopped VMs not to. A stopped VM with `onboot=1`, or a running VM without it, is reported as CRITICAL.
+
+`crs` checks the [CRS settings](#crs) against the HA resources:
+
+- CRIT: auto-rebalance is enabled with the `basic` mode, which ignores it.
+- CRIT: the imbalance computed by the HA manager (Proxmox VE 9.2 and later) is above the auto-rebalance threshold, whether auto-rebalance is enabled or not.
+- WARN: HA resources exist and the mode is `basic`, which places them by count and ignores CPU and memory: use `static` or `dynamic`.
+- WARN, with auto-rebalance enabled in `static` or `dynamic` mode: threshold and margin are both 0 (the HA manager never balances), the margin is 0 (migrations that don't improve the balance, ping-pong), the hold duration is 0 (it reacts on the first imbalanced round), or no HA resource can be moved: there is none, or all of them have `auto-rebalance` disabled, directly or through a positive resource-affinity rule with one that has.
+- INFO, with auto-rebalance enabled: more than half of the memory allocated to running VMs belongs to VMs not managed by HA, which the auto-rebalancer can't move.
+
+Without the `Sys.Audit` privilege on `/`, the CRS settings are read as the Proxmox VE defaults.
 
 Each check reports messages with one of these levels: `OK`, `INFO`, `WARN` (warning) or `CRIT` (critical). The status of a check is its worst message. Checks always run in the same order, grouped by type (NODE, HIGH_AVAILABILITY, VIRTUAL_MACHINE, STORAGE), followed by a summary. To run only some checks, give their ids:
 

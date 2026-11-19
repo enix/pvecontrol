@@ -29,6 +29,8 @@ class PVEEmptyClusterTestcase(unittest.TestCase):
         self.users = None
         self.groups = None
         self.acls = None
+        self.cluster_options = None
+        self.ha_manager_status = None
 
         self._build_fixtures()
         self._build_wrapper()
@@ -51,6 +53,8 @@ class PVEEmptyClusterTestcase(unittest.TestCase):
             users=self.users,
             groups=self.groups,
             acls=self.acls,
+            cluster_options=self.cluster_options,
+            ha_manager_status=self.ha_manager_status,
         )
 
     def _register_routes(self):
@@ -127,6 +131,7 @@ class PVEControlTestcase(PVEEmptyClusterTestcase):
         self.responses_get("/api2/json/cluster/ha/rules")
         self.responses_get("/api2/json/cluster/ha/status/manager_status")
         self.responses_get("/api2/json/cluster/ha/resources")
+        self.responses_get("/api2/json/cluster/options")
         self.responses_get("/api2/json/cluster/backup")
         self.responses_get("/api2/json/access/users")
         self.responses_get("/api2/json/access/groups")

@@ -54,9 +54,22 @@ def create_response_wrapper(
     users=None,
     groups=None,
     acls=None,
+    cluster_options=None,
+    ha_manager_status=None,
 ):
     routes = generate_routes(
-        nodes, vms, backup_jobs, storage_resources, storages_contents, ha_rules, ha_resources, users, groups, acls
+        nodes,
+        vms,
+        backup_jobs,
+        storage_resources,
+        storages_contents,
+        ha_rules,
+        ha_resources,
+        users,
+        groups,
+        acls,
+        cluster_options,
+        ha_manager_status,
     )
 
     def wrapper(path, data=None, **kwargs):
@@ -84,6 +97,8 @@ def generate_routes(
     users=None,
     groups=None,
     acls=None,
+    cluster_options=None,
+    ha_manager_status=None,
 ):
     storage_resources = storage_resources or []
     routes = {
@@ -94,7 +109,8 @@ def generate_routes(
         "/api2/json/cluster/tasks": [],
         "/api2/json/cluster/ha/rules": ha_rules or [],
         "/api2/json/cluster/ha/groups": [],
-        "/api2/json/cluster/ha/status/manager_status": [],
+        "/api2/json/cluster/options": cluster_options or {},
+        "/api2/json/cluster/ha/status/manager_status": ha_manager_status or [],
         "/api2/json/cluster/ha/resources": ha_resources or [],
         "/api2/json/cluster/backup": backup_jobs,
         "/api2/json/access/users": users or [],
@@ -201,8 +217,9 @@ def fake_ha_group(group_id, nodes):
     }
 
 
-def fake_ha_resource(vmid, group=None):
-    """Fake HA resource (Proxmox < 9.1, group field links to ha group)"""
+def fake_ha_resource(vmid, group=None, auto_rebalance=None):
+    """Fake HA resource (Proxmox < 9.1, group field links to ha group).
+    auto-rebalance appeared in PVE 9.2, absent means enabled."""
     resource = {
         "sid": f"vm:{vmid}",
         "type": "vm",
@@ -211,7 +228,25 @@ def fake_ha_resource(vmid, group=None):
     }
     if group:
         resource["group"] = group
+    if auto_rebalance is not None:
+        resource["auto-rebalance"] = int(auto_rebalance)
     return resource
+
+
+def fake_cluster_options(crs=None):
+    """Fake cluster/options (datacenter.cfg), crs is a property string like "ha=static,ha-auto-rebalance=1" """
+    options = {"keyboard": "en-us"}
+    if crs is not None:
+        options["crs"] = crs
+    return options
+
+
+def fake_ha_manager_status(imbalance=None):
+    """Fake cluster/ha/status/manager_status, imbalance (0-1 fraction) is only reported since PVE 9.2"""
+    manager_status = {"master_node": "pve-devel-1", "node_status": {}, "service_status": {}}
+    if imbalance is not None:
+        manager_status["imbalance"] = imbalance
+    return {"manager_status": manager_status, "quorum": {"node": "pve-devel-1", "quorate": "1"}}
 
 
 def generate_vm_routes(nodes, vms):
