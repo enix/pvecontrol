@@ -1,5 +1,6 @@
 from unittest.mock import PropertyMock, patch
 
+import responses
 from proxmoxer.core import ResourceException
 
 from pvecontrol.models.cluster import PVECluster
@@ -231,3 +232,53 @@ class HaCrsUnreadableTestcase(HaCrsTestcase):
         assert len(self.check.messages) == 1
         assert_message(self.check.messages[0], CheckCode.WARN, "can't be read")
         assert self.exitcode == 0
+
+
+class HaCrsHaStatusUnreadableTestcase(HaCrsTestcase):
+    """A failing HA status must not hide the checks on the settings alone"""
+
+    crs = "ha=basic,ha-auto-rebalance=1"
+
+    def _post_setup(self):
+        error = ResourceException(500, "Internal Server Error", "manager status unavailable")
+        with patch.object(PVECluster, "ha", new_callable=PropertyMock, side_effect=error):
+            super()._post_setup()
+
+    def test_check(self):
+        assert self._codes() == [CheckCode.WARN, CheckCode.CRIT]
+        assert_message(self.check.messages[0], CheckCode.WARN, "HA status can't be read")
+        assert_message(self.check.messages[1], CheckCode.CRIT, "ignored in CRS mode basic")
+        assert self.exitcode == 1
+
+
+class HaCrsHaStatusUnreadableSettingsTestcase(HaCrsTestcase):
+    """Without the HA status, the auto-rebalance settings are still checked, the resource checks are skipped"""
+
+    crs = "ha=static,ha-auto-rebalance=1,ha-auto-rebalance-margin=0"
+
+    def _post_setup(self):
+        error = ResourceException(500, "Internal Server Error", "manager status unavailable")
+        with patch.object(PVECluster, "ha", new_callable=PropertyMock, side_effect=error):
+            super()._post_setup()
+
+    def test_check(self):
+        assert self._codes() == [CheckCode.WARN, CheckCode.WARN]
+        assert_message(self.check.messages[1], CheckCode.WARN, "margin is 0")
+        assert self.exitcode == 0
+
+
+class HaCrsManagerStatusFetchedOnceTestcase(HaCrsTestcase):
+    """The imbalance comes from the manager status cached by the ha property, not from a second call"""
+
+    def _post_setup(self):
+        self.cluster._ha = None  # pylint: disable=protected-access  # start from an empty cache
+        before = len(responses.calls)
+        HaCrs(self.cluster).run()
+        self.manager_status_calls = [
+            call
+            for call in list(responses.calls)[before:]
+            if call.request.url.endswith("/cluster/ha/status/manager_status")
+        ]
+
+    def test_manager_status_calls(self):
+        assert len(self.manager_status_calls) == 1

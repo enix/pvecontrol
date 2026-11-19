@@ -115,7 +115,11 @@ class PVECluster:
     @property
     def ha_imbalance(self):
         """Current HA imbalance as a fraction (0-1) computed by the HA manager, None when unknown (PVE < 9.2)"""
-        status = self.api.cluster.ha.status.manager_status.get()
+        # Reuse the manager status already fetched by the ha property, else fetch only that endpoint
+        if self._ha is not None:
+            status = self._ha["manager_status"]
+        else:
+            status = self.api.cluster.ha.status.manager_status.get()
         manager_status = status.get("manager_status") if isinstance(status, dict) else None
         if not isinstance(manager_status, dict):
             return None

@@ -24,13 +24,19 @@ class HaCrs(Check):
     def run(self):
         try:
             crs = self.proxmox.crs
-            imbalance = self.proxmox.ha_imbalance
         except ResourceException as error:
             msg = f"CRS settings can't be read: {error}"
             self.add_messages(CheckMessage(CheckCode.WARN, msg))
             return
 
-        resources = self.proxmox.ha["resources"]
+        # The HA status only feeds the checks on resources and imbalance: the settings are checked without it
+        try:
+            resources = self.proxmox.ha["resources"]
+            imbalance = self.proxmox.ha_imbalance
+        except ResourceException as error:
+            msg = f"HA status can't be read, HA resources and imbalance not checked: {error}"
+            self.add_messages(CheckMessage(CheckCode.WARN, msg))
+            resources = imbalance = None
 
         if crs.mode == "basic" and resources:
             msg = "CRS mode basic places HA resources by count, ignoring CPU and memory: use static or dynamic"
@@ -70,6 +76,9 @@ class HaCrs(Check):
         if crs.hold_duration == 0:
             msg = "Auto-rebalance hold duration is 0, it reacts on the first imbalanced round"
             self.add_messages(CheckMessage(CheckCode.WARN, msg))
+
+        if resources is None:
+            return
 
         if not self._movable_resources(resources):
             if resources:
