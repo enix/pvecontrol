@@ -1,1 +1,1 @@
-from . import acl, cluster, crs, group, node, report, storage, task, user, vm
+from . import acl, cluster, crs, group, ha, node, report, storage, task, user, vm
