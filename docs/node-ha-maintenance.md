@@ -154,16 +154,16 @@ Checks that the `GET cluster/ha/status` index lists `disarm-ha`, else a clear er
 `POST cluster/ha/status/disarm-ha|arm-ha`. `--wait` until `manager_status.disarm.state` is `disarmed` (or gone for
 `arm`). Warns that no node can enter maintenance while HA is disarmed.
 
-## Pull requests (one branch per phase, merged before the next starts)
+## Pull request
 
-1. `feat/node-ha-state`: phase 1.
-2. `fix/evacuate-skip-ha-maintenance`: phase 2.
-3. `feat/sanitycheck-ha-nodes`: phase 3.
-4. `feat/ha-maintenance`: phase 4.
-5. `feat/ha-arm-disarm`: phase 5.
+A single PR, `feat/node-ha-maintenance`, with one commit per phase so that the changelog lists each change:
 
-Each PR updates the README (a new `### ha` section after `### crs` from phase 4 on) and, if a gotcha appears,
-`AGENTS.md`.
+1. `feat(node)`: phase 1.
+2. `fix(node)`: phase 2.
+3. `feat(sanitycheck)`: phase 3.
+4. `feat(ha)`: phases 4 and 5.
+
+Each commit updates the README (a new `### ha` section after `### crs` for the `ha` group) and `AGENTS.md`.
 
 ## Verification
 
