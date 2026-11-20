@@ -1,5 +1,7 @@
 """HA Cluster Resource Scheduler (CRS) settings, the crs property string of datacenter.cfg"""
 
+import math
+
 from dataclasses import dataclass, fields
 from typing import Optional, Union
 
@@ -199,6 +201,10 @@ class PVECrs(PVECrsData):
             if option.kind == "enum" and value not in option.choices:
                 errors.append(f"{option.key}: '{value}' is not one of {', '.join(option.choices)}")
             if option.kind == "number":
+                # nan and inf convert to float but are no valid setting, and nan passes every bound check
+                if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+                    errors.append(f"{option.key}: '{value}' is not a valid number")
+                    continue
                 if option.minimum is not None and value < option.minimum:
                     errors.append(f"{option.key}: {value} is lower than {option.minimum}")
                 if option.maximum is not None and value > option.maximum:
