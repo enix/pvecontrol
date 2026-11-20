@@ -7,7 +7,7 @@ from pvecontrol.utils import NODE_ERRORS, node_unreachable
 from pvecontrol.models import api_kwargs
 from pvecontrol.models.vm import PVEVm, VmStatus
 
-COLUMNS = ["node", "status", "allocatedcpu", "maxcpu", "mem", "allocatedmem", "maxmem"]
+COLUMNS = ["node", "status", "ha_state", "allocatedcpu", "maxcpu", "mem", "allocatedmem", "maxmem"]
 
 
 class NodeStatus(Enum):
@@ -17,6 +17,44 @@ class NodeStatus(Enum):
 
     def __str__(self):
         return self.name.lower()
+
+
+class NodeHaState(Enum):
+    """State of a node as seen by the HA manager"""
+
+    NONE = 0  # HA is not used on the cluster, or its status can't be read
+    ONLINE = 1
+    MAINTENANCE_REQUESTED = 2  # requested, the node is not in maintenance yet
+    MAINTENANCE = 3
+    UNKNOWN = 4
+    FENCE = 5
+    GONE = 6
+
+    def __str__(self):
+        return "-" if self == NodeHaState.NONE else self.name.lower()
+
+    @property
+    def available(self):
+        """The HA manager can place resources on the node"""
+        return self in (NodeHaState.NONE, NodeHaState.ONLINE)
+
+
+def parse_node_ha_states(status):
+    """Map each node to its NodeHaState, from the payload of cluster/ha/status/manager_status"""
+    manager_status = status.get("manager_status") or {}
+    requests = manager_status.get("node_request") or {}
+    states = {}
+    for node, node_status in (manager_status.get("node_status") or {}).items():
+        try:
+            state = NodeHaState[str(node_status).upper()]
+        except KeyError:
+            logging.debug("Unknown HA state %s for node %s", node_status, node)
+            state = NodeHaState.NONE
+        # The CRM records the request first, the node enters maintenance once its LRM has switched mode
+        if state == NodeHaState.ONLINE and (requests.get(node) or {}).get("maintenance"):
+            state = NodeHaState.MAINTENANCE_REQUESTED
+        states[node] = state
+    return states
 
 
 @dataclass(eq=False)
@@ -100,6 +138,10 @@ class PVENode(PVENodeData):
     @property
     def online(self):
         return self.status == NodeStatus.ONLINE
+
+    @property
+    def ha_state(self):
+        return self.cluster.node_ha_states.get(self.node, NodeHaState.NONE)
 
     @property
     def api(self):
