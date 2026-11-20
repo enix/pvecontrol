@@ -119,7 +119,7 @@ def set_crs(ctx, reset, dry_run, force, **changes):
 
     print(f"Current CRS settings: {_describe(current)}")
     print(f"New CRS settings: {_describe(new)}")
-    if new == current:
+    if new.to_property_string() == current.to_property_string():
         print("CRS settings unchanged")
         return
 
