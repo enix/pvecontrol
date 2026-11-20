@@ -241,12 +241,38 @@ def fake_cluster_options(crs=None):
     return options
 
 
-def fake_ha_manager_status(imbalance=None):
-    """Fake cluster/ha/status/manager_status, imbalance (0-1 fraction) is only reported since PVE 9.2"""
-    manager_status = {"master_node": "pve-devel-1", "node_status": {}, "service_status": {}}
+def fake_ha_manager_status(
+    imbalance=None, node_status=None, node_request=None, lrm_modes=None, service_status=None, disarm=None
+):
+    """Fake cluster/ha/status/manager_status, imbalance (0-1 fraction) is only reported since PVE 9.2.
+
+    node_status maps a node to its HA state ("online", "maintenance", ...), node_request lists the nodes the
+    maintenance mode is requested for, lrm_modes maps a node to its LRM mode ("active" by default),
+    service_status maps a sid to its node, disarm is the {"mode", "state"} of a disarmed HA stack."""
+    node_status = node_status or {}
+    lrm_modes = lrm_modes or {}
+    manager_status = {
+        "master_node": "pve-devel-1",
+        "node_status": node_status,
+        "service_status": {
+            sid: {"node": node, "state": "started", "running": 1} for sid, node in (service_status or {}).items()
+        },
+        "timestamp": 1793193652,
+    }
+    if node_request:
+        manager_status["node_request"] = {node: {"maintenance": 1} for node in node_request}
     if imbalance is not None:
         manager_status["imbalance"] = imbalance
-    return {"manager_status": manager_status, "quorum": {"node": "pve-devel-1", "quorate": "1"}}
+    if disarm is not None:
+        manager_status["disarm"] = disarm
+    return {
+        "manager_status": manager_status,
+        "lrm_status": {
+            node: {"mode": lrm_modes.get(node, "active"), "state": "active", "timestamp": 1793193650}
+            for node in node_status
+        },
+        "quorum": {"node": "pve-devel-1", "quorate": "1"},
+    }
 
 
 def generate_vm_routes(nodes, vms):

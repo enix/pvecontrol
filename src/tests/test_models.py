@@ -72,8 +72,9 @@ class StatusOutputTestcase(PVEControlTestcase):
         )
 
     def _post_setup(self):
-        # cluster/tasks is read lazily, while the api is mocked
+        # cluster/tasks and the HA status are read lazily, while the api is mocked
         _ = self.cluster.tasks
+        _ = self.cluster.node_ha_states
 
     def _list(self, resource):
         with patch("pvecontrol.cli.PVECluster.create_from_config", return_value=self.cluster):
