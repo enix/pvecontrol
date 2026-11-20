@@ -67,8 +67,8 @@ def evacuate(ctx, node, target, dry_run, online, follow, wait, no_skip_stopped):
                 targets.append(node)
     else:
         targets = [n for n in proxmox.nodes if n.status == NodeStatus.ONLINE and n.node != srcnode.node]
-        for node in [n for n in targets if not n.ha_state.available]:
-            logging.warning("Node %s is in HA state %s, it is not a target", node.node, node.ha_state)
+        for unavailable in [n for n in targets if not n.ha_state.available]:
+            logging.warning("Node %s is in HA state %s, it is not a target", unavailable.node, unavailable.ha_state)
         targets = [n for n in targets if n.ha_state.available]
     if len(targets) == 0:
         # An empty node needs no target: the VMs that can't be placed are reported once the plan is built
