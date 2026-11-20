@@ -1,8 +1,11 @@
+import logging
 import unittest
 
 from unittest.mock import patch
 
 import responses
+
+from click.testing import CliRunner
 
 from tests.fixtures.api import (
     create_response_wrapper,
@@ -10,6 +13,7 @@ from tests.fixtures.api import (
     fake_vm,
     fake_storage_resource,
 )
+from pvecontrol import pvecontrol
 from pvecontrol.models.cluster import PVECluster
 
 
@@ -86,6 +90,19 @@ class PVEEmptyClusterTestcase(unittest.TestCase):
                 "max_last_backup": 100,
             },
         }
+
+    # Messages logged by the last _invoke_logged
+    logs = errors = warnings = ()
+
+    def _invoke_logged(self, args, answer=None):
+        """Run pvecontrol on cluster "name", keeping the messages it logs in self.logs, self.errors, self.warnings"""
+        with self.assertLogs(level="DEBUG") as logs:
+            logging.debug("Running %s", args)
+            result = CliRunner().invoke(pvecontrol, ["-c", "name", *args], input=answer)
+        self.logs = [record.getMessage() for record in logs.records]
+        self.errors = [record.getMessage() for record in logs.records if record.levelno >= logging.ERROR]
+        self.warnings = [record.getMessage() for record in logs.records if record.levelno == logging.WARNING]
+        return result
 
     def _post_setup(self):
         """Subclass hook called once self.cluster is built (response mock still active)."""
