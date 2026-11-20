@@ -95,6 +95,17 @@ class PVECrsModelTestcase(unittest.TestCase):
         ).validate()
         assert len(errors) == 4
 
+    def test_validate_rejects_invalid_numbers(self):
+        for key in ["threshold", "hold-duration", "margin"]:
+            for value in ["nan", "inf", "-inf"]:
+                with self.subTest(key=key, value=value):
+                    crs = PVECrs.from_api(f"ha=static,ha-auto-rebalance=1,ha-auto-rebalance-{key}={value}")
+                    errors = crs.validate()
+                    assert len(errors) == 1
+                    assert "is not a valid number" in errors[0]
+        with self.assertRaises(ValueError):
+            PVECrs.from_api("ha-auto-rebalance-margin=ten")
+
     def test_rows(self):
         rows = PVECrs.from_api("ha=static").to_rows()
         assert rows[0] == {"option": "ha", "value": "static", "source": "configured"}
@@ -186,6 +197,19 @@ class PVECrsCommandsTestcase(PVEControlTestcase):
                 assert len(errors) == 1
                 assert "requires the static or dynamic mode" in errors[0]
                 assert not self._puts()
+
+    @responses.activate
+    def test_set_refuses_invalid_numbers(self):
+        for args in [["--threshold", "nan"], ["--hold-duration", "inf"], ["--margin", "nan"]]:
+            for dry_run in [[], ["--dry-run"]]:
+                with self.subTest(args=args, dry_run=dry_run):
+                    result, errors = self._run(
+                        ["crs", "set", "--mode", "static", "--auto-rebalance", *args, *dry_run, "--force"]
+                    )
+                    assert result.exit_code == 1
+                    assert len(errors) == 1
+                    assert "is not a valid number" in errors[0]
+                    assert not self._puts()
 
     @responses.activate
     def test_set_dry_run(self):
