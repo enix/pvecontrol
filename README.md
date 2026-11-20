@@ -256,26 +256,32 @@ Options:
   --help                          Show this message and exit.
 
 Commands:
-  acl list       List acls in the cluster
-  crs set        Change the HA Cluster Resource Scheduler settings
-  crs show       Show the HA Cluster Resource Scheduler settings
-  group list     List groups in the cluster
-  node evacuate  Evacuate a node by migrating all it's VM out to one or...
-  node list      List nodes in the cluster
-  report         Generate a resource usage report for the cluster
-  sanitycheck    Check status of proxmox Cluster
-  status         Show cluster status
-  storage list   List storages in the cluster
-  task get       Get detailled information about a task
-  task list      List tasks in the cluster
-  user list      List users in the cluster
-  vm list        List VMs in the cluster
-  vm migrate     Migrate VMs in the cluster
-  vm restore     Restore a VM from a backup archive
-  vm shutdown    Cleanly shutdown a VM
-  vm start       Start a VM
-  vm stop        Stop a VM
-  vm unlock      Remove the lock set on a VM
+  acl list                List acls in the cluster
+  crs set                 Change the HA Cluster Resource Scheduler settings
+  crs show                Show the HA Cluster Resource Scheduler settings
+  group list              List groups in the cluster
+  ha arm                  Arm HA again after it was disarmed
+  ha disarm               Disarm HA on the whole cluster
+  ha maintenance-disable  Take a node out of HA maintenance mode
+  ha maintenance-enable   Put a node in HA maintenance mode
+  ha status               Show the state of the nodes in the HA manager
+  node evacuate           Evacuate a node by migrating all it's VM out to one
+                          or...
+  node list               List nodes in the cluster
+  report                  Generate a resource usage report for the cluster
+  sanitycheck             Check status of proxmox Cluster
+  status                  Show cluster status
+  storage list            List storages in the cluster
+  task get                Get detailled information about a task
+  task list               List tasks in the cluster
+  user list               List users in the cluster
+  vm list                 List VMs in the cluster
+  vm migrate              Migrate VMs in the cluster
+  vm restore              Restore a VM from a backup archive
+  vm shutdown             Cleanly shutdown a VM
+  vm start                Start a VM
+  vm stop                 Stop a VM
+  vm unlock               Remove the lock set on a VM
 
   Made with love by Enix.io
 ```
@@ -335,6 +341,8 @@ $ pvecontrol vm list --filter node 'pve-node-1$' --filter status RUNNING --colum
 ```
 
 `vm list` also lists templates. `storage list` shows a shared storage once, with the list of its nodes.
+
+`node list` shows the state of each node in the HA manager in its `ha_state` column: `online`, `maintenance_requested` (the maintenance mode is requested, the node has not entered it yet), `maintenance`, `unknown`, `fence` or `gone`. It is `-` when HA is not used on the cluster, or when its status can't be read (it requires `Sys.Audit` on `/`).
 
 ### vm migrate
 
@@ -413,7 +421,7 @@ How it works:
 
 - **Which VMs**: only the running VMs are migrated by default. Add `--no-skip-stopped` to migrate the stopped ones too.
 - **`--online`**: Proxmox refuses to migrate a running VM offline, so running VMs are only migrated with `--online` (live migration). Without it they are skipped with a warning, and the node is not fully evacuated.
-- **Targets**: by default, every other online node of the cluster. Targets can be given as node names or glob patterns (`'pve-node-*'`, quote them for your shell); the source node and nodes that are not online are skipped with a warning.
+- **Targets**: by default, every other online node of the cluster. Targets can be given as node names or glob patterns (`'pve-node-*'`, quote them for your shell); the source node, nodes that are not online and nodes the HA manager can't place resources on (an `ha_state` of `maintenance_requested`, `maintenance`, `unknown`, `fence` or `gone`, see [Listing resources](#listing-resources)) are skipped with a warning.
 - **Placement**: greedy, VM after VM in the order Proxmox lists them, each VM going to the first target where it fits (targets are tried in no particular order). A VM fits when, with the VMs already placed there, the target keeps `memoryminimum` of memory free and stays within `cpufactor` times its CPUs (see [Advanced configuration options](#advanced-configuration-options)). A VM that fits nowhere is skipped with a warning.
 - **Confirmation**: the planned migrations are displayed, then confirmation is always asked. Declining it exits with code 1.
 - **`--dry-run`**: the plan is computed and displayed (and the confirmation asked) but no migration is started.
@@ -468,6 +476,29 @@ How it works:
 - The current and new settings are displayed, then confirmation is asked unless `--force` is given. Declining it exits with code 1. `--dry-run` displays the settings and stops there, without asking.
 - Reading the settings requires the `Sys.Audit` privilege on `/` (without it, Proxmox VE doesn't return them and they are shown as defaults), changing them requires `Sys.Modify` on `/`.
 
+### ha
+
+The `ha` commands follow the nodes in the HA manager, put them in maintenance and disarm HA:
+
+```shell
+$ pvecontrol ha status
+$ pvecontrol ha maintenance-enable pve-node-1 --wait
+$ pvecontrol node evacuate pve-node-1 --online --wait   # the VMs not managed by HA
+$ pvecontrol ha maintenance-disable pve-node-1 --wait
+```
+
+- `ha status [NODE]` shows, for each node: its HA state (as in the `ha_state` column of `node list`, see [Listing resources](#listing-resources)), the mode of its local resource manager (`lrm_mode`), whether a maintenance request is queued for the HA manager (`request_queued`, Proxmox VE 9.2.33 and later), the HA resources on it or moving to it, whatever their state (frozen while HA is disarmed for instance), and the VMs not managed by HA. A warning tells when HA is disarmed. `ha status` honors `-o`. With `--wait`, it waits until the node has entered the maintenance mode with no HA resource left, or has left it; it exits with code 1 when the node is neither entering nor leaving the maintenance mode.
+- `ha maintenance-enable NODE` asks the HA manager to put the node in maintenance: it migrates the HA resources away and places none on the node until `ha maintenance-disable NODE`, which moves them back. The VMs not managed by HA stay on the node, they are listed with a warning: use [node evacuate](#node-evacuate) to move them. With `--wait`, the command waits until no active HA resource is left on the node (or until it is back online for `maintenance-disable`); while it waits, it shows the state of the HA resources left and their target. The HA manager picks the targets: when a resource doesn't move, its logs (`pve-ha-crm`, `pve-ha-lrm`) tell why. For instance, a VM that got a guest identity on a Proxmox VE 9.2.33 node can't move to an older node, and the HA manager keeps trying.
+- `ha disarm --mode freeze|ignore` disarms HA on the whole cluster: every node releases its watchdog and no node is fenced, for instance during a network or corosync maintenance. With `freeze`, HA resources keep their state and new commands are not applied; with `ignore`, they are no longer tracked and can be managed as if HA didn't manage them. `ha arm` arms HA again. No node can enter the maintenance mode while HA is disarmed. With `--wait`, they wait until the HA manager has applied the change.
+
+How it works:
+
+- The maintenance mode is set through the API of the node itself, which requires the node to be online, and pve-manager 9.2.33 or later both on that node and on the node pvecontrol connects to (the `host` of the cluster configuration): a node running an older version refuses the request instead of passing it on. During an upgrade, point `host` to an upgraded node. On an older version, the error gives the `ha-manager crm-command node-maintenance enable|disable NODE` command to run on a node instead. `ha disarm` and `ha arm` require Proxmox VE 9.1 or later.
+- The HA manager handles the requests on its next round (about 10 s). `--wait` polls it every 10 s, up to `--timeout` seconds (900 by default): when the timeout expires, the command exits with code 1.
+- `ha maintenance-enable` refuses what the HA manager would refuse, before sending the request: a disarmed HA, a node the HA manager doesn't track, or a node in the `unknown`, `fence` or `gone` HA state. Proxmox VE only returns the first line of the error of the `ha-manager` command, which can be an unrelated warning: when a request fails anyway, run the `ha-manager` command given in the error on the node to see the whole error.
+- Confirmation is asked before any change unless `--force` is given. Declining it exits with code 1.
+- Reading the HA state requires the `Sys.Audit` privilege on `/`, the maintenance mode requires `Sys.Modify` on `/`, disarming and arming require `Sys.Console` on `/`.
+
 ### Tasks
 
 `task list` lists the tasks of the cluster, `task get UPID` shows a task, its status and its log. With `--wait` (`-w`), `task get` waits for the end of a running task; with `--follow` (`-f`), it prints its log while it runs. The same options are available on the commands that start a task (`vm migrate`, `vm start`, `vm shutdown`, `vm stop`, `vm restore`, `node evacuate`).
@@ -484,6 +515,7 @@ With `--wait` or `--follow`, the command exits with code 1 when the task failed:
 |----|------|------------------|
 | `nodes` | NODE | Every node is online (CRIT otherwise). The memory allocated to running VMs plus `memoryminimum` stays below the node memory (CRIT otherwise). The vCPUs allocated to running VMs stay below `cpufactor` times the node CPUs (WARN otherwise). |
 | `ha_groups` | HIGH_AVAILABILITY | Every HA group (node-affinity rule since PVE 9.1) contains at least 2 nodes (CRIT otherwise). |
+| `ha_nodes` | HIGH_AVAILABILITY | Every node is available to the HA manager: a node in the `unknown` or `fence` HA state is a CRIT; a node in maintenance or with the maintenance mode requested, a node `gone` from the cluster, and a disarmed HA stack are a WARN. See [ha](#ha). |
 | `ha_vms` | HIGH_AVAILABILITY | VMs managed by HA have all their disks on shared storages (CRIT otherwise) and don't use the `host` CPU type (WARN otherwise). An HA resource without a matching VM is a WARN. |
 | `crs` | HIGH_AVAILABILITY | The HA Cluster Resource Scheduler settings, see below. |
 | `vms_start_on_boot` | VIRTUAL_MACHINE | The `onboot` option ("Start at boot") of each VM, templates excluded, matches its state, see below. |

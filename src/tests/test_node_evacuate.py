@@ -6,13 +6,13 @@ from click.testing import CliRunner
 from pvecontrol.actions.node import evacuate
 from pvecontrol.models.task import PVETask
 from pvecontrol.models.vm import PVEVm
-from tests.fixtures.api import fake_vm
+from tests.fixtures.api import fake_ha_manager_status, fake_vm
 from tests.testcase import PVEControlTestcase
 
 UPID = "UPID:pve-devel-1:00001234:00005678:6AE38CD2:qmigrate:100:root@pam:"
 
 
-class EvacuateTestcase(PVEControlTestcase):
+class EvacuateBaseTestcase(PVEControlTestcase):
     """pve-devel-1 hosts VM 100 (running) and VM 101 (stopped)"""
 
     def _build_fixtures(self):
@@ -23,6 +23,10 @@ class EvacuateTestcase(PVEControlTestcase):
         config = super()._cluster_config()
         config["node"]["memoryminimum"] = 1073741824
         return config
+
+    def _post_setup(self):
+        # The HA state of the targets is read lazily, while the api is mocked
+        _ = self.cluster.node_ha_states
 
     def _evacuate(self, args, confirmation="yes", task_exitstatus="OK", task_running=False):
         # cluster/tasks lists a finished task with its exit status and endtime, a running one without both
@@ -38,6 +42,9 @@ class EvacuateTestcase(PVEControlTestcase):
             )
         calls = {call.args[0].vmid: call.args[1:] for call in migrate.call_args_list}
         return result, calls
+
+
+class EvacuateTestcase(EvacuateBaseTestcase):
 
     def test_unknown_node(self):
         with self.assertLogs("root", level="ERROR") as log:
@@ -120,8 +127,55 @@ class EvacuateTestcase(PVEControlTestcase):
         assert result.exit_code == 0
 
 
+class EvacuateHaMaintenanceTestcase(EvacuateBaseTestcase):
+    """pve-devel-2 is in HA maintenance, pve-devel-3 has its maintenance mode requested"""
+
+    def _build_fixtures(self):
+        super()._build_fixtures()
+        self.ha_manager_status = fake_ha_manager_status(
+            node_status={"pve-devel-1": "online", "pve-devel-2": "maintenance", "pve-devel-3": "online"},
+            node_request=["pve-devel-2", "pve-devel-3"],
+        )
+
+    def test_maintenance_nodes_are_not_targets(self):
+        with self.assertLogs("root", level="WARNING") as log:
+            result, calls = self._evacuate(["pve-devel-1", "--online"])
+        assert result.exit_code == 1
+        assert calls == {}
+        assert any("pve-devel-2 is in HA state maintenance, it is not a target" in msg for msg in log.output)
+        assert any("pve-devel-3 is in HA state maintenance_requested, it is not a target" in msg for msg in log.output)
+        assert any("no target for VM(s): 100" in msg for msg in log.output)
+
+    def test_explicit_maintenance_target_skipped(self):
+        with self.assertLogs("root", level="WARNING") as log:
+            result, calls = self._evacuate(["pve-devel-1", "pve-devel-*", "--online"])
+        assert result.exit_code == 1
+        assert calls == {}
+        assert any("Target node pve-devel-2 is in HA state maintenance, skipping" in msg for msg in log.output)
+        assert any("Target node pve-devel-3 is in HA state maintenance_requested" in msg for msg in log.output)
+
+
+class EvacuateHaOnlineTargetTestcase(EvacuateBaseTestcase):
+    """Only pve-devel-2 is in HA maintenance: pve-devel-3 takes the VM"""
+
+    def _build_fixtures(self):
+        super()._build_fixtures()
+        self.ha_manager_status = fake_ha_manager_status(
+            node_status={"pve-devel-1": "online", "pve-devel-2": "maintenance", "pve-devel-3": "online"}
+        )
+
+    def test_migration(self):
+        result, calls = self._evacuate(["pve-devel-1", "--online"])
+        assert result.exit_code == 0
+        assert list(calls) == [100]
+        assert calls[100][0] == "pve-devel-3"
+
+
 class EvacuateNoCapacityTestcase(PVEControlTestcase):
     """Default test config reserves more memory than any node has"""
+
+    def _post_setup(self):
+        _ = self.cluster.node_ha_states
 
     def test_no_target_for_vms(self):
         with (
