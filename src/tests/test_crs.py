@@ -41,6 +41,14 @@ class PVECrsModelTestcase(unittest.TestCase):
         assert crs.is_set("threshold")
         assert not crs.is_set("margin")
 
+    def test_dataclass_fields(self):
+        # set keys land in the dataclass fields (kebab-case mapped to snake_case), unknown ones in extra
+        crs = PVECrs.from_api({"ha": "static", "ha-auto-rebalance-margin": "15", "ha-future-key": "foo"})
+        assert crs.ha == "static"
+        assert crs.ha_auto_rebalance_margin == 15
+        assert crs.ha_auto_rebalance is None
+        assert crs.extra == {"ha-future-key": "foo"}
+
     def test_parse_property_string(self):
         crs = PVECrs.from_api("ha=dynamic, ha-rebalance-on-start=1,ha-auto-rebalance=0,ha-auto-rebalance-method=topsis")
         assert crs.mode == "dynamic"
