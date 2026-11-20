@@ -8,7 +8,7 @@ from proxmoxer.tools import Tasks
 from requests.exceptions import ConnectionError as RequestsConnectionError, SSLError, Timeout
 
 from pvecontrol.utils import defaulter, parse_pve_version, run_auth_commands
-from pvecontrol.models.node import PVENode
+from pvecontrol.models.node import NodeHaState, PVENode, parse_node_ha_states
 from pvecontrol.models.storage import PVEStorage
 from pvecontrol.models.task import PVETask
 from pvecontrol.models.acl import PVEAcl
@@ -30,6 +30,8 @@ class PVECluster:
         self.config = config
         self._tasks = None
         self._ha = None
+        self._ha_manager_status = None
+        self._node_ha_states = None
         self._backups = None
         self._backup_jobs = None
         self._users = None
@@ -87,10 +89,55 @@ class PVECluster:
             _ha_groups = self.api.cluster.ha.groups.get()
         self._ha = {
             "groups": _ha_groups,
-            "manager_status": self.api.cluster.ha.status.manager_status.get(),
+            "manager_status": self.ha_manager_status,
             "resources": self.api.cluster.ha.resources.get(),
         }
         return self._ha
+
+    @property
+    def ha_manager_status(self):
+        """Status of the HA manager: manager_status, lrm_status and quorum (needs Sys.Audit on /)"""
+        if self._ha_manager_status is None:
+            status = self.api.cluster.ha.status.manager_status.get()
+            # A cluster where HA was never used has no status object
+            self._ha_manager_status = status if isinstance(status, dict) else {}
+        return self._ha_manager_status
+
+    @property
+    def node_ha_states(self):
+        """HA state of each node, empty when HA is not used or its status can't be read"""
+        if self._node_ha_states is None:
+            try:
+                status = self.ha_manager_status
+            except ResourceException as e:
+                logging.warning("Cannot read the HA manager status, note that it requires Sys.Audit on /: %s", e)
+                status = {}
+            states = parse_node_ha_states(status)
+            if states:
+                try:
+                    queued = self.ha_queued_requests()
+                except ResourceException as e:
+                    logging.warning("Cannot read the queued HA maintenance requests: %s", e)
+                    queued = set()
+                # The request waits in a queue until the next round of the CRM, about 10 s
+                for node in queued:
+                    if states.get(node) == NodeHaState.ONLINE:
+                        states[node] = NodeHaState.MAINTENANCE_REQUESTED
+            self._node_ha_states = states
+        return self._node_ha_states
+
+    def ha_queued_requests(self):
+        """Nodes with a maintenance request not yet read by the CRM (pve-ha-manager >= 5.2.7), not cached"""
+        return {
+            entry.get("node")
+            for entry in self.api.cluster.ha.status.current.get()
+            if entry.get("type") == "lrm" and int(entry.get("maintenance-request-queued", 0))
+        }
+
+    def refresh_ha_status(self):
+        """Read the HA manager status again on next use, without the inventory"""
+        self._ha_manager_status = None
+        self._node_ha_states = None
 
     @property
     def crs(self):
@@ -115,12 +162,7 @@ class PVECluster:
     @property
     def ha_imbalance(self):
         """Current HA imbalance as a fraction (0-1) computed by the HA manager, None when unknown (PVE < 9.2)"""
-        # Reuse the manager status already fetched by the ha property, else fetch only that endpoint
-        if self._ha is not None:
-            status = self._ha["manager_status"]
-        else:
-            status = self.api.cluster.ha.status.manager_status.get()
-        manager_status = status.get("manager_status") if isinstance(status, dict) else None
+        manager_status = self.ha_manager_status.get("manager_status")
         if not isinstance(manager_status, dict):
             return None
         imbalance = manager_status.get("imbalance")
@@ -147,6 +189,8 @@ class PVECluster:
 
         # force ha information refesh
         self._ha = None
+        self._ha_manager_status = None
+        self._node_ha_states = None
         _ = self.ha
 
     def __str__(self):

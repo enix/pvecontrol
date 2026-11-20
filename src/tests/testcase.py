@@ -130,6 +130,7 @@ class PVEControlTestcase(PVEEmptyClusterTestcase):
 
         self.responses_get("/api2/json/cluster/ha/rules")
         self.responses_get("/api2/json/cluster/ha/status/manager_status")
+        self.responses_get("/api2/json/cluster/ha/status/current")
         self.responses_get("/api2/json/cluster/ha/resources")
         self.responses_get("/api2/json/cluster/options")
         self.responses_get("/api2/json/cluster/backup")
