@@ -415,7 +415,7 @@ How it works:
 
 - **Which VMs**: only the running VMs are migrated by default. Add `--no-skip-stopped` to migrate the stopped ones too.
 - **`--online`**: Proxmox refuses to migrate a running VM offline, so running VMs are only migrated with `--online` (live migration). Without it they are skipped with a warning, and the node is not fully evacuated.
-- **Targets**: by default, every other online node of the cluster. Targets can be given as node names or glob patterns (`'pve-node-*'`, quote them for your shell); the source node and nodes that are not online are skipped with a warning.
+- **Targets**: by default, every other online node of the cluster. Targets can be given as node names or glob patterns (`'pve-node-*'`, quote them for your shell); the source node, nodes that are not online and nodes the HA manager can't place resources on (an `ha_state` of `maintenance_requested`, `maintenance`, `unknown`, `fence` or `gone`, see [Listing resources](#listing-resources)) are skipped with a warning.
 - **Placement**: greedy, VM after VM in the order Proxmox lists them, each VM going to the first target where it fits (targets are tried in no particular order). A VM fits when, with the VMs already placed there, the target keeps `memoryminimum` of memory free and stays within `cpufactor` times its CPUs (see [Advanced configuration options](#advanced-configuration-options)). A VM that fits nowhere is skipped with a warning.
 - **Confirmation**: the planned migrations are displayed, then confirmation is always asked. Declining it exits with code 1.
 - **`--dry-run`**: the plan is computed and displayed (and the confirmation asked) but no migration is started.
