@@ -486,6 +486,7 @@ With `--wait` or `--follow`, the command exits with code 1 when the task failed:
 |----|------|------------------|
 | `nodes` | NODE | Every node is online (CRIT otherwise). The memory allocated to running VMs plus `memoryminimum` stays below the node memory (CRIT otherwise). The vCPUs allocated to running VMs stay below `cpufactor` times the node CPUs (WARN otherwise). |
 | `ha_groups` | HIGH_AVAILABILITY | Every HA group (node-affinity rule since PVE 9.1) contains at least 2 nodes (CRIT otherwise). |
+| `ha_nodes` | HIGH_AVAILABILITY | Every node is available to the HA manager: a node in the `unknown` or `fence` HA state is a CRIT; a node in maintenance or with the maintenance mode requested, a node `gone` from the cluster, and a disarmed HA stack are a WARN. See [ha](#ha). |
 | `ha_vms` | HIGH_AVAILABILITY | VMs managed by HA have all their disks on shared storages (CRIT otherwise) and don't use the `host` CPU type (WARN otherwise). An HA resource without a matching VM is a WARN. |
 | `crs` | HIGH_AVAILABILITY | The HA Cluster Resource Scheduler settings, see below. |
 | `vms_start_on_boot` | VIRTUAL_MACHINE | The `onboot` option ("Start at boot") of each VM, templates excluded, matches its state, see below. |
