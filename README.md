@@ -344,6 +344,12 @@ $ pvecontrol vm list --filter node 'pve-node-1$' --filter status RUNNING --colum
 
 `node list` shows the state of each node in the HA manager in its `ha_state` column: `online`, `maintenance_requested` (the maintenance mode is requested, the node has not entered it yet), `maintenance`, `unknown`, `fence` or `gone`. It is `-` when HA is not used on the cluster, or when its status can't be read (it requires `Sys.Audit` on `/`).
 
+`vm list` shows the state of each VM in the HA manager in its `ha_state` column (`started`, `stopped`, `migrate`, `freeze`...), `-` for a VM not managed by HA. For instance, the VMs not managed by HA on a node:
+
+```shell
+$ pvecontrol vm list --filter node '^pve-node-1$' --filter ha_state '^-$'
+```
+
 ### vm migrate
 
 `vm migrate VMID --target NODE` migrates a VM to another node. Use `--online` for a live migration of a running VM. Disks on local storages are migrated along (`with-local-disks`). `--dry-run` runs the Proxmox migration precheck but doesn't start the migration. Unlike `node evacuate`, `vm migrate` does not check that the target node has enough CPU or memory left.

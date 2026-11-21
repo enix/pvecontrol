@@ -389,8 +389,8 @@ def fake_node(node_id, local=False, online=True):
     }
 
 
-def fake_vm(vm_id, node, status="running", config=None):
-    return {
+def fake_vm(vm_id, node, status="running", config=None, hastate=None):
+    vm = {
         "id": f"qemu/{vm_id}",
         "vmid": vm_id,
         "name": f"vm-{vm_id}",
@@ -407,11 +407,14 @@ def fake_vm(vm_id, node, status="running", config=None):
         "cpu": 0.00581464923852424,
         "netin": 7215771,
         "template": 0,
-        "hastate": "started",
         "maxcpu": 1,
         "type": "qemu",
         "config": config,
     }
+    # cluster/resources only gives the HA state of the VMs managed by HA
+    if hastate is not None:
+        vm["hastate"] = hastate
+    return vm
 
 
 def fake_offline_vm(vm_id, node):
