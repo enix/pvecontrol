@@ -350,3 +350,29 @@ class PVEVmMigrateTestcase(PVEControlTestcase):
         assert len(self._calls("GET")) == 1
         assert not self._calls("POST")
         mock_print_task.assert_not_called()
+
+
+class PVEVmHaStateTestcase(PVEControlTestcase):
+    """VM 100 is managed by HA and migrating, VM 102 is frozen, the others are not managed by HA"""
+
+    def _build_fixtures(self):
+        super()._build_fixtures()
+        self.vms[0]["hastate"] = "migrate"
+        self.vms[2]["hastate"] = "freeze"
+
+    def test_ha_state(self):
+        assert {vm.vmid: vm.ha_state for vm in self.cluster.vms} == {
+            100: "migrate",
+            101: "-",
+            102: "freeze",
+            103: "-",
+            104: "-",
+        }
+
+    def test_vm_list_filter(self):
+        # The VMs not managed by HA on a node, as the warning of ha maintenance-enable tells
+        args = ["-c", "name", "-o", "json", "vm", "list", "--filter", "node", "^pve-devel-1$"]
+        with patch("pvecontrol.cli.PVECluster.create_from_config", return_value=self.cluster):
+            result = CliRunner().invoke(pvecontrol, [*args, "--filter", "ha_state", "^-$"])
+        assert result.exit_code == 0, result.output
+        assert [(row["vmid"], row["ha_state"]) for row in json.loads(result.output)] == [(101, "-")]

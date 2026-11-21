@@ -5,7 +5,7 @@ from typing import Optional
 
 from pvecontrol.models import api_kwargs
 
-COLUMNS = ["vmid", "name", "status", "lock", "node", "cpus", "maxmem", "maxdisk", "tags"]
+COLUMNS = ["vmid", "name", "status", "ha_state", "lock", "node", "cpus", "maxmem", "maxdisk", "tags"]
 
 
 class VmStatus(Enum):
@@ -35,6 +35,8 @@ class PVEVmData:
     uptime: int = field(default=0)
     tags: str = field(default="")
     template: int = field(default=0)
+    # State of the HA resource of the VM, absent from cluster/resources for a VM not managed by HA
+    hastate: str = field(default="")
 
 
 class PVEVm(PVEVmData):
@@ -54,6 +56,11 @@ class PVEVm(PVEVmData):
     @classmethod
     def from_api(cls, api, payload):
         return cls(api, **api_kwargs(PVEVmData, payload))
+
+    @property
+    def ha_state(self):
+        """State of the VM in the HA manager (started, migrate, freeze...), "-" when HA doesn't manage it"""
+        return self.hastate or "-"
 
     @property
     def config(self):
