@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2.23.0
         with:
           egress-policy: audit
 
@@ -27,7 +27,7 @@ jobs:
       # GitHub App is allowed to bypass the ruleset, GITHUB_TOKEN cannot.
       - name: Generate a GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: actions/create-github-app-token@f418cff399f7aef4c2f0ad47e25ca7a6abbdd6fc # v3.4.0
         with:
           client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
