@@ -6,30 +6,30 @@ from pvecontrol.utils import column_value, print_output
 from pvecontrol.models.cluster import PVECluster
 
 
-def _make_filter_type_generator(columns):
-    def _regexp_type(value):
+class RegexpType(click.ParamType):
+    name = "regexp"
+
+    def convert(self, value, param, ctx):
+        if isinstance(value, re.Pattern):
+            return value
         try:
             return re.compile(value)
         except re.error as e:
-            raise click.BadParameter(f"invalid regular expression: '{value}' ({e})")
+            self.fail(f"invalid regular expression: '{value}' ({e})", param, ctx)
 
-    def _column_type(value):
-        if value not in columns:
-            choices = ", ".join([f"'{c}'" for c in columns])
-            raise click.BadParameter(f"'{value}' is not one of {choices}.")
-        return value
 
-    while True:
-        yield _column_type
-        yield _regexp_type
+def filter_option(columns, *param_decls, help_text):
+    """A repeatable option taking a column name and a regular expression"""
+    return click.option(
+        *param_decls,
+        type=(click.Choice(columns), RegexpType()),
+        metavar="COLUMN REGEXP",
+        multiple=True,
+        help=help_text,
+    )
 
 
 def with_table_options(columns, default_sort):
-    filter_type_generator = _make_filter_type_generator(columns)
-
-    def filter_type(x):
-        return next(filter_type_generator)(x)
-
     def check_cols(cols):
         res = []
         for col in cols.split(","):
@@ -48,15 +48,8 @@ def with_table_options(columns, default_sort):
             help="Comma-separated list of columns",
             callback=lambda *v: check_cols(v[2]),
         )(func)
-        func = click.option(
-            "--filter",
-            "filters",
-            type=filter_type,
-            nargs=2,
-            metavar="COLUMN REGEXP",
-            multiple=True,
-            help="Regex to filter items (can be set multiple times)",
-            callback=lambda *v: v[2],
+        func = filter_option(
+            columns, "--filter", "filters", help_text="Regex to filter items (can be set multiple times)"
         )(func)
         func = click.option(
             "--sort-by",

@@ -376,3 +376,34 @@ class PVEVmHaStateTestcase(PVEControlTestcase):
             result = CliRunner().invoke(pvecontrol, [*args, "--filter", "ha_state", "^-$"])
         assert result.exit_code == 0, result.output
         assert [(row["vmid"], row["ha_state"]) for row in json.loads(result.output)] == [(101, "-")]
+
+
+class PVEVmListFilterTestcase(PVEControlTestcase):
+
+    def _list(self, *args):
+        with patch("pvecontrol.cli.PVECluster.create_from_config", return_value=self.cluster):
+            result = CliRunner().invoke(pvecontrol, ["-c", "name", "-o", "json", "vm", "list", *args])
+        vmids = [vm["vmid"] for vm in json.loads(result.output)] if result.exit_code == 0 else None
+        return result, vmids
+
+    def test_filter(self):
+        _, vmids = self._list("--filter", "node", "pve-devel-2")
+        assert sorted(vmids) == [102, 103, 104]
+
+    def test_filters_all(self):
+        _, vmids = self._list("--filter", "node", "pve-devel-2", "--filter", "vmid", "^10[34]$")
+        assert sorted(vmids) == [103, 104]
+
+    def test_filter_on_displayed_value(self):
+        _, vmids = self._list("--filter", "maxmem", "^1.0 GiB$", "--filter", "status", "^running$")
+        assert sorted(vmids) == [100, 101, 102, 103, 104]
+
+    def test_unknown_column(self):
+        result, _ = self._list("--filter", "unknown", "x")
+        assert result.exit_code == 2
+        assert "'unknown' is not one of" in result.output
+
+    def test_invalid_regexp(self):
+        result, _ = self._list("--filter", "name", "(")
+        assert result.exit_code == 2
+        assert "invalid regular expression: '('" in result.output

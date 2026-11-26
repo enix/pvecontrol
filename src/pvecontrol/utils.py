@@ -133,27 +133,49 @@ def prepare_prettytable(table, sortby, filters, columns=()):
     x.field_names = [*keys, "sortby"] if do_sort else keys
 
     for line in table:
-        for key in line:
-            if isinstance(line[key], Enum):
-                line[key] = str(line[key])
-            # transform set to list as some output does not support it
-            if isinstance(line[key], set):
-                line[key] = list(line[key])
-
+        _normalize_values(line)
+        # Sort on the raw sizes, not on their human readable form
         if do_sort:
             line["sortby"] = line[sortby]
-        for key in NATURALSIZE_KEYS:
-            if key in line:
-                line[key] = naturalsize(line[key], binary=True)
+        _humanize_sizes(line)
 
-    for filter_key, filter_value in filters:
-        re_filter = re.compile(filter_value)
-        table = [line for line in table if re_filter.search(str(line[filter_key]))]
+    table = [line for line in table if match_filters(line, filters)]
 
     for line in table:
         x.add_row(line.values())
 
     return x
+
+
+def _normalize_values(line):
+    for key in line:
+        if isinstance(line[key], Enum):
+            line[key] = str(line[key])
+        # transform set to list as some output does not support it
+        if isinstance(line[key], set):
+            line[key] = list(line[key])
+
+
+def _humanize_sizes(line):
+    for key in NATURALSIZE_KEYS:
+        if key in line:
+            line[key] = naturalsize(line[key], binary=True)
+
+
+def format_row(line):
+    """Turn the values of a row into what the output displays, in place, and return it"""
+    _normalize_values(line)
+    _humanize_sizes(line)
+    return line
+
+
+def match_filters(line, filters):
+    """Tell whether a formatted row matches every (column, regexp) filter.
+
+    A filter is searched in the displayed value of its column (see format_row()), so a filter selects
+    the same items in every command that takes one.
+    """
+    return all(re.search(regexp, str(line[column])) for column, regexp in filters)
 
 
 def print_output(table, columns=None, sortby=None, filters=None, output=OutputFormats.TEXT):
