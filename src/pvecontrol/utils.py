@@ -98,11 +98,11 @@ def render_output(table, columns=None, sortby=None, filters=None, output=OutputF
         filters = []
 
     if len(columns) == 0:
-        columns = list(table[0].keys())
+        columns = list(table[0].keys()) if table else []
     else:
         table = [as_row(item, columns) for item in table]
 
-    x = prepare_prettytable(table, sortby, filters)
+    x = prepare_prettytable(table, sortby, filters, columns)
 
     if sortby is not None:
         sortby = "sortby"
@@ -123,12 +123,14 @@ def render_output(table, columns=None, sortby=None, filters=None, output=OutputF
     return None
 
 
-def prepare_prettytable(table, sortby, filters):
+def prepare_prettytable(table, sortby, filters, columns=()):
     do_sort = sortby is not None
 
     x = PrettyTable()
     x.align = "l"
-    x.field_names = [*table[0].keys(), "sortby"] if do_sort else table[0].keys()
+    # An empty table still has its header, from the columns
+    keys = list(table[0].keys()) if table else list(columns)
+    x.field_names = [*keys, "sortby"] if do_sort else keys
 
     for line in table:
         for key in line:

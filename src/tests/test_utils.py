@@ -53,6 +53,14 @@ def _auth_config(**kwargs):
     return clusterconfig
 
 
+def test_render_output_empty_table():
+    # An empty list keeps its header, and the structured outputs are empty lists
+    assert "| vmid | name |" in render_output([], columns=["vmid", "name"], sortby="vmid")
+    assert json.loads(render_output([], columns=["vmid", "name"], output=OutputFormats.JSON)) == []
+    assert yaml.safe_load(render_output([], columns=["vmid", "name"], output=OutputFormats.YAML)) == []
+    assert render_output([], columns=["vmid", "name"], output=OutputFormats.CSV).strip() == "vmid,name"
+
+
 def test_run_auth_commands_plain_values():
     auth = run_auth_commands(_auth_config(user="root@pam", password="secret"))
     assert auth == {"user": "root@pam", "password": "secret"}
