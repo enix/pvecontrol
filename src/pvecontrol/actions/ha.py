@@ -295,20 +295,20 @@ def _check_can_enter_maintenance(proxmox, node):
         sys.exit(1)
 
 
-def _set_maintenance(ctx, nodename, mode, force):
-    proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
-    node = proxmox.find_node(nodename)
-    if not node:
-        logging.error("Node %s does not exist", nodename)
-        sys.exit(1)
+def check_maintenance(proxmox, node, mode):
+    """Exit 1 when the maintenance mode of the node can't be changed through the API"""
     # The request is run by the node itself, through the ha-manager command
     if not node.online:
-        logging.error("Node %s is not online, its maintenance mode can't be changed through the API", nodename)
+        logging.error("Node %s is not online, its maintenance mode can't be changed through the API", node.node)
         sys.exit(1)
     _check_maintenance_api(proxmox, node, mode)
     if mode == "enable":
         _check_can_enter_maintenance(proxmox, node)
 
+
+def request_maintenance(proxmox, node, mode, force=False):
+    """Ask for confirmation then request the maintenance mode change, exit 1 when declined or refused"""
+    nodename = node.node
     print(f"{mode.capitalize()} the HA maintenance mode of node {nodename} (HA state {node.ha_state})")
     if not confirm(force):
         sys.exit(1)
@@ -341,6 +341,22 @@ def _set_maintenance(ctx, nodename, mode, force):
             )
         sys.exit(1)
     print(f"Maintenance mode {mode} requested for node {nodename}")
+
+
+def wait_drained(proxmox, nodename, timeout):
+    """Wait until the HA manager has moved the active HA resources away from a node entering maintenance"""
+    proxmox.refresh_ha_status()
+    return _wait(proxmox, nodename, _is_drained, timeout)
+
+
+def _set_maintenance(ctx, nodename, mode, force):
+    proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
+    node = proxmox.find_node(nodename)
+    if not node:
+        logging.error("Node %s does not exist", nodename)
+        sys.exit(1)
+    check_maintenance(proxmox, node, mode)
+    request_maintenance(proxmox, node, mode, force)
     return proxmox
 
 
@@ -359,8 +375,7 @@ def maintenance_enable(ctx, node, wait, timeout, force):
     """
     proxmox = _set_maintenance(ctx, node, "enable", force)
     if wait:
-        proxmox.refresh_ha_status()
-        row = _wait(proxmox, node, _is_drained, timeout)
+        row = wait_drained(proxmox, node, timeout)
     else:
         row = _read_rows(proxmox)[0][node]
     if row["other_vms"]:

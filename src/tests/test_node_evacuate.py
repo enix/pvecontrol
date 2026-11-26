@@ -1,5 +1,10 @@
+import re
+
 from types import SimpleNamespace
 from unittest.mock import patch
+from urllib.parse import parse_qs
+
+import responses
 
 from click.testing import CliRunner
 
@@ -9,6 +14,7 @@ from pvecontrol.models.vm import PVEVm
 from tests.fixtures.api import fake_ha_manager_status, fake_vm
 from tests.testcase import PVEControlTestcase
 
+MAINTENANCE_URL = re.compile(r"https://host:8006/api2/json/nodes/[^/]+/maintenance")
 UPID = "UPID:pve-devel-1:00001234:00005678:6AE38CD2:qmigrate:100:root@pam:"
 
 
@@ -250,6 +256,152 @@ class EvacuateFilterTestcase(EvacuateBaseTestcase):
         assert result.exit_code == 2
         assert calls == {}
         assert "invalid regular expression: '('" in result.output
+
+
+class EvacuateHaMaintenanceBaseTestcase(EvacuateBaseTestcase):
+    """pve-devel-1 also hosts VM 105 (running), HA manages VM 100, the nodes run pve-manager 9.2.33"""
+
+    node_status = "online"
+
+    def _build_fixtures(self):
+        super()._build_fixtures()
+        self.vms[0]["hastate"] = "started"
+        self.vms.append(fake_vm(105, self.nodes[0]))
+        self.ha_manager_status = fake_ha_manager_status(
+            node_status={"pve-devel-1": self.node_status, "pve-devel-2": "online", "pve-devel-3": "online"},
+            node_request=["pve-devel-1"] if self.node_status == "maintenance" else None,
+            service_status={"vm:100": "pve-devel-1"},
+        )
+
+    def _post_setup(self):
+        super()._post_setup()
+        self.cluster.version = {"version": "9.2.33", "release": "9.2"}
+        self.cluster.find_node("pve-devel-1").version = {"version": "9.2.33", "release": "9.2"}
+
+    def _drain(self):
+        """What refresh() reads once the HA manager has moved VM 100 to pve-devel-2"""
+        srcnode = self.cluster.find_node("pve-devel-1")
+        # refresh() also runs after each migration
+        for vm in [vm for vm in srcnode.vms if vm.vmid == 100]:
+            srcnode.vms.remove(vm)
+            self.cluster.find_node("pve-devel-2").allocatedmem += vm.maxmem
+
+    # pylint: disable=too-many-arguments
+    def _evacuate_ha(self, args, answers="y\ny\n", drain=True, wait_drained=None, put_status=200):
+        task = PVETask(None, UPID, summary={"endtime": 1, "status": "OK"})
+        with (
+            responses.RequestsMock(assert_all_requests_are_fired=False) as api,
+            patch("pvecontrol.actions.node.PVECluster.create_from_config", return_value=self.cluster),
+            patch.object(self.cluster, "refresh", side_effect=self._drain if drain else None) as refresh,
+            patch("pvecontrol.actions.node.wait_drained", side_effect=wait_drained) as wait,
+            patch("pvecontrol.actions.node.print_task", return_value=task),
+            patch.object(PVEVm, "migrate", autospec=True, return_value="UPID") as migrate,
+            self.assertLogs("root", level="DEBUG") as log,
+        ):
+            api.put(MAINTENANCE_URL, status=put_status, json={"data": None})
+            result = CliRunner().invoke(
+                evacuate,
+                ["pve-devel-1", "--ha-maintenance", *args],
+                obj={"args": SimpleNamespace(cluster="test")},
+                input=answers,
+            )
+            puts = [(call.request.url, parse_qs(call.request.body)) for call in api.calls]
+        self.wait, self.refresh, self.log = wait, refresh, log.output
+        return result, puts, [call.args[0].vmid for call in migrate.call_args_list]
+
+    def _logged(self, text):
+        return any(text in msg for msg in self.log)
+
+
+class EvacuateHaMaintenanceModeTestcase(EvacuateHaMaintenanceBaseTestcase):
+
+    def test_ha_maintenance(self):
+        result, puts, migrated = self._evacuate_ha(["--online"])
+        assert result.exit_code == 0, result.output
+        assert puts == [("https://host:8006/api2/json/nodes/pve-devel-1/maintenance", {"maintenance-mode": ["enable"]})]
+        assert "The HA manager will move the HA VM(s) of node pve-devel-1 away: 100" in result.stdout
+        self.wait.assert_called_once_with(self.cluster, "pve-devel-1", 900)
+        # The drained node is read again before the plan, VM 100 is gone: only VM 105 is migrated
+        assert migrated == [105]
+        assert "Migrating VM 105" in result.stdout
+        assert self._logged("Node pve-devel-1 stays in HA maintenance mode")
+
+    def test_timeout(self):
+        result, _, migrated = self._evacuate_ha(["--online", "--timeout", "60"])
+        assert result.exit_code == 0, result.output
+        self.wait.assert_called_once_with(self.cluster, "pve-devel-1", 60)
+        assert migrated == [105]
+
+    def test_ha_vm_left_on_node(self):
+        # A stopped HA resource doesn't count as active: the node is drained with it
+        result, _, migrated = self._evacuate_ha(["--online", "--no-skip-stopped"], drain=False)
+        assert result.exit_code == 0, result.output
+        assert migrated == [101, 105]
+        assert self._logged("VM 100 (vm-100) is managed by HA (started), left to the HA manager")
+
+    def test_maintenance_declined(self):
+        result, puts, migrated = self._evacuate_ha(["--online"], answers="n\n")
+        assert result.exit_code == 1
+        assert puts == []
+        self.wait.assert_not_called()
+        assert migrated == []
+        assert not self._logged("stays in HA maintenance mode")
+
+    def test_plan_declined(self):
+        result, puts, migrated = self._evacuate_ha(["--online"], answers="y\nn\n")
+        assert result.exit_code == 1
+        assert len(puts) == 1
+        assert migrated == []
+        assert self._logged("Node pve-devel-1 stays in HA maintenance mode")
+
+    def test_drain_timeout(self):
+        result, puts, migrated = self._evacuate_ha(["--online"], wait_drained=SystemExit(1))
+        assert result.exit_code == 1
+        assert len(puts) == 1
+        self.refresh.assert_not_called()
+        assert migrated == []
+        assert self._logged("Node pve-devel-1 stays in HA maintenance mode")
+
+    def test_maintenance_refused(self):
+        result, _, migrated = self._evacuate_ha(["--online"], put_status=500)
+        assert result.exit_code == 1
+        self.wait.assert_not_called()
+        assert migrated == []
+        assert not self._logged("stays in HA maintenance mode")
+
+    def test_dry_run(self):
+        result, puts, migrated = self._evacuate_ha(["--online", "--dry-run"], answers="y\n")
+        assert result.exit_code == 0, result.output
+        assert puts == []
+        self.wait.assert_not_called()
+        assert "HA maintenance mode of node pve-devel-1 is not enabled, HA VM(s): 100" in result.stdout
+        assert self._logged("the plan doesn't account for the HA VMs")
+        assert self._logged("VM 100 (vm-100) is managed by HA (started), left to the HA manager")
+        assert "Migrating VM 105" in result.stdout
+        assert migrated == []
+        assert not self._logged("stays in HA maintenance mode")
+
+    def test_old_pve_manager(self):
+        self.cluster.find_node("pve-devel-1").version = {"version": "9.1.4", "release": "9.1"}
+        result, puts, migrated = self._evacuate_ha(["--online"])
+        assert result.exit_code == 1
+        assert puts == []
+        assert migrated == []
+        assert self._logged("The maintenance API requires pve-manager 9.2.33 or later, node pve-devel-1 runs 9.1.4")
+
+
+class EvacuateAlreadyInHaMaintenanceTestcase(EvacuateHaMaintenanceBaseTestcase):
+    """pve-devel-1 is already in HA maintenance, still draining"""
+
+    node_status = "maintenance"
+
+    def test_ha_maintenance(self):
+        result, puts, migrated = self._evacuate_ha(["--online"], answers="y\n")
+        assert result.exit_code == 0, result.output
+        assert puts == []
+        assert self._logged("Node pve-devel-1 is already in HA state maintenance")
+        self.wait.assert_called_once_with(self.cluster, "pve-devel-1", 900)
+        assert migrated == [105]
 
 
 class EvacuateNoCapacityTestcase(PVEControlTestcase):

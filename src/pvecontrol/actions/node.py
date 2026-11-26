@@ -3,7 +3,8 @@ import sys
 
 import click
 
-from pvecontrol.models.node import NodeStatus
+from pvecontrol.actions.ha import HA_WAIT_TIMEOUT, check_maintenance, request_maintenance, wait_drained
+from pvecontrol.models.node import NodeHaState, NodeStatus
 from pvecontrol.models.vm import VmStatus, COLUMNS as VM_COLUMNS
 from pvecontrol.utils import as_row, confirm, format_row, match_filters, print_task
 from pvecontrol.cli import ResourceGroup, filter_option, migration_related_command
@@ -39,19 +40,58 @@ def root():
     "excludes",
     help_text="Leave the VMs whose column matches the regex on the node (can be set multiple times)",
 )
+@click.option(
+    "--ha-maintenance",
+    is_flag=True,
+    help="Put the node in HA maintenance mode first, wait for the HA manager to move the HA resources away, then "
+    "evacuate the VMs not managed by HA",
+)
+@click.option(
+    "--timeout",
+    type=click.IntRange(min=1),
+    default=HA_WAIT_TIMEOUT,
+    show_default=True,
+    metavar="SECONDS",
+    help="Maximum time to wait for the HA resources to leave the node with --ha-maintenance",
+)
 @click.pass_context
-def evacuate(ctx, node, target, dry_run, online, follow, wait, no_skip_stopped, filters, excludes):
+def evacuate(
+    ctx, node, target, dry_run, online, follow, wait, no_skip_stopped, filters, excludes, ha_maintenance, timeout
+):
     """Evacuate a node by migrating all it's VM out to one or multiple target nodes"""
     proxmox = PVECluster.create_from_config(ctx.obj["args"].cluster)
     srcnode = _source_node(proxmox, node)
-    _evacuate_vms(proxmox, srcnode, target, dry_run, online, follow, wait, no_skip_stopped, filters, excludes)
+    if not ha_maintenance:
+        _evacuate_vms(proxmox, srcnode, target, dry_run, online, follow, wait, no_skip_stopped, filters, excludes)
+        return
+    check_maintenance(proxmox, srcnode, "enable")
+    if dry_run:
+        print(f"Dry run, the HA maintenance mode of node {node} is not enabled, HA VM(s): {_ha_vmids(srcnode)}")
+        logging.warning("Dry run, the plan doesn't account for the HA VMs the HA manager would move to the targets")
+        _evacuate_vms(proxmox, srcnode, target, dry_run, online, follow, wait, no_skip_stopped, filters, excludes, True)
+        return
+    _request_ha_maintenance(proxmox, srcnode)
+    try:
+        # The HA manager places the HA resources with the CRS and the HA rules, evacuate knows neither: the VMs not
+        # managed by HA are only placed once it is done, on the allocations the HA resources left
+        wait_drained(proxmox, node, timeout)
+        proxmox.refresh()
+        srcnode = _source_node(proxmox, node)
+        _evacuate_vms(proxmox, srcnode, target, dry_run, online, follow, wait, no_skip_stopped, filters, excludes, True)
+    finally:
+        # Whatever happens to the VMs not managed by HA, leaving the maintenance mode is up to the operator
+        logging.info(
+            "Node %s stays in HA maintenance mode, leave it with: pvecontrol ha maintenance-disable %s", node, node
+        )
 
 
 # Each option of evacuate is an argument, they are most of the locals
 # pylint: disable-next=too-many-locals
-def _evacuate_vms(proxmox, srcnode, target, dry_run, online, follow, wait, no_skip_stopped, filters, excludes):
+def _evacuate_vms(
+    proxmox, srcnode, target, dry_run, online, follow, wait, no_skip_stopped, filters, excludes, ha_maintenance=False
+):
     targets = _find_targets(proxmox, srcnode, target)
-    vms, need_online = _select_vms(srcnode, filters, excludes, no_skip_stopped, online)
+    vms, need_online = _select_vms(srcnode, filters, excludes, no_skip_stopped, online, ha_maintenance)
     plan, unplaced = _place(proxmox, vms, targets)
 
     logging.debug(plan)
@@ -97,6 +137,22 @@ def _source_node(proxmox, nodename):
     return srcnode
 
 
+def _ha_managed(vm):
+    return vm.ha_state != "-"
+
+
+def _ha_vmids(node):
+    return _vmids([vm for vm in node.vms if _ha_managed(vm)]) or "none"
+
+
+def _request_ha_maintenance(proxmox, srcnode):
+    if srcnode.ha_state in (NodeHaState.MAINTENANCE_REQUESTED, NodeHaState.MAINTENANCE):
+        logging.info("Node %s is already in HA state %s", srcnode.node, srcnode.ha_state)
+        return
+    print(f"The HA manager will move the HA VM(s) of node {srcnode.node} away: {_ha_vmids(srcnode)}")
+    request_maintenance(proxmox, srcnode, "enable")
+
+
 def _find_targets(proxmox, srcnode, patterns):
     targets = []
     if patterns:
@@ -127,13 +183,17 @@ def _find_targets(proxmox, srcnode, patterns):
     return targets
 
 
-def _select_vms(srcnode, filters, excludes, no_skip_stopped, online):
+def _select_vms(srcnode, filters, excludes, no_skip_stopped, online, ha_maintenance):
     """The VMs to migrate, and the running ones that need --online"""
     vms = []
     need_online = []
     for vm in srcnode.vms:
         if vm.status != VmStatus.RUNNING and not no_skip_stopped:
             logging.debug("VM %i is not running, skipping", vm.vmid)
+            continue
+        # The HA manager moves the HA resources of a node in maintenance, or leaves them there (stopped ones)
+        if ha_maintenance and _ha_managed(vm):
+            logging.warning("VM %s (%s) is managed by HA (%s), left to the HA manager", vm.vmid, vm.name, vm.ha_state)
             continue
         # An excluded VM is left on purpose: it doesn't need --online
         if not _vm_selected(vm, filters, excludes):
