@@ -540,7 +540,7 @@ With `--wait` or `--follow`, the command exits with code 1 when the task failed:
 | Id | Type | What is verified |
 |----|------|------------------|
 | `nodes` | NODE | Every node is online (CRIT otherwise). The memory allocated to running VMs plus `memoryminimum` stays below the node memory (CRIT otherwise). The vCPUs allocated to running VMs stay below `cpufactor` times the node CPUs (WARN otherwise). |
-| `ha_groups` | HIGH_AVAILABILITY | Every HA group (node-affinity rule since PVE 9.1) contains at least 2 nodes (CRIT otherwise). |
+| `ha_groups` | HIGH_AVAILABILITY | Every enabled HA group (node-affinity rule since PVE 9.1) lets its resources run on at least 2 nodes, the nodes not listed for a negative affinity (CRIT otherwise). |
 | `ha_nodes` | HIGH_AVAILABILITY | Every node is available to the HA manager: a node in the `unknown` or `fence` HA state is a CRIT; a node in maintenance or with the maintenance mode requested, a node `gone` from the cluster, and a disarmed HA stack are a WARN. See [ha](#ha). |
 | `ha_rules` | HIGH_AVAILABILITY | Every HA rule is enforced (Proxmox VE 9.0 and later): a rule the HA manager ignores because it conflicts with others is a CRIT (an anti-affinity, for instance, is not applied), a disabled rule is a WARN. See [ha](#ha). |
 | `ha_vms` | HIGH_AVAILABILITY | VMs managed by HA have all their disks on shared storages (CRIT otherwise) and don't use the `host` CPU type (WARN otherwise). An HA resource without a matching VM is a WARN. |

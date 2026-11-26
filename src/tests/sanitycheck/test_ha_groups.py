@@ -41,3 +41,25 @@ class HaGroupsResourceAffinityOnlyTestcase(PVEControlTestcase):
 
         assert len(check.messages) == 1
         assert_message(check.messages[0], CheckCode.OK)
+
+
+class HaGroupsNegativeAndDisabledTestcase(PVEControlTestcase):
+    """A negative node affinity runs its resources on the other nodes, a disabled rule is not applied"""
+
+    def _build_fixtures(self):
+        super()._build_fixtures()
+        self.ha_rules = [
+            {**fake_ha_rule("avoid-1", ["pve-devel-1"], [100]), "affinity": "negative"},
+            {**fake_ha_rule("avoid-1-2", ["pve-devel-1", "pve-devel-2"], [101]), "affinity": "negative"},
+            {**fake_ha_rule("disabled", ["pve-devel-3"], [102]), "disable": 1},
+        ]
+
+    def _post_setup(self):
+        _ = self.cluster.ha
+
+    def test_check(self):
+        check = HaGroups(self.cluster)
+        check.run()
+
+        assert len(check.messages) == 1
+        assert_message(check.messages[0], CheckCode.CRIT, "avoid-1-2", "1 node")

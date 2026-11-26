@@ -8,12 +8,20 @@ class HaGroups(Check):
     name = "Check HA groups"
 
     def run(self):
+        cluster_nodes = {node.node for node in self.proxmox.nodes}
         for group in self.proxmox.ha["groups"]:
             # Since PVE 9.1, cluster/ha/rules also returns resource-affinity rules, which have no nodes.
             # Legacy HA groups have no type at all.
             if group.get("type", "node-affinity") != "node-affinity":
                 continue
-            num_nodes = len(group["nodes"].split(","))
+            # A disabled rule is not applied, the ha_rules check reports it
+            if int(group.get("disable", 0) or 0):
+                continue
+            nodes = {item.split(":")[0] for item in group["nodes"].split(",") if item}
+            # A negative node affinity keeps the resources away from its nodes: they run on the other ones
+            if group.get("affinity") == "negative":
+                nodes = cluster_nodes - nodes
+            num_nodes = len(nodes)
             if num_nodes < 2:
                 group_name = group.get("group") or group.get("rule", "")
                 msg = f"Group {group_name} contain only {num_nodes} node"
