@@ -171,6 +171,87 @@ class EvacuateHaOnlineTargetTestcase(EvacuateBaseTestcase):
         assert calls[100][0] == "pve-devel-3"
 
 
+class EvacuateFilterTestcase(EvacuateBaseTestcase):
+    """pve-devel-1 also hosts VM 105 (running, tagged noevacuate), HA doesn't manage VM 101"""
+
+    def _build_fixtures(self):
+        super()._build_fixtures()
+        self.vms[0]["hastate"] = "started"
+        self.vms.append(fake_vm(105, self.nodes[0], hastate="started") | {"tags": "prod;noevacuate"})
+
+    def _evacuate_all(self, *args):
+        return self._evacuate(["pve-devel-1", "--online", "--no-skip-stopped", *args])
+
+    def test_no_filter(self):
+        result, calls = self._evacuate_all()
+        assert result.exit_code == 0
+        assert list(calls) == [100, 101, 105]
+
+    def test_exclude(self):
+        with self.assertLogs("root", level="INFO") as log:
+            result, calls = self._evacuate_all("--exclude", "name", "^vm-100$")
+        assert result.exit_code == 0
+        assert list(calls) == [101, 105]
+        assert any("VM 100 (vm-100) is excluded" in msg for msg in log.output)
+
+    def test_exclude_tag(self):
+        result, calls = self._evacuate_all("--exclude", "tags", "noevacuate")
+        assert result.exit_code == 0
+        assert list(calls) == [100, 101]
+
+    def test_excludes_any(self):
+        result, calls = self._evacuate_all("--exclude", "tags", "noevacuate", "--exclude", "vmid", "^100$")
+        assert result.exit_code == 0
+        assert list(calls) == [101]
+
+    def test_filter(self):
+        result, calls = self._evacuate_all("--filter", "vmid", "^10[15]$")
+        assert result.exit_code == 0
+        assert list(calls) == [101, 105]
+
+    def test_filters_all(self):
+        result, calls = self._evacuate_all("--filter", "vmid", "^10[15]$", "--filter", "status", "^running$")
+        assert result.exit_code == 0
+        assert list(calls) == [105]
+
+    def test_filter_and_exclude(self):
+        result, calls = self._evacuate_all("--filter", "status", "running", "--exclude", "tags", "noevacuate")
+        assert result.exit_code == 0
+        assert list(calls) == [100]
+
+    def test_exclude_ha_managed(self):
+        result, calls = self._evacuate_all("--filter", "ha_state", "^-$")
+        assert result.exit_code == 0
+        assert list(calls) == [101]
+
+    def test_filter_on_displayed_value(self):
+        # Sizes are matched as vm list displays them
+        result, calls = self._evacuate_all("--filter", "maxmem", "^1.0 GiB$", "--exclude", "vmid", "^10[01]$")
+        assert result.exit_code == 0
+        assert list(calls) == [105]
+
+    def test_excluded_vms_are_not_left_behind(self):
+        # A running VM left on purpose needs no --online and doesn't fail the evacuation
+        with self.assertLogs("root", level="INFO") as log:
+            result, calls = self._evacuate(["pve-devel-1", "--exclude", "status", "running"])
+        assert result.exit_code == 0
+        assert calls == {}
+        assert any("No VM to migrate" in msg for msg in log.output)
+        assert not any("not fully evacuated" in msg for msg in log.output)
+
+    def test_unknown_column(self):
+        result, calls = self._evacuate_all("--exclude", "unknown", "x")
+        assert result.exit_code == 2
+        assert calls == {}
+        assert "'unknown' is not one of" in result.output
+
+    def test_invalid_regexp(self):
+        result, calls = self._evacuate_all("--filter", "name", "(")
+        assert result.exit_code == 2
+        assert calls == {}
+        assert "invalid regular expression: '('" in result.output
+
+
 class EvacuateNoCapacityTestcase(PVEControlTestcase):
     """Default test config reserves more memory than any node has"""
 

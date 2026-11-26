@@ -434,6 +434,7 @@ ERROR:root:Aborting
 How it works:
 
 - **Which VMs**: only the running VMs are migrated by default. Add `--no-skip-stopped` to migrate the stopped ones too.
+- **`--filter COLUMN REGEXP` / `--exclude COLUMN REGEXP`**: select the VMs to evacuate on the columns of `vm list` (`vmid`, `name`, `status`, `tags`, ...). `--filter` keeps the VMs that match every filter, exactly as `vm list --filter` does, so `vm list --filter node NODE --filter ...` previews the selection. `--exclude` leaves the VMs that match any exclusion on the node, for instance `--exclude tags noevacuate`. Both can be repeated. Values are matched as `vm list` displays them (`maxmem` is `4.0 GiB`). The VMs left out are logged and don't make the evacuation fail.
 - **`--online`**: Proxmox refuses to migrate a running VM offline, so running VMs are only migrated with `--online` (live migration). Without it they are skipped with a warning, and the node is not fully evacuated.
 - **Targets**: by default, every other online node of the cluster. Targets can be given as node names or glob patterns (`'pve-node-*'`, quote them for your shell); the source node, nodes that are not online and nodes the HA manager can't place resources on (an `ha_state` of `maintenance_requested`, `maintenance`, `unknown`, `fence` or `gone`, see [Listing resources](#listing-resources)) are skipped with a warning.
 - **Placement**: greedy, VM after VM in the order Proxmox lists them, each VM going to the first target where it fits (targets are tried in no particular order). A VM fits when, with the VMs already placed there, the target keeps `memoryminimum` of memory free and stays within `cpufactor` times its CPUs (see [Advanced configuration options](#advanced-configuration-options)). A VM that fits nowhere is skipped with a warning.
@@ -497,7 +498,7 @@ The `ha` commands follow the nodes in the HA manager, put them in maintenance, d
 ```shell
 $ pvecontrol ha status
 $ pvecontrol ha maintenance-enable pve-node-1 --wait
-$ pvecontrol node evacuate pve-node-1 --online --wait   # the VMs not managed by HA
+$ pvecontrol node evacuate pve-node-1 --online --wait --filter ha_state '^-$'   # the VMs not managed by HA
 $ pvecontrol ha maintenance-disable pve-node-1 --wait
 ```
 
