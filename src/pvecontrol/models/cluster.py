@@ -8,6 +8,7 @@ from proxmoxer.tools import Tasks
 from requests.exceptions import ConnectionError as RequestsConnectionError, SSLError, Timeout
 
 from pvecontrol.utils import defaulter, parse_pve_version, run_auth_commands
+from pvecontrol.models.ha import PVEHaResource, PVEHaRule, sid_vmid
 from pvecontrol.models.node import NodeHaState, PVENode, parse_node_ha_states
 from pvecontrol.models.storage import PVEStorage
 from pvecontrol.models.task import PVETask
@@ -32,6 +33,7 @@ class PVECluster:
         self._ha = None
         self._ha_manager_status = None
         self._node_ha_states = None
+        self._ha_rules = None
         self._backups = None
         self._backup_jobs = None
         self._users = None
@@ -140,6 +142,39 @@ class PVECluster:
         self._node_ha_states = None
 
     @property
+    def ha_rules(self):
+        """HA rules, read from cluster/ha/rules whatever the version (PVE >= 9.0), needs Sys.Audit on /"""
+        if self._ha_rules is None:
+            self._ha_rules = [PVEHaRule.from_api(rule) for rule in self.api.cluster.ha.rules.get()]
+        return self._ha_rules
+
+    @property
+    def ha_resources(self):
+        """The VMs managed by HA, with their name, their node and their state in the HA manager"""
+        try:
+            rules = self.ha_rules
+        except ResourceException as e:
+            logging.warning("Cannot read the HA rules: %s", e)
+            rules = []
+        vms = {vm.vmid: vm for vm in self.vms}
+        service_status = (self.ha_manager_status.get("manager_status") or {}).get("service_status") or {}
+        resources = []
+        for payload in self.api.cluster.ha.resources.get(type="vm"):
+            sid = payload["sid"]
+            vm = vms.get(sid_vmid(sid))
+            service = service_status.get(sid) or {}
+            resources.append(
+                PVEHaResource.from_api(
+                    payload,
+                    name=vm.name if vm else "",
+                    node=service.get("node") or (vm.node if vm else ""),
+                    ha_state=service.get("state", "-"),
+                    rules=[rule.rule for rule in rules if sid in rule.sids],
+                )
+            )
+        return resources
+
+    @property
     def crs(self):
         """HA Cluster Resource Scheduler settings, from cluster/options (needs Sys.Audit on /)"""
         if self._crs is None:
@@ -191,6 +226,7 @@ class PVECluster:
         self._ha = None
         self._ha_manager_status = None
         self._node_ha_states = None
+        self._ha_rules = None
         _ = self.ha
 
     def __str__(self):

@@ -264,6 +264,14 @@ Commands:
   ha disarm               Disarm HA on the whole cluster
   ha maintenance-disable  Take a node out of HA maintenance mode
   ha maintenance-enable   Put a node in HA maintenance mode
+  ha resource-add         Add VMs to HA, as HA resources
+  ha resource-list        List HA resources in the cluster
+  ha resource-remove      Remove VMs from HA
+  ha resource-set         Change the HA parameters of HA resources
+  ha rule-add             Create an HA rule
+  ha rule-list            List HA rules in the cluster
+  ha rule-remove          Delete an HA rule
+  ha rule-set             Change an HA rule
   ha status               Show the state of the nodes in the HA manager
   node evacuate           Evacuate a node by migrating all it's VM out to one
                           or...
@@ -329,7 +337,7 @@ If this works, we're good to go! `Status` is `healthy` when the cluster has quor
 
 ### Listing resources
 
-`vm list`, `node list`, `storage list`, `task list`, `user list`, `group list` and `acl list` all list resources of the whole cluster, and share the same options:
+`vm list`, `node list`, `storage list`, `task list`, `user list`, `group list`, `acl list`, `ha resource-list` and `ha rule-list` all list resources of the whole cluster, and share the same options:
 
 - `--columns COL1,COL2,...` to choose the columns to display (and their order);
 - `--sort-by COLUMN` to sort the rows;
@@ -484,7 +492,7 @@ How it works:
 
 ### ha
 
-The `ha` commands follow the nodes in the HA manager, put them in maintenance and disarm HA:
+The `ha` commands follow the nodes in the HA manager, put them in maintenance, disarm HA, and manage the HA resources and the HA rules:
 
 ```shell
 $ pvecontrol ha status
@@ -495,6 +503,17 @@ $ pvecontrol ha maintenance-disable pve-node-1 --wait
 
 - `ha status [NODE]` shows, for each node: its HA state (as in the `ha_state` column of `node list`, see [Listing resources](#listing-resources)), the mode of its local resource manager (`lrm_mode`), whether a maintenance request is queued for the HA manager (`request_queued`, Proxmox VE 9.2.33 and later, `None` when the queue can't be read), and three counts: the HA resources on it or moving to it, whatever their state (`ha_resources`, frozen ones included while HA is disarmed), the active ones among them, which the HA manager moves away in maintenance (`ha_active`), and the VMs not managed by HA (`other_vms`). The `ha_state` column of `vm list` gives the details, see [Listing resources](#listing-resources). A warning tells when HA is disarmed. `ha status` honors `-o`. With `--wait`, it waits until the node has entered the maintenance mode with no HA resource left, or has left it; it exits with code 1 when the node is neither entering nor leaving the maintenance mode.
 - `ha maintenance-enable NODE` asks the HA manager to put the node in maintenance: it migrates the HA resources away and places none on the node until `ha maintenance-disable NODE`, which moves them back. The VMs not managed by HA stay on the node, a warning counts them and gives the `vm list` command that lists them: use [node evacuate](#node-evacuate) to move them. With `--wait`, the command waits until no active HA resource is left on the node (or until it is back online for `maintenance-disable`); while it waits, it shows the state of the HA resources left and their target (the first 5, the others are counted; the error on timeout names them all). The HA manager picks the targets: when a resource doesn't move, its logs (`pve-ha-crm`, `pve-ha-lrm`) tell why. For instance, a VM that got a guest identity on a Proxmox VE 9.2.33 node can't move to an older node, and the HA manager keeps trying.
+- `ha resource-list` lists the VMs managed by HA (the HA resources): their requested `state`, their current state in the HA manager (`ha_state`), `max_restart`, `max_relocate`, `failback`, `auto_rebalance`, the HA `rules` they belong to and their `comment`.
+- `ha resource-add VMID...` adds VMs to HA, `ha resource-set VMID...` changes their HA parameters, `ha resource-remove VMID...` removes them from HA (the VMs keep running). The options are those of the API: `--state started|stopped|disabled|ignored` (`stopped` and `disabled` make the HA manager stop the VM), `--max-restart N` (restarts on the same node after a failed start), `--max-relocate N` (moves to another node once the restarts failed), `--failback/--no-failback` (move back to the preferred node of its node affinity rule when it comes back), `--auto-rebalance/--no-auto-rebalance` (Proxmox VE 9.2) and `--comment` (an empty one deletes it). Options not given keep the default of the API, or the current value for `resource-set`. `resource-remove` also removes the VMs from the HA rules, and deletes the rules left without resource, unless `--no-purge` is given: it lists them before asking for confirmation.
+- `ha rule-list` lists the HA rules (Proxmox VE 9.0 and later, they replace the HA groups): `type`, `affinity`, `resources`, `nodes`, `strict` (`-` for a resource affinity rule, which is always strict), `state` (`enabled` or `disabled`) and the `errors` of a rule the HA manager ignores because it conflicts with others.
+- `ha rule-add RULE --type node-affinity --resources VMIDS --nodes NODE[:PRIORITY],...` keeps HA resources on some nodes, the ones with the highest priority first. `--strict` restricts them to these nodes (they stop when none is available), and `--affinity negative` keeps them away from the nodes instead. `ha rule-add RULE --type resource-affinity --resources VMIDS --affinity positive|negative` keeps HA resources on the same node (`positive`) or on separate nodes (`negative`, anti-affinity). `--disable` creates the rule disabled. `ha rule-set RULE` changes a rule (`--resources` and `--nodes` replace the whole list, `--enable/--disable`), `ha rule-remove RULE` deletes it. The resources of a rule must be HA resources.
+
+```shell
+$ pvecontrol ha resource-add 101 102 --max-relocate 2
+$ pvecontrol ha rule-add db-apart --type resource-affinity --resources 101,102 --affinity negative
+$ pvecontrol ha rule-add db-prefer --type node-affinity --resources 101,102 --nodes pve-node-1:2,pve-node-2:2,pve-node-3
+```
+
 - `ha disarm --mode freeze|ignore` disarms HA on the whole cluster: every node releases its watchdog and no node is fenced, for instance during a network or corosync maintenance. With `freeze`, HA resources keep their state and new commands are not applied; with `ignore`, they are no longer tracked and can be managed as if HA didn't manage them. `ha arm` arms HA again. No node can enter the maintenance mode while HA is disarmed. With `--wait`, they wait until the HA manager has applied the change.
 
 How it works:
@@ -502,8 +521,9 @@ How it works:
 - The maintenance mode is set through the API of the node itself, which requires the node to be online, and pve-manager 9.2.33 or later both on that node and on the node pvecontrol connects to (the `host` of the cluster configuration): a node running an older version refuses the request instead of passing it on. During an upgrade, point `host` to an upgraded node. On an older version, the error gives the `ha-manager crm-command node-maintenance enable|disable NODE` command to run on a node instead. `ha disarm` and `ha arm` require Proxmox VE 9.1 or later.
 - The HA manager handles the requests on its next round (about 10 s). `--wait` polls it every 10 s, up to `--timeout` seconds (900 by default): when the timeout expires, the command exits with code 1.
 - `ha maintenance-enable` refuses what the HA manager would refuse, before sending the request: a disarmed HA, a node the HA manager doesn't track, or a node in the `unknown`, `fence` or `gone` HA state. Proxmox VE only returns the first line of the error of the `ha-manager` command, which can be an unrelated warning: when a request fails anyway, run the `ha-manager` command given in the error on the node to see the whole error.
-- Confirmation is asked before any change unless `--force` is given. Declining it exits with code 1.
-- Reading the HA state requires the `Sys.Audit` privilege on `/`, the maintenance mode requires `Sys.Modify` on `/`, disarming and arming require `Sys.Console` on `/`.
+- Proxmox VE refuses a rule that conflicts with the others (a resource in two node affinity rules, a resource affinity rule with less than two resources, an anti-affinity with more resources than nodes, node priorities in a negative node affinity, ...), but its error doesn't tell why. `ha rule-add` and `ha rule-set` check the common cases first and tell which one fails; for the others, see the feasibility checks in the [HA rules documentation](https://pve.proxmox.com/pve-docs/chapter-ha-manager.html).
+- Confirmation is asked before any change unless `--force` is given. Declining it exits with code 1. A command given several VMs tries them all and exits with code 1 when one failed.
+- Reading the HA state, resources and rules requires the `Sys.Audit` privilege on `/`, the maintenance mode requires `Sys.Modify` on `/`, disarming and arming HA and changing the HA resources and rules require `Sys.Console` on `/`.
 
 ### Tasks
 
