@@ -90,8 +90,10 @@ class ResourceGroup(click.Group):
         add_list_resource_command(name, self, columns, default_sort, list_callback)
 
 
-def add_list_resource_command(resource_name, root_cmd, default_columns, default_sort, list_callback):
-    @root_cmd.command("list", help=f"List {resource_name}s in the cluster")
+def add_list_resource_command(
+    resource_name, root_cmd, default_columns, default_sort, list_callback, command_name="list"
+):
+    @root_cmd.command(command_name, help=f"List {resource_name}s in the cluster")
     @with_table_options(default_columns, default_sort)
     @click.pass_context
     def _(ctx, sort_by, columns, filters):
