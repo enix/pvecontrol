@@ -206,7 +206,7 @@ def pvecontrol(ctx, debug, output, cluster, unicode, color, config_file):
             logging.debug("Cluster specified: %s", cluster)
 
         # get cli arguments
-        args = SimpleNamespace(output=output, cluster=cluster, unicode=unicode, color=color)
+        args = SimpleNamespace(output=output, cluster=cluster, unicode=unicode, color=color, config_file=config_file)
         logging.debug("Arguments: %s", args)
 
         ctx.ensure_object(dict)
