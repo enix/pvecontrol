@@ -8,7 +8,15 @@ import pytest
 import yaml
 
 from pvecontrol.models.vm import PVEVm, COLUMNS
-from pvecontrol.utils import render_output, redact_secrets, run_auth_commands, parse_pve_version, OutputFormats
+from pvecontrol.utils import (
+    format_row,
+    match_filters,
+    render_output,
+    redact_secrets,
+    run_auth_commands,
+    parse_pve_version,
+    OutputFormats,
+)
 
 
 def test_render_output():
@@ -158,3 +166,10 @@ def test_parse_pve_version_orders_like_versions():
 def test_parse_pve_version_invalid(version):
     with pytest.raises(ValueError):
         parse_pve_version(version)
+
+
+def test_format_row_sorts_sets():
+    # The order of a set depends on the hash seed of the process, a filter must not
+    row = format_row({"tags": {"web", "noevacuate", "prod"}})
+    assert row["tags"] == ["noevacuate", "prod", "web"]
+    assert match_filters(row, [("tags", r"^\['noevacuate', 'prod', 'web'\]$")])

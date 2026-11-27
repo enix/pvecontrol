@@ -151,9 +151,10 @@ def _normalize_values(line):
     for key in line:
         if isinstance(line[key], Enum):
             line[key] = str(line[key])
-        # transform set to list as some output does not support it
+        # transform set to list as some output does not support it, sorted: the order of a set changes with the
+        # hash seed of each process, a filter must select the same items in every run
         if isinstance(line[key], set):
-            line[key] = list(line[key])
+            line[key] = sorted(line[key], key=str)
 
 
 def _humanize_sizes(line):
