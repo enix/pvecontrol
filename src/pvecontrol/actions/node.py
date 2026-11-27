@@ -1,9 +1,16 @@
 import logging
+import shlex
 import sys
 
 import click
 
-from pvecontrol.actions.ha import HA_WAIT_TIMEOUT, check_maintenance, request_maintenance, wait_drained
+from pvecontrol.actions.ha import (
+    HA_WAIT_TIMEOUT,
+    check_maintenance,
+    maintenance_requested,
+    request_maintenance,
+    wait_drained,
+)
 from pvecontrol.models.node import NodeHaState, NodeStatus
 from pvecontrol.models.vm import VmStatus, COLUMNS as VM_COLUMNS
 from pvecontrol.utils import as_row, confirm, format_row, match_filters, print_task
@@ -71,18 +78,18 @@ def evacuate(
         _evacuate_vms(proxmox, srcnode, target, dry_run, online, follow, wait, no_skip_stopped, filters, excludes, True)
         return
     _request_ha_maintenance(proxmox, srcnode)
+    drained = False
     try:
         # The HA manager places the HA resources with the CRS and the HA rules, evacuate knows neither: the VMs not
         # managed by HA are only placed once it is done, on the allocations the HA resources left
         wait_drained(proxmox, node, timeout)
+        drained = True
         proxmox.refresh()
         srcnode = _source_node(proxmox, node)
         _evacuate_vms(proxmox, srcnode, target, dry_run, online, follow, wait, no_skip_stopped, filters, excludes, True)
     finally:
         # Whatever happens to the VMs not managed by HA, leaving the maintenance mode is up to the operator
-        logging.info(
-            "Node %s stays in HA maintenance mode, leave it with: pvecontrol ha maintenance-disable %s", node, node
-        )
+        _log_maintenance_left(ctx.obj["args"], node, drained)
 
 
 # Each option of evacuate is an argument, they are most of the locals
@@ -145,8 +152,34 @@ def _ha_vmids(node):
     return _vmids([vm for vm in node.vms if _ha_managed(vm)]) or "none"
 
 
+def _pvecontrol_command(args, *command):
+    """A pvecontrol command line on the cluster, and with the configuration file, of this run"""
+    options = ["-c", args.cluster]
+    if getattr(args, "config_file", None):
+        options += ["--config", args.config_file]
+    return shlex.join(["pvecontrol", *options, *command])
+
+
+def _log_maintenance_left(args, nodename, drained):
+    disable = _pvecontrol_command(args, "ha", "maintenance-disable", nodename)
+    if drained:
+        logging.info("Node %s stays in HA maintenance mode, leave it with: %s", nodename, disable)
+        return
+    # The request may still be queued, or dropped
+    logging.warning(
+        "The HA maintenance mode of node %s is requested, it may not be effective yet: check it with %s, "
+        "cancel it with: %s",
+        nodename,
+        _pvecontrol_command(args, "ha", "status", nodename),
+        disable,
+    )
+
+
 def _request_ha_maintenance(proxmox, srcnode):
-    if srcnode.ha_state in (NodeHaState.MAINTENANCE_REQUESTED, NodeHaState.MAINTENANCE):
+    # A node in maintenance whose request the CRM dropped is leaving the maintenance mode: request it again
+    if srcnode.ha_state in (NodeHaState.MAINTENANCE_REQUESTED, NodeHaState.MAINTENANCE) and maintenance_requested(
+        proxmox, srcnode.node
+    ):
         logging.info("Node %s is already in HA state %s", srcnode.node, srcnode.ha_state)
         return
     print(f"The HA manager will move the HA VM(s) of node {srcnode.node} away: {_ha_vmids(srcnode)}")
@@ -188,12 +221,12 @@ def _select_vms(srcnode, filters, excludes, no_skip_stopped, online, ha_maintena
     vms = []
     need_online = []
     for vm in srcnode.vms:
-        if vm.status != VmStatus.RUNNING and not no_skip_stopped:
-            logging.debug("VM %i is not running, skipping", vm.vmid)
-            continue
         # The HA manager moves the HA resources of a node in maintenance, or leaves them there (stopped ones)
         if ha_maintenance and _ha_managed(vm):
             logging.warning("VM %s (%s) is managed by HA (%s), left to the HA manager", vm.vmid, vm.name, vm.ha_state)
+            continue
+        if vm.status != VmStatus.RUNNING and not no_skip_stopped:
+            logging.debug("VM %i is not running, skipping", vm.vmid)
             continue
         # An excluded VM is left on purpose: it doesn't need --online
         if not _vm_selected(vm, filters, excludes):

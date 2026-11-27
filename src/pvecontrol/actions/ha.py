@@ -343,6 +343,13 @@ def request_maintenance(proxmox, node, mode, force=False):
     print(f"Maintenance mode {mode} requested for node {nodename}")
 
 
+def maintenance_requested(proxmox, nodename):
+    """The CRM holds a maintenance request for the node: it is entering or staying in maintenance. A node in
+    maintenance without it is leaving the maintenance mode."""
+    manager_status = _read_manager_status(proxmox).get("manager_status") or {}
+    return bool(((manager_status.get("node_request") or {}).get(nodename) or {}).get("maintenance"))
+
+
 def wait_drained(proxmox, nodename, timeout):
     """Wait until the HA manager has moved the active HA resources away from a node entering maintenance"""
     proxmox.refresh_ha_status()
